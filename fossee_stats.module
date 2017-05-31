@@ -855,7 +855,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                 /* For setting completion date for pending TBC and LM more */
                         $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( $enddate)));
 
-                            $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id  FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id  FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                                 ':city' => $cityname,
                                 ':state' => $statename,
                                 ':country' => $countryname,
@@ -880,7 +880,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                 /* For setting completion date for pending TBC and LM more */
                         $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( $enddate)));
 
-                            $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                                 ':city' => $cityname,
                                 ':state' => $statename,
                                 ':country' => $countryname,
@@ -906,7 +906,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                /* For setting completion date for pending TBC and LM more */
                         $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( $enddate)));
 
-                        $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -1089,7 +1089,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -1105,7 +1105,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -1122,7 +1122,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                         ':startdate' => $startdate,
                         ':enddate' => $enddate
                     ));
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
                         ':state' => $statename,
                         ':country' => $countryname,
@@ -1453,16 +1453,6 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
     }
     return $rows;
 }
-
-
-
-
-
-
-
-
-
-
 
 //List of option to fill first drop down ie. Foss type.
 function _ajax_example_get_first_dropdown_options() {
@@ -2486,20 +2476,20 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
 
                 if ($foss_detail->foss_name != 'eSim' && $foss_detail->foss_name != 'OpenModelica'  && $foss_detail->foss_name != 'OpenFOAM' && $foss_detail->foss_name != 'OR-Tools') {
                     if ($foss_detail->foss_name != 'DWSIM') {
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':startdate' => $startdate,
                             ':enddate' => $pending_enddate
                         ));
                     } 
                     else {
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1  AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1  AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':startdate' => $startdate,
                             ':enddate' => $pending_enddate
                         ));
                     }
                 } 
                 else {
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                         ':startdate' => $startdate,
                         ':enddate' => $pending_enddate
                     ));
@@ -2708,7 +2698,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
 
                 if ($foss_detail->foss_name != 'eSim'  && $foss_detail->foss_name != 'OpenModelica' && $foss_detail->foss_name != 'OpenFOAM' && $foss_detail->foss_name != 'OR-Tools') {
                     if ($foss_detail->foss_name != 'DWSIM') {
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -2717,7 +2707,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                         ));
                     } 
                     else {
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -2727,7 +2717,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     }
                 } 
                 else {
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND po.city LIKE :city   AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city   AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
                         ':state' => $statename,
                         ':country' => $countryname,
@@ -3031,7 +3021,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 db_set_active($foss_detail->foss_name); //Active other database
                 if ($foss_detail->foss_name != 'eSim' && $foss_detail->foss_name != 'OpenModelica' && $foss_detail->foss_name != 'OpenFOAM' && $foss_detail->foss_name != 'OR-Tools') {
                     if ($foss_detail->foss_name != 'DWSIM') {
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -3040,7 +3030,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                         ));
                     } 
                     else {
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':city' => $cityname,
                             ':state' => $statename,
                             ':country' => $countryname,
@@ -3050,7 +3040,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     }
                 } 
                 else {
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status !=3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
                         ':state' => $statename,
                         ':country' => $countryname,
@@ -3919,7 +3909,7 @@ $query = "
             "#required" => TRUE
         );
 
-  $form["event_link"] = array(
+        $form["event_link"] = array(
             "#type" => "textfield",
             "#title" => "Link to event's website",
             "#default_value" => ''
@@ -4752,6 +4742,7 @@ $query = "
         $query->condition('w_id', $workshop_id);
         $result = $query->execute();
         $row = $result->fetchObject();
+        $eventfolder = str_replace(' ',  '_', $row->w_name) ;
         $query1 = db_select('workshop_images');
         $query1->fields('workshop_images');
         $query1->condition('w_id', $workshop_id);
@@ -4759,7 +4750,7 @@ $query = "
         while ($row1 = $result1->fetchObject()) {
             $form['imagecheck@' . $row1->id] = array(
                 '#type' => 'checkbox',
-                '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . ' />'
+                '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . ' />'
             );
         }
         $form['enduploadphotos'] = array(
@@ -4886,7 +4877,7 @@ function workshop_add_form_validate($form, &$form_state) {
                 $allowed_extensions = explode(',', $allowed_extensions_str);
                 $temp_extension = end(explode('.', strtolower($_FILES['files']['name'][$file_form_name])));
                 if (!in_array($temp_extension, $allowed_extensions))
-                    form_set_error($file_form_name, t('Only file with ' . $allowed_extensions_str . ' extensions can be uploaded.'));
+                    form_set_error($file_form_name, t('Only file with') . $allowed_extensions_str . t(',extensions can be uploaded.'));
                 //if ($_FILES['files']['size'][$file_form_name] <= 0)
                 //  form_set_error($file_form_name, t('File size cannot be zero.'));
             }
@@ -5048,7 +5039,7 @@ function workshop_add_form_submit($form, &$form_state) {
 
         $speakersupload = 0;
         for ($i = 0; $i <= $v["speakers_count"]; $i++) {
-   $s_id=$v['speakers_fieldset'][$i]["s_id"];
+           $s_id=$v['speakers_fieldset'][$i]["s_id"];
             if ($s_id != "") {
                 if ($v['speakers_fieldset'][$i]["speakername"] != "") {
                     $query = db_update('speakers');
@@ -5204,14 +5195,19 @@ function workshop_add_form_submit($form, &$form_state) {
                     }
                 } 
                 else {
-                    drupal_set_message('Error Could not delete : ' . $filename . ', file does not exist', 'error');
+                    drupal_set_message(t('Error Could not delete :') . $filename . t(', file does not exist'), 'error');
                 }
             }
         }
         /* For adding more images to existing event */
         $items = array();
         $root_path = events_images_path();
-        $eventfolder = str_replace(' ', '_', $v["name"]);
+        $query = db_select('workshop');
+        $query->fields('workshop');
+        $query->condition('w_id', $v["workshop_id"]);
+        $result = $query->execute();
+        $row_folder = $result->fetchObject();
+        $eventfolder = $row_folder -> images_folder;
         $dest_path = $eventfolder . '/';
         if (!is_dir($root_path . $dest_path)) {
             mkdir($root_path . $dest_path);
@@ -5221,9 +5217,9 @@ function workshop_add_form_submit($form, &$form_state) {
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
                 if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
-                    drupal_set_message(t("Error uploading file. File !filename already exists.", array(
+                    drupal_set_message(t("Error uploading file. File !filename already exists."), array(
                         '!filename' => $_FILES['files']['name'][$file_form_name]
-                    )), 'error');
+                    ), 'error');
                     return;
                 }
                 
@@ -5250,7 +5246,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
                 } 
                 else {
-                    drupal_set_message(t('Error uploading file : ' . $dest_path . $file_name), 'error');
+                    drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
             }
         }
@@ -5268,16 +5264,18 @@ function workshop_add_form_submit($form, &$form_state) {
         }
     } 
     else {
+        $eventfolder = str_replace(' ', '_', $v["name"]) . time();
         $query = "
   INSERT INTO {workshop}
-  (foss_name, type, w_name, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body)
-  VALUES  (:foss_name, :type, :w_name, :startdate, :starttime,:enddate, :endtime, :venue, :street, :country, :state, :city, :pincode, :event_link,
+  (foss_name, type, w_name, images_folder, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body)
+  VALUES  (:foss_name, :type, :w_name, :images_folder, :startdate, :starttime,:enddate, :endtime, :venue, :street, :country, :state, :city, :pincode, :event_link,
 :no_of_participant, :body)
   ";
         $args = array(
             ":foss_name" => $v["foss_select"],
       ":type" => $v["type"],
             ":w_name" => $v["name"],
+            ":images_folder" => $eventfolder,
             ":startdate" => $v["start_date"],
             ":starttime" => "00:00",
             ":enddate" => $v["end_date"],
@@ -5378,7 +5376,7 @@ function workshop_add_form_submit($form, &$form_state) {
         /* For adding images of events*/
         $items = array();
         $root_path = events_images_path();
-        $eventfolder = str_replace(' ', '_', $v["name"]);
+        
         $dest_path = $eventfolder . '/';
         if (!is_dir($root_path . $dest_path)) {
             mkdir($root_path . $dest_path);
@@ -5387,9 +5385,9 @@ function workshop_add_form_submit($form, &$form_state) {
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
                 if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
-                    drupal_set_message(t("Error uploading file. File !filename already exists.", array(
+                    drupal_set_message(t("Error uploading file. File !filename already exists."), array(
                         '!filename' => $_FILES['files']['name'][$file_form_name]
-                    )), 'error');
+                    ), 'error');
                     return;
                 }
                 $imageupload = 0;
@@ -5416,7 +5414,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
                 } 
                 else {
-                    drupal_set_message('Error uploading file : ' . $dest_path . $file_name, 'error');
+                    drupal_set_message($file_name . $dest_path . ' was having an error while uploading :' , 'error');
                 }
             }
         }
@@ -5510,9 +5508,10 @@ function workshop_view_image_all($id = 0) {
     $query->condition('w_id', $row1->w_id);
     $result = $query->execute();
     $row = $result->fetchObject();
+    $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $previous = ($row1->id) - 1;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:550px; height:350px' src=" . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:550px; height:350px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     $page_content .= "<a href=" . $GLOBALS['base_url'] . "/events/images/change/" . $previous . " name=" . $row1->id . " id=" . $row1->id . "  class='autodialog' data-dialog-width='600px'>PREVIOUS</a>";
     return $page_content;
@@ -5584,8 +5583,9 @@ function workshop_view_image_change($id = 0) {
     $query->condition('w_id', $row1->w_id);
     $result = $query->execute();
     $row = $result->fetchObject();
+    $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:600px; height:500px' src=" . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:600px; height:500px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     return $page_content;
 }
@@ -5624,7 +5624,7 @@ function workshop_delete_all($workshop_id = 0) {
     if (is_dir($dir_path)) {
         $res = delete_directory($dir_path);
         if (!$res) {
-            drupal_set_message(t("Cannot delete Event directory : " . $dir_path . ". Please contact administrator."), 'error');
+            drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
             return;
         } 
         else {
@@ -5634,7 +5634,7 @@ function workshop_delete_all($workshop_id = 0) {
         }
     } 
     else {
-        drupal_set_message(t("Event directory not present : " . $dir_path . ". Skipping deleting directory."), 'status');
+        drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
     }
     $query_t = db_delete('testimonials');
     $query_t->condition('w_id', $workshop_id);
@@ -6120,7 +6120,8 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
     if ($num_of_results != 0) {
         $page_content .= "<tr><td><b>Pictures</b></td><td>";
         while ($row1 = $result->fetchObject()) {
-            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . " /></a>";
+          $eventfolder = str_replace(' ',  '_', $row->w_name) ;
+            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></a>";
         }
         $page_content .= "</td></tr></table>";
     } 
@@ -6740,12 +6741,13 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         $result1 = $query1->execute();
         while ($row1 = $result1->fetchObject()) {
     $suffix="";
+    $eventfolder = str_replace(' ',  '_', $row->p_name) ;
     $ext = explode(".", $row1->name);
     if (($ext[1]=="png")||($ext[1]=="PNG")||($ext[1]=="jpeg")||($ext[1]=="JPEG")||($ext[1]=="jpg")||($ext[1]=="JPG")) {
-                 $suffix='<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/campaign_posters/" . str_replace(' ', '_', $row->p_name) . "/" . $row1->name . ' />';
+                 $suffix='<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . ' />';
     }
     else{
-    $suffix='<a href=' . $GLOBALS['base_url'] . "/campaign_posters/" . str_replace(' ', '_', $row->p_name) . "/" . $row1->name . " target=" . "_blank >" . $row1->name . '</a>';
+    $suffix='<a href=' . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " target=" . "_blank >" . $row1->name . '</a>';
     }
 
             $form['postercheck@' . $row1->id] = array(
@@ -6859,7 +6861,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                     }
                 } 
                 else {
-                    drupal_set_message('Error Could not delete : ' . $row_poster->name . ', file does not exist', 'error');
+                    drupal_set_message(t('Error Could not delete :') . $row_poster->name . t(', file does not exist'), 'error');
                 }
             }
         }
@@ -6875,9 +6877,9 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
                 if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
-                    drupal_set_message(t("Error uploading file. File !filename already exists.", array(
+                    drupal_set_message(t("Error uploading file. File !filename already exists."), array(
                         '!filename' => $_FILES['files']['name'][$file_form_name]
-                    )), 'error');
+                    ), 'error');
                     return;
                 }
                 $posterupload = 0;
@@ -6904,7 +6906,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
                 } 
                 else {
-                    drupal_set_message('Error uploading file : ' . $dest_path . $file_name, 'error');
+                    drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
             }
         }
@@ -6950,9 +6952,9 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
                 if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
-                    drupal_set_message(t("Error uploading file. File !filename already exists.", array(
-                        '!filename' => $_FILES['files']['name'][$file_form_name]
-                    )), 'error');
+                    drupal_set_message(t("Error uploading file. File !filename already exists."), array(
+                        t('!filename') => $_FILES['files']['name'][$file_form_name]
+                    ), 'error');
                     return;
                 }
                 $posterupload = 0;
@@ -6979,7 +6981,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
                 } 
                 else {
-                    drupal_set_message('Error uploading file : ' . $dest_path . $file_name, 'error');
+                    drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
             }
         }
@@ -7032,7 +7034,7 @@ function postalcampaign_add_form_validate($form, &$form_state) {
     $allowed_ext= explode('.', strtolower($_FILES['files']['name'][$file_form_name]));
                 $temp_extension = end($allowed_ext);
                 if (!in_array($temp_extension, $allowed_extensions))
-                    form_set_error($file_form_name, t('Only file with ' . $allowed_extensions_str . ' extensions can be uploaded.'));
+                    form_set_error($file_form_name, t('Only file with') . $allowed_extensions_str . t(',extensions can be uploaded.'));
                 
             }
         }
@@ -7090,7 +7092,7 @@ function postalcampaign_delete_all($postercampaign_id = 0) {
     if (is_dir($dir_path)) {
         $res = delete_directory($dir_path);
         if (!$res) {
-            drupal_set_message(t("Cannot delete Campaign directory : " . $dir_path . ". Please contact administrator."), 'error');
+            drupal_set_message(t("Cannot delete Campaign directory :") . $dir_path . t(",Please contact administrator."), 'error');
             return;
         } 
         else {
@@ -7100,7 +7102,7 @@ function postalcampaign_delete_all($postercampaign_id = 0) {
         }
     } 
     else {
-        drupal_set_message(t("Event directory not present : " . $dir_path . ". Skipping deleting directory."), 'status');
+        drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
     }
   
     $query3 = db_delete('postercampaign');
@@ -7156,8 +7158,9 @@ $page_content .="</tr>";
         $page_content .= "<tr><td>";
         while ($row1 = $result->fetchObject()) {
   $ext = explode(".", $row1->name);
+  $eventfolder = str_replace(' ',  '_', $row->p_name) ;
   if (($ext[1]=="png")||($ext[1]=="PNG")||($ext[1]=="jpeg")||($ext[1]=="JPEG")||($ext[1]=="jpg")||($ext[1]=="JPG")) {
-            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/campaign_posters/" . str_replace(' ',  '_', $row->p_name) . "/" . $row1->name . "><img title='Click to view' style='width:120px; height:200px; padding-right:20px;padding-bottom:10px'       src=" . $GLOBALS['base_url'] . "/campaign_posters/" . str_replace(' ', '_', $row->p_name) . "/" . $row1->name . " /></a>";
+            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . "><img title='Click to view' style='width:120px; height:200px; padding-right:20px;padding-bottom:10px'       src=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " /></a>";
 
   }
   }
@@ -7170,8 +7173,9 @@ $page_content .="</tr>";
 
   while ($row1 = $result->fetchObject()) {
   $ext = explode(".", $row1->name);
+  $eventfolder = str_replace(' ',  '_', $row->p_name) ;
   if (($ext[1]=="pdf")||($ext[1]=="PDF")) {
-            $page_content .= "<a href=" . $GLOBALS['base_url'] . "/campaign_posters/" . str_replace(' ', '_', $row->p_name) . "/" . $row1->name . " target='_blank' title='Click to view'>" . $row1->name . "</a>";
+            $page_content .= "<a href=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " target='_blank' title='Click to view'>" . $row1->name . "</a>";
 
   }
   }
@@ -7577,6 +7581,7 @@ $page_content .= '</tbody></table>';
     $query->fields('workshop_images');
     $query->condition('w_id', $workshop_id);
     $result = $query->execute();
+    $eventfolder = str_replace(' ',  '_', $row->e_name) ;
     $num_of_results = $result->rowCount();
     if ($num_of_results!=0) {
         $i=0;
@@ -7587,14 +7592,14 @@ $page_content .= '</tbody></table>';
   
   
   if (($i%2)==0) {
-  $page='"' . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . '"';
+  $page='"' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . '"';
   $page_content .='<td><img style="width:320px;height:240px;margin:5px 5px 5px 5px;" src=' . $page . '/></td>';
 
   $page_content .= "</tr><tr>";
 
   }
   else {
-  $page = '"' . $GLOBALS['base_url'] . "/events_images/" . str_replace(' ', '_', $row->w_name) . "/" . $row1->name . '"';
+  $page = '"' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . '"';
   $page_content .= '<td><img style="width:320px;height:240px;margin:5px 5px 5px 5px;" src=' . $page . '/></td>';
 
   }
@@ -7669,7 +7674,8 @@ $pdf->lastPage();
 // ---------------------------------------------------------
 
 //Close and output PDF document
-$pdf->Output(str_replace(' ', '_', $row->w_name) . " . pdf", 'I');
+$eventfolder = str_replace(' ',  '_', $row->w_name) ;
+$pdf->Output($eventfolder . " . pdf", 'I');
 
 //============================================================+
 // END OF FILE

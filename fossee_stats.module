@@ -112,14 +112,14 @@ function fossee_stats_menu() {
         "type" => MENU_CALLBACK
     );
   //To delete existing events
-    $items["events/delete"] = array(
+    /*$items["events/delete"] = array(
         "title" => "Delete Events",
         "page callback" => "workshop_delete_all",
         "access arguments" => array(
             "manage workshop"
         ),
         "type" => MENU_CALLBACK
-    );
+    );*/
     //List of all events
     $items["events/view_details"] = array(
         "title" => "Details of Selected Event",

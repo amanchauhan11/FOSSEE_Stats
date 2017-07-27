@@ -7448,7 +7448,7 @@ class MYPDF extends TCPDF {
     /*public function Header() {
         // Logo
            $image_file = K_PATH_IMAGES."fosseelogo.png";
-     $this->Image($image_file, 10, 10, 25, 0, 'PNG', 'http://fossee.in');
+     $this->Image($image_file, 10, 10, 25, 0, 'PNG', 'https://fossee.in');
         // Set font
         $this->SetFont('helvetica', 'B', 20);
         // Title
@@ -7466,7 +7466,7 @@ class MYPDF extends TCPDF {
 
         $this->Cell(0, 10, 'Page ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, FALSE, 'R', 0, '', 0, FALSE, 'T', 'M');
 
-  $html = '<a href="http://fossee.in" target="_blank" >http://fossee.in</a>';
+  $html = '<a href="https://fossee.in" target="_blank" >https://fossee.in</a>';
   $this->writeHTML($html, TRUE, FALSE, TRUE, FALSE, '');
     }
 }
@@ -7581,7 +7581,7 @@ $page_content .= '</tbody></table>';
     $query->fields('workshop_images');
     $query->condition('w_id', $workshop_id);
     $result = $query->execute();
-    $eventfolder = str_replace(' ',  '_', $row->e_name) ;
+    $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $num_of_results = $result->rowCount();
     if ($num_of_results!=0) {
         $i=0;
@@ -7589,8 +7589,7 @@ $page_content .= '</tbody></table>';
   $page_content .= '<table border="" cellspacing="6" cellpadding="4"><tr>';
         while ($row1 = $result->fetchObject()) {
   $i++;
-  
-  
+
   if (($i%2)==0) {
   $page='"' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . '"';
   $page_content .='<td><img style="width:320px;height:240px;margin:5px 5px 5px 5px;" src=' . $page . '/></td>';

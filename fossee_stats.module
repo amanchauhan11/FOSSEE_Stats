@@ -6121,7 +6121,7 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
         $page_content .= "<tr><td><b>Pictures</b></td><td>";
         while ($row1 = $result->fetchObject()) {
           $eventfolder = str_replace(' ',  '_', $row->w_name) ;
-            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></a>";
+            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . " /></a>";
         }
         $page_content .= "</td></tr></table>";
     } 
@@ -7591,14 +7591,14 @@ $page_content .= '</tbody></table>';
   $i++;
 
   if (($i%2)==0) {
-  $page='"' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . '"';
+  $page='"' . $GLOBALS['base_url'] . "/events_images/" .  $row1->path . '"';
   $page_content .='<td><img style="width:320px;height:240px;margin:5px 5px 5px 5px;" src=' . $page . '/></td>';
 
   $page_content .= "</tr><tr>";
 
   }
   else {
-  $page = '"' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . '"';
+  $page = '"' . $GLOBALS['base_url'] . "/events_images/"  . $row1->path . '"';
   $page_content .= '<td><img style="width:320px;height:240px;margin:5px 5px 5px 5px;" src=' . $page . '/></td>';
 
   }

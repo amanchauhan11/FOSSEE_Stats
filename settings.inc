@@ -1,7 +1,7 @@
 <?php
 // $Id$
 
-function events_settings_form($form_state)
+function events_settings_form($form,&$form_state)
 {
   
   $form['extensions']['image'] = array(

@@ -3896,7 +3896,7 @@ $query = "
             '#title' => t('Pincode'),
             '#size' => 30,
             '#maxlength' => 6,
-            '#required' => False,
+            '#required' => True,
             '#attributes' => array(
                 'placeholder' => 'Enter pincode....'
             )
@@ -4343,7 +4343,7 @@ $query = "
             '#title' => t('Pincode'),
             '#size' => 30,
             '#maxlength' => 6,
-            '#required' => False,
+            '#required' => True,
             '#attributes' => array(
                 'placeholder' => 'Enter pincode....'
             ),

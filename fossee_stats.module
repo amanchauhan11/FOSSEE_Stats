@@ -2582,7 +2582,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
             $result2 = $query2->execute();
             $completedlabcount = $result2->fetchObject()->count;
             if ($foss_detail->lm_completed != "" && $foss_detail->lm_completed != NULL) {
-                $clink = "<a href=" . $foss_detail->lm_completed . " target='_blank'>" . $completedlabcount . "</a>";
+                $clink =   "<a href=" . $foss_detail->lm_completed . " target='_blank'>" . $completedlabcount . "</a>";
                 $completedlabcount = $clink;
             }
             $query3 = db_select('lab_migration_proposal');
@@ -7747,8 +7747,8 @@ function fossee_map_form($form, $form_state) {
   $form['foss_sub_project'] = array(
       '#type' => 'select',
       '#title' => t('Activities'),
-      '#options' => get_activities_list($foss_project),
-      '#prefix' => '<td><div id="dropdown-second-replace" style="width:250px;padding-left:25px" >',
+      '#options' => get_activities_list_for_map($foss_project),
+      '#prefix' => '<td><div id="dropdown-second-replace" style="width:350px;padding-left:25px" >',
       '#suffix' => '</div>',
       '#default_value' => "--------------",
       '#validated' => TRUE,
@@ -7769,86 +7769,6 @@ function fossee_map_form($form, $form_state) {
       )
   );
 
- /* third Dropdown for Status like Completed and In Progress */
-  if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
-      $foss_sub_project_status = isset($form_state['values']['$foss_sub_project_status']) ? $form_state['values']['$foss_sub_project_status'] : '';
-  }
-  else {
-      $foss_sub_project_status = '';
-  }
-  $form['foss_sub_project_status'] = array(
-      '#type' => 'select',
-      '#title' => t('Status'),
-      '#options' => _ajax_example_get_third_dropdown_options($foss_sub_project),
-      '#prefix' => '<td><div id="dropdown-third-replace" style="width:250px">',
-      '#suffix' => '</div></td></tr>',
-      '#default_value' => $foss_sub_project_status,
-      '#validated' => TRUE,
-      '#states' => array(
-          'invisible' => array(
-              array(
-                  array(
-                      ':input[name="foss_sub_project"]' => array(
-                          'value' => 0
-                      )
-                  ),
-                  'or',
-                  array(
-                      ':input[name="foss_type"]' => array(
-                          'value' => ""
-                      )
-
-                  )
-              )
-          )
-      )
-  );
-   /* Start Date for Filter */
-  $form['start_date'] = array(
-      '#type' => 'date_popup',
-      '#title' => t('From Date:'),
-      '#date_label_position' => '',
-      '#description' => '',
-      '#default_value' => '',
-      '#date_format' => 'Y-m-d',
-      '#date_increment' => 0,
-      '#date_year_range' => '2011:+0',
-      '#prefix' => '<tr><td><div id="startdate">',
-      '#suffix' => '</div></td>',
-      '#datepicker_options' => array(
-          'maxDate' => 0
-      ),
-      '#states' => array(
-          'invisible' => array(
-              ':input[name="foss_type"]' => array(
-                  'value' => ""
-              )
-          )
-      )
-  );
-/* End Date for Filter */
-  $form['end_date'] = array(
-      '#type' => 'date_popup',
-      '#title' => t('To Date:'),
-      '#date_label_position' => '',
-      '#description' => '',
-      '#default_value' => '',
-      '#date_format' => 'Y-m-d',
-      '#date_increment' => 0,
-      '#date_year_range' => '2011:+0',
-      '#prefix' => '<td><div id="enddate" style="padding-left:15px;">',
-      '#suffix' => '</div></td>',
-      '#datepicker_options' => array(
-          'maxDate' => 0
-      ),
-      '#states' => array(
-          'invisible' => array(
-              ':input[name="foss_type"]' => array(
-                  'value' => ""
-              )
-          )
-      )
-  );
   $form['submit'] = array(
       '#type' => 'submit',
       '#ajax' => array(
@@ -7867,10 +7787,254 @@ function fossee_map_form($form, $form_state) {
       '#prefix' => '',
       '#suffix' => '</td></tr></table></div>'
   );
+  $form['map'] = array(
+      '#type' => 'item',
+      '#prefix' => '<div id="load_map" >',
+      '#markup' => '',
+      '#suffix' => '</div>'
+   );
   return $form;
 }
 
 /* Form submit for map */
+
 function ajax_submit_for_map($form, &$form_state){
-  
+
+  $commands = array();
+  $foss_type = $form['foss_type']['#options'][$form_state['values']['foss_type']];
+  $foss_sub_project = $form['foss_sub_project']['#options'][$form_state['values']['foss_sub_project']];
+  $data = get_map_data($foss_type, $foss_sub_project);
+
+  $form['load_map']['#markup'] = $data;
+  $commands[] = ajax_command_html("#load_map", drupal_render($form['load_map']));
+  return array(
+      '#type' => 'ajax',
+      '#commands' => $commands
+  );
+
+}
+
+function get_map_data($type, $project){
+  $states = array();
+  if($type == "--------------"){
+    $query = db_select('foss_type','u')
+      ->fields('u', array(
+        'id',
+        'foss_name',
+        'lab_migration',
+        'workshop',
+        'conference'
+      ))
+      ->execute();
+      while($foss = $query->fetchObject()){
+        $name = $foss->foss_name;
+
+        // Workshop
+        if($foss->workshop){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w', array('state'))
+            ->condition('type','workshop')
+            ->execute()
+            ->fetchAll();
+          foreach ($query1 as $s) {
+            if($s->state){
+              $states[$s->state]++;
+            }
+          }
+        }
+        // Conference
+        if($foss->conference){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w',array('state'))
+            ->condition('type','conference')
+            ->execute()
+            ->fetchAll();
+          foreach ($query1 as $s) {
+            if($s->state){
+              $states[$s->state]++;
+            }
+          }
+        }
+        /*
+          Self Workshop space
+        */
+
+        db_set_active($name);
+        // Lab Migration
+        if($foss->lab_migration){
+          $query1 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('state'))
+            ->condition('approval_status', 3)
+            ->execute()
+            ->fetchAll();
+          foreach ($query1 as $s) {
+            if($s->state){
+              $states[$s->state]++;
+            }
+          }
+        }
+        db_set_active('default');
+        db_set_active();
+      }
+  }elseif ($project == "--------------") {
+    $query = db_select('foss_type','u')
+      ->fields('u', array(
+        'lab_migration',
+        'workshop',
+        'conference'
+      ))
+      ->condition('foss_name',$type)
+      ->execute()
+      ->fetchObject();
+
+    // Workshop
+    if($query->workshop){
+      $query1 = db_select('workshop', 'w')
+        ->fields('w', array('state'))
+        ->condition('type','workshop')
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    // Conference
+    if($query->conference){
+      $query1 = db_select('workshop', 'w')
+        ->fields('w',array('state'))
+        ->condition('type','conference')
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    /*
+      Self Workshop space
+    */
+
+    db_set_active($type);
+    // Lab Migration
+    if($query->lab_migration){
+      $query1 = db_select('lab_migration_proposal','u')
+        ->fields('u', array('state'))
+        ->condition('approval_status', 3)
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    db_set_active('default');
+    db_set_active();
+  }else{
+    $query = db_select('foss_type','u')
+      ->fields('u', array(
+        'lab_migration',
+        'workshop',
+        'conference'
+      ))
+      ->condition('foss_name',$type)
+      ->execute()
+      ->fetchObject();
+    // Workshop
+    if($query->workshop && $project == 2){
+      $query1 = db_select('workshop', 'w')
+        ->fields('w', array('state'))
+        ->condition('type','workshop')
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    // Conference
+    if($query->conference && $project == 3){
+      $query1 = db_select('workshop', 'w')
+        ->fields('w',array('state'))
+        ->condition('type','conference')
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    /*
+      Self Workshop space
+    */
+
+    db_set_active($type);
+    // Lab Migration
+    if($query->lab_migration && $project == 1){
+      $query1 = db_select('lab_migration_proposal','u')
+        ->fields('u', array('state'))
+        ->condition('approval_status', 3)
+        ->execute()
+        ->fetchAll();
+      foreach ($query1 as $s) {
+        if($s->state){
+          $states[$s->state]++;
+        }
+      }
+    }
+    db_set_active('default');
+    db_set_active();
+  }
+  print_r($states);
+  return $out;
+
+}
+
+// Activities List for Map
+function get_activities_list_for_map($foss_project) {
+    if ($foss_project != NULL) {
+        $query = db_select('foss_type');
+        $query->fields('foss_type', array(
+            'lab_migration',
+            'workshop',
+            'self_workshop',
+            'conference'
+        ));
+        $query->condition('id', $foss_project);
+        $result = $query->execute();
+        $subproject_detail = $result->fetchObject();
+        $optiondata = array(
+            "lab_migration",
+            "workshop",
+            "self_workshop",
+            "conference"
+        );
+        $optionvalue = array(
+            " ",
+            "Lab Migration",
+            "Workshop",
+            "Self Workshop",
+            "Conference"
+        );
+        $options = array();
+        $options[0] = "--------------";
+        $i = 0;
+        foreach ($optiondata as $value) {
+            $i++;
+            if (($subproject_detail->$value) != 0) {
+                $options[$i] = $optionvalue[$i];
+            }
+        }
+        return $options;
+    }
+    else {
+        $options[0] = "--------------";
+        return $options;
+    }
+
 }

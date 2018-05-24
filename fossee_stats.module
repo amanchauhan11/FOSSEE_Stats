@@ -42,7 +42,7 @@ function fossee_stats_permission() {
             "title" => t("Events upload setting"),
             "description" => t("Allows users to manage postalcampaign.")
         )
-       
+
     );
 }
 
@@ -85,7 +85,7 @@ function fossee_stats_menu() {
   //'access callback' => TRUE,
    "type" => MENU_CALLBACK
      );
-     //Fetch the Details of self workshop 
+     //Fetch the Details of self workshop
      $items['view-completed-workshop'] = array(
      'title' => 'Workshop Details',
      'page callback' => 'view_completed_workshop',
@@ -93,7 +93,7 @@ function fossee_stats_menu() {
                 );
 
     //Following are menu of Events (Workshop, Conference along with testimonial and images and speakers)
-   
+
     $items["events/add"] = array(
         "title" => "Add Events",
         "page callback" => "workshop_display_all",
@@ -193,7 +193,7 @@ function fossee_stats_menu() {
         ),
         "type" => MENU_CALLBACK
     );
-    
+
 
      // List of all Postal Campaign
      $items["postalcampaign"] = array(
@@ -278,6 +278,21 @@ function fossee_stats_menu() {
         'type' => MENU_NORMAL_ITEM,
         'file' => 'settings.inc'
     );
+
+    /* STATS MAP */
+    //For show the stats in the India map
+    $items["fossee-stats-map"] = array(
+        "title" => "FOSSEE Stats Map",
+        "page callback" => "drupal_get_form",
+        "page arguments" => array(
+            "fossee_map_form"
+        ),
+        "access arguments" => array(
+            "access fossee_stats"
+        ),
+        "type" => MENU_NORMAL_ITEM
+    );
+
     return $items;
 }
 
@@ -299,7 +314,7 @@ function fossee_stats_form($form, &$form_state) {
     $options_first = _ajax_example_get_first_dropdown_options();
     if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
         $foss_project = isset($form_state['values']['foss_type']) ? $form_state['values']['foss_type'] : key($options_first);
-    } 
+    }
     else {
         $foss_project = '';
     }
@@ -324,7 +339,7 @@ function fossee_stats_form($form, &$form_state) {
 
     if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
         $foss_sub_project = isset($form_state['values']['foss_sub_project']) ? $form_state['values']['foss_sub_project'] : key(get_activities_list($foss_project));
-    } 
+    }
     else {
         $foss_sub_project = '';
     }
@@ -343,7 +358,7 @@ function fossee_stats_form($form, &$form_state) {
                 'message' => ''
             )
         ),
-        
+
         '#states' => array(
             'invisible' => array(
                 ':input[name="foss_type"]' => array(
@@ -356,7 +371,7 @@ function fossee_stats_form($form, &$form_state) {
    /* third Dropdown for Status like Completed and In Progress */
     if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
         $foss_sub_project_status = isset($form_state['values']['$foss_sub_project_status']) ? $form_state['values']['$foss_sub_project_status'] : '';
-    } 
+    }
     else {
         $foss_sub_project_status = '';
     }
@@ -381,7 +396,7 @@ function fossee_stats_form($form, &$form_state) {
                         ':input[name="foss_type"]' => array(
                             'value' => ""
                         )
-                        
+
                     )
                 )
             )
@@ -436,7 +451,7 @@ function fossee_stats_form($form, &$form_state) {
      /* Country list for Filter */
     if (isset($form_state['values']['countryname']) && isset($form_state['values']['statename']) && isset($form_state['values']['cityname'])) {
         $countryname = isset($form_state['values']['countryname']) ? $form_state['values']['countryname'] : key(get_country_list($foss_project, $foss_sub_project));
-    } 
+    }
     else {
         $countryname = '';
     }
@@ -462,7 +477,7 @@ function fossee_stats_form($form, &$form_state) {
                         ':input[name="foss_type"]' => array(
                             'value' => 3
                         )
-                        
+
                     )
                 )
             )
@@ -475,15 +490,15 @@ function fossee_stats_form($form, &$form_state) {
             )
         )
     );
-    
+
  /* State list for Filter */
     if (isset($form_state['values']['countryname']) && isset($form_state['values']['statename']) && isset($form_state['values']['cityname'])) {
         $statename = isset($form_state['values']['statename']) ? $form_state['values']['statename'] : key(get_state_list($foss_project, $foss_sub_project, $countryname));
-    } 
+    }
     else {
         $statename = '';
     }
-    
+
     $form['statename'] = array(
         "#type" => "select",
         "#title" => t("State Name"),
@@ -507,7 +522,7 @@ function fossee_stats_form($form, &$form_state) {
                         ':input[name="foss_type"]' => array(
                             'value' => 3
                         )
-                        
+
                     )
                 )
             )
@@ -520,11 +535,11 @@ function fossee_stats_form($form, &$form_state) {
             )
         )
     );
-    
+
 /* City list for Filter */
     if (isset($form_state['values']['countryname']) && isset($form_state['values']['statename']) && isset($form_state['values']['cityname'])) {
         $cityname = isset($form_state['values']['cityname']) ? $form_state['values']['cityname'] : key(get_city_list($foss_project, $foss_sub_project, $countryname, $statename));
-    } 
+    }
     else {
         $cityname = '';
     }
@@ -551,7 +566,7 @@ function fossee_stats_form($form, &$form_state) {
                         ':input[name="foss_type"]' => array(
                             'value' => 3
                         )
-                        
+
                     )
                 )
             )
@@ -565,13 +580,13 @@ function fossee_stats_form($form, &$form_state) {
                 'message' => ''
             )
         ),
-        '#value' => t('Filter'),        
+        '#value' => t('Filter'),
         '#prefix' => '<tr><td align="center">',
         '#suffix' => ''
     );
     $form['reset'] = array(
         '#type' => 'submit',
-        '#value' => t('Reset'),        
+        '#value' => t('Reset'),
         '#prefix' => '',
         '#suffix' => '</td></tr></table></div>'
     );
@@ -586,7 +601,7 @@ function fossee_stats_form($form, &$form_state) {
     $form['tbctable'] = array(
         '#type' => 'item',
         '#prefix' => '<div id="default_load" >',
-        '#markup' => '<ul class="nav nav-tabs">                       
+        '#markup' => '<ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companions</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migrations</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshops</a></li>
@@ -604,15 +619,15 @@ function fossee_stats_form($form, &$form_state) {
         <div id="tbctabledata"class="tab-pane fade in active">' . get_tabledata_TBC_or_LM("TBC", "1960/01/01", "") . '
         <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . drupal_render($TBC_getchart) . '</div>
         </div>
-     
+
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", "1960/01/01", "") . '
         <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render($LM_getchart) . '</div>
-        </div>   
+        </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, 1960-01-01, date("Y-m-d")) . '</div>
-       
+
         <div id="selfworkshopdata" class="tab-pane fade">' . getselfworkshoplcount(0, 1960-01-01, date("Y-m-d"), "", "") . '</div>
-        
+
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, "", "") . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . spokentutorial_view_all("") . '</div>
@@ -631,7 +646,7 @@ function getchart($sub_type) {
     $title = "";
     if ($sub_type == "TBC") {
         $title = "Textbook Companion Statistics";
-    } 
+    }
     else {
         $title = "Lab Migration Statistics";
     }
@@ -657,15 +672,15 @@ function getchart($sub_type) {
 
 //This is used to create a  bar chart for particular LM or TBC and along with filters
 function getchartforselectedProject($foss_type, $sub_type, $startdate, $enddate, $countryname, $statename, $cityname) {
-    
+
     $title = "";
     if ($sub_type == "TBC") {
         $title = $foss_type . "" . "'s Completed Textbook Companion Statistics";
-    } 
+    }
     else {
         $title = $foss_type . "" . "'s Completed Lab Migration Statistics";
     }
-    
+
     $chart = array(
         '#type' => 'chart',
         '#title' => t($title),
@@ -689,11 +704,11 @@ function getchartforselectedProject($foss_type, $sub_type, $startdate, $enddate,
 
 //This is used to create a pie chart for particular LM or TBC and along with filters
 function getpiechartforselectedProject($foss_type, $sub_type, $startdate, $enddate, $countryname, $statename, $cityname) {
-    
+
     $title = "";
     if ($sub_type == "TBC") {
         $title = $foss_type . "" . "'s Textbook Companion Statistics";
-    } 
+    }
     else {
         $title = $foss_type . "" . "'s Lab Migration Statistics";
     }
@@ -741,7 +756,7 @@ function get_data_for_chart_allproject($sub_type) {
                     //For TBC
                     if ($foss_detail->foss_name != 'eSim' && $foss_detail->foss_name != 'OpenModelica' && $foss_detail->foss_name != 'OpenFOAM' && $foss_detail->foss_name != 'OR-Tools') {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0");
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1");
                     }
@@ -753,7 +768,7 @@ function get_data_for_chart_allproject($sub_type) {
                         (int) $completedbookcount
                     );
                     array_push($rows, $option1);
-                } 
+                }
                 else {
                     db_set_active($foss_detail->foss_name); //Active other database
                     $query2 = db_select('tbc_book');
@@ -771,7 +786,7 @@ function get_data_for_chart_allproject($sub_type) {
                 }
             }
         }
-    } 
+    }
     else {
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
@@ -809,32 +824,32 @@ function get_data_for_chart_allproject($sub_type) {
 
 //This function is used to get list of TBC books/LM Labs after the filter is applied
 function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startdate, $enddate, $countryname, $statename, $cityname) {
-    
+
     if ($cityname == "" || $cityname == "null") {
         $cityname = "%";
-    } 
+    }
     else {
         $cityname = $cityname;
     }
     if ($statename == "" || $statename == "null") {
         $statename = "%";
-    } 
+    }
     else {
         $statename = $statename;
     }
     if ($countryname == "" || $countryname == "null") {
         $countryname = "%";
-    } 
+    }
     else {
         $countryname = $countryname;
     }
-    
+
     $flag = 1;
     $page_content = "";
     db_set_active($foss_type);
     $query2 = "";
     if ($sub_type == "TBC") {
-        
+
         if ($foss_type != NULL) {
             if ($foss_type != 'Python') {
                 //For TBC
@@ -848,7 +863,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                                 ':startdate' => $startdate,
                                 ':enddate' => $enddate
                             ));
-                            
+
                         }
                         if ($status == "pending") {
 
@@ -864,7 +879,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                             ));
                             $flag = 0;
                         }
-                    } 
+                    }
                     else {
                         if ($status == "completed") {
                             $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id  FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
@@ -890,7 +905,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                             $flag = 0;
                         }
                     }
-                } 
+                }
                 else {
                     if ($status == "completed") {
                         $query2 = db_query("SELECT pe.book,pe.author,pe.publisher,pe.year,pe.id FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
@@ -916,8 +931,8 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                         $flag = 0;
                     }
                 }
-                
-            } 
+
+            }
             else {
                 if ($status == "completed") {
                     $query2 = db_select('tbc_book', 'tbc');
@@ -927,7 +942,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                         'id'
                     ));
                     $query2->condition('approved', 1);
-                    
+
                 }
                 if ($status == "pending") {
                     $query2 = db_select('tbc_book', 'tbc');
@@ -937,9 +952,9 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                         'id'
                     ));
                     $query2->condition('approved', 1, '<>');
-                    
+
                 }
-                
+
             }
         }
         db_set_active('default'); // We need to call the main (drupal) db back
@@ -962,13 +977,13 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
             while ($preference_data = $query2->fetchObject()) {
                 $page_content .= "<li>";
                 $page_content .= "<a href=" . $foss_detail->tbc_run . "/" . $preference_data->id . " target='_blank'>" . $preference_data->book . " by " . $preference_data->author . ", " . $preference_data->publisher . ", " . $preference_data->year . "</a>";
-                
-                
+
+
                 $page_content .= "</li>";
             }
             $page_content .= "</ol>";
-            
-        } 
+
+        }
         else {
             $page_content .= "<h3>List of Books in Progress</h3><br>";
             $page_content .= "<ol>";
@@ -980,12 +995,12 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
             }
             $page_content .= "</ol>";
         }
-        
-    } 
+
+    }
     else {
-        
+
         if ($foss_type != NULL) {
-            
+
             if ($status == "completed") {
                 $query2 = db_query("SELECT * from {lab_migration_proposal} WHERE approval_status=3 AND city LIKE :city AND  state LIKE :state AND country LIKE :country AND FROM_UNIXTIME(approval_date) >=:startdate AND FROM_UNIXTIME(approval_date) <=:enddate", array(
                     ':city' => $cityname,
@@ -1030,7 +1045,7 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                     $page_content .= "</li>";
                 }
                 $page_content .= "</ol>";
-            } 
+            }
             else {
                 $page_content .= "<h3>List of Labs in Progress</h3><br>";
                 $page_content .= "<ol>";
@@ -1043,19 +1058,19 @@ function list_tbc_and_lm_detail($String, $foss_type, $sub_type, $status, $startd
                 }
                 $page_content .= "</ol>";
             }
-            
+
         }
-        
+
     }
     db_set_active('default'); // We need to call the main (drupal) db back
     db_set_active();
-    
+
     return $page_content;
 }
 
 /* This function is used to get count of LM and TBC after a filter is applied and pass this count to create chart function*/
 function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate, $enddate, $countryname, $statename, $cityname) {
-    
+
     if ($enddate == "") {
         $enddate = date("Y-m-d");
     }
@@ -1096,7 +1111,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':city' => $cityname,
@@ -1113,7 +1128,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                             ':enddate' => $enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
@@ -1144,7 +1159,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                     (int) $pendingbookcount
                 );
                 array_push($rows, $option2);
-            } 
+            }
             else {
                 $rows = array();
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -1174,7 +1189,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
                 array_push($rows, $option2);
             }
         }
-    } 
+    }
     else {
         $rows = array();
         $query = db_select('foss_type');
@@ -1232,7 +1247,7 @@ function get_data_for_piechart_selectedproject($foss_type, $sub_type, $startdate
 
 /* This function is used to get count of LM and TBC after a filter is applied and pass this count to create chart function*/
 function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $enddate, $countryname, $statename, $cityname) {
-    
+
     if ($enddate == "") {
         $enddate = date("Y-m-d");
     }
@@ -1273,7 +1288,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));*/
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count ,FROM_UNIXTIME(po.completion_date, '%Y') AS year FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate Group by FROM_UNIXTIME(po.completion_date, '%Y')", array(
                             ':city' => $cityname,
@@ -1290,7 +1305,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                             ':enddate' => $enddate
                         ));*/
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count, FROM_UNIXTIME(po.completion_date, '%Y') AS year FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate Group by FROM_UNIXTIME(po.completion_date, '%Y')", array(
                         ':city' => $cityname,
@@ -1313,7 +1328,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                 $result = $query2->fetchAll();
 
                 foreach ($result as $tbc_yearwise_count) {
-  
+
             $completedbookcount= $tbc_yearwise_count->book_count;
             $option1 = array(
                     $tbc_yearwise_count->year,
@@ -1345,7 +1360,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                     (int) $pendingbookcount
                 );
                 array_push($rows, $option2);*/
-            } 
+            }
             else {
                 $rows = array();
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -1376,7 +1391,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                 array_push($rows, $option2);*/
             }
         }
-    } 
+    }
     else {
         $rows = array();
         $query = db_select('foss_type');
@@ -1416,7 +1431,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
             $result = $query3->fetchAll();
 
                 foreach ($result as $lm_yearwise_count) {
-  
+
             $completedlabcount= $lm_yearwise_count->count;
             $option1 = array(
                     $lm_yearwise_count->year,
@@ -1424,7 +1439,7 @@ function get_data_for_chart_selectedproject($foss_type, $sub_type, $startdate, $
                 );
                 array_push($rows, $option1);
         }
-            
+
               /*$result = $query3->execute();
 
                 while ($lm_yearwise_count = $result->fetchObject()) {
@@ -1573,12 +1588,12 @@ function get_activities_list($foss_project) {
             }
         }
         return $options;
-    } 
+    }
     else {
         $options[0] = "--------------";
         return $options;
     }
-    
+
 }
 
 
@@ -1602,7 +1617,7 @@ function _ajax_example_get_third_dropdown_options($foss_sub_project) {
 
 //this is ajax callback method for first dropdown ie FOSS type
 function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
-    
+
     $foss_sub_project = $form_state['values']['foss_type'];
     $foss_sub_project_activities = $form_state['values']['foss_sub_project'];
     $startdate = $form_state['values']['start_date'];
@@ -1611,18 +1626,18 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
     $startdate = trim($startdate);
     if ($startdate == "") {
         $startdate = '1960/01/01';
-    } 
+    }
     else {
         $startdate = $startdate;
     }
     if ($enddate == "") {
         $enddate = date("Y-m-d");
-    } 
+    }
     else {
         $enddate = $enddate;
     }
     if ($foss_sub_project == "") {
-        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">                       
+        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
@@ -1630,22 +1645,22 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
                             <li><a data-toggle="tab" href="#conferencedata">Conference </a></li>
                             <li><a data-toggle="tab" href="#spokentutorialdata">Spoken Tutorial</a></li>
                       </ul>
-   
+
 
     <div class="tab-content">
 
         <div id="tbctabledata"class="tab-pane fade in active">' . get_tabledata_TBC_or_LM("TBC", $startdate, $enddate) . '
         <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchart("TBC")) . '</div>
         </div>
-     
+
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
         <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
-        </div>   
+        </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
-       
+
         <div id="selfworkshopdata" class="tab-pane fade">'. getselfworkshoplcount(0, $startdate, $enddate, "", "") . '</div>
-        
+
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, $startdate, $enddate) . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . spokentutorial_view_all("") . '</div>
@@ -1663,10 +1678,10 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
         $commands[] = ajax_command_html("#enddate", "");
         $form['dropdown-third-replace']['#markup'] = "";
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
-        
-    } 
+
+    }
     elseif ($foss_sub_project == '3') {
-       
+
         $form['startdate']['#markup'] = "";
         $commands[] = ajax_command_html("#startdate", "");
         $form['enddate']['#markup'] = "";
@@ -1682,9 +1697,9 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
         $form['dropdown-third-replace']['#markup'] = "";
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
 
-        
+
     }
-    
+
     else {
         $form['start_date']['#type'] = "date_popup";
         $form['start_date']['#title'] = t('From Date:');
@@ -1718,28 +1733,28 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
         $commands[] = ajax_command_html("#load_state", "");
         $form['load_country']['#markup'] = "";
         $commands[] = ajax_command_html("#load_country", "");
-        
+
     }
     $form['foss_sub_project']['#default_value'] = "--------------";
     $form['foss_sub_project']['#options'] = get_activities_list($foss_sub_project);
     $commands[] = ajax_command_replace("#dropdown-second-replace", drupal_render($form['foss_sub_project']));
-    
-    
+
+
     if ($foss_sub_project != "" && ($foss_sub_project_activities == 1 || $foss_sub_project_activities == 2)) {
 
     if ($foss_sub_project == 3) {
       $foss_sub_project_activities="";
     $form['dropdown-third-replace']['#markup'] = "";
           $commands[] = ajax_command_html("#dropdown-third-replace", "");
-    } 
+    }
     else{
       $form['foss_sub_project_status']['#type'] = "select";
           $form['foss_sub_project_status']['#title'] = t("Status");
           $form['foss_sub_project_status']['#options'] = _ajax_example_get_third_dropdown_options($foss_sub_project_activities);
           $commands[] = ajax_command_html("#dropdown-third-replace", drupal_render($form['foss_sub_project_status']));
     }
-      
-    } 
+
+    }
     else {
         $form['dropdown-third-replace']['#markup'] = "";
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
@@ -1756,7 +1771,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
       $foss_type = $form_state['values']['foss_type'];
 
 
-  
+
     if ($foss_type != "" && $foss_project != 0 && $foss_type != 3) {
 
   if ($foss_project == 7) {
@@ -1766,7 +1781,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $commands[] = ajax_command_html("#load_country", "");
   $form['load_state']['#markup'] = "";
         $commands[] = ajax_command_html("#load_state", "");
-  
+
   }
   elseif ($foss_project == 6) {
   $form['load_city']['#markup'] = "";
@@ -1790,7 +1805,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $form['countryname']['#suffix'] = "</div>";
         $commands[] = ajax_command_html("#load_country", drupal_render($form['countryname']));
         $country_value = $form_state['values']['countryname'];
-        
+
         $form['statename']['#type'] = "select";
         $form['statename']['#title'] = t("State Name");
         $form['statename']['#options'] = get_state_list($foss_type, $foss_project, $country_value);
@@ -1798,17 +1813,17 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $form['statename']['#suffix'] = "</div>";
         $commands[] = ajax_command_html("#load_state", drupal_render($form['statename']));
         $state_value = $form_state['values']['statename'];
-        
+
         $form['cityname']['#type'] = "select";
         $form['cityname']['#title'] = t("City Name");
         $form['cityname']['#options'] = get_city_list($foss_type, $foss_project, $country_value, $state_value);
         $form['cityname']['#prefix'] = "<div style='padding-right:15px;'>";
         $form['cityname']['#suffix'] = "</div>";
         $commands[] = ajax_command_html("#load_city", drupal_render($form['cityname']));
-  
+
   }
-        
-    } 
+
+    }
     else {
    if ($foss_project == 3 || $foss_project == 4 || $foss_project == 5) {
 
@@ -1845,7 +1860,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $commands[] = ajax_command_html("#load_country", drupal_render($form['countryname']));
 
         $country_value = $form_state['values']['countryname'];
-        
+
         $form['statename']['#type'] = "select";
         $form['statename']['#title'] = t("State Name");
         $form['statename']['#options'] = get_state_list($foss_type, $foss_project, $country_value);
@@ -1853,14 +1868,14 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $form['statename']['#suffix'] = "</div>";
         $commands[] = ajax_command_html("#load_state", drupal_render($form['statename']));
         $state_value = $form_state['values']['statename'];
-        
+
         $form['cityname']['#type'] = "select";
         $form['cityname']['#title'] = t("City Name");
         $form['cityname']['#options'] = get_city_list($foss_type, $foss_project, $country_value, $state_value);
         $form['cityname']['#prefix'] = "<div style='padding-right:15px;'>";
         $form['cityname']['#suffix'] = "</div>";
         $commands[] = ajax_command_html("#load_city", drupal_render($form['cityname']));
-  
+
 
   }
   elseif ($foss_project == 7) {
@@ -1913,7 +1928,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $form['foss_sub_project_status']['#title'] = t("Status");
         $form['foss_sub_project_status']['#options'] = _ajax_example_get_third_dropdown_options($foss_project);
         $commands[] = ajax_command_html("#dropdown-third-replace", drupal_render($form['foss_sub_project_status']));
-    } 
+    }
     else {
         $form['dropdown-third-replace']['#markup'] = "";
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
@@ -1941,39 +1956,39 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
     $statename = $form['statename']['#options'][$form_state['values']['statename']];
     $statename = trim($statename);
     $link_flag = 0;
-    
+
     if ($cityname == "--------------" || $cityname == "") {
         $cityname = "%";
-    } 
+    }
     else {
         $cityname = $cityname;
     }
     if ($statename == "--------------" || $statename == "") {
         $statename = "%";
-    } 
+    }
     else {
         $statename = $statename;
     }
     if ($countryname == "--------------" || $countryname == "") {
         $countryname = "%";
-    } 
+    }
     else {
         $countryname = $countryname;
     }
     if ($startdate == "") {
         $startdate = '1960-01-01';
-    } 
+    }
     else {
         $startdate = $startdate;
     }
     if ($enddate == "") {
         $enddate = date("Y-m-d");
-    } 
+    }
     else {
         $enddate = $enddate;
     }
     if ($foss_type == '--------------') {
-        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">                       
+        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
@@ -1986,22 +2001,22 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
         <div id="tbctabledata"class="tab-pane fade in active">' . get_tabledata_TBC_or_LM("TBC", $startdate, $enddate) . '
         <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchart("TBC")) . '</div>
         </div>
-     
+
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
         <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
-        </div>   
+        </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
-       
+
         <div id="selfworkshopdata" class="tab-pane fade">' . getselfworkshoplcount(0, $startdate, $enddate, "", "") . '</div>
-        
+
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, "", "") . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . spokentutorial_view_all("") . '</div>
- </div> 
+ </div>
           ';
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-    } 
+    }
     elseif ($foss_type != '--------------' && (($foss_sub_project == "--------------") || ($foss_sub_project == "No Sub-Project Available"))) {
 
     $tbcdatacheck="";
@@ -2018,7 +2033,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
 
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        db_set_active('default'); // We need to call the main (drupal) db back      
+        db_set_active('default'); // We need to call the main (drupal) db back
         db_set_active(); // without the paramater means set back to the default for the site
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
@@ -2064,7 +2079,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //                $pagecontent .= "<div class='tab-preview'>
      //            <input type='radio' id='tab-1' name='tab-group-1' checked>
      //            <label for='tab-1'>Textbook Companion</label>
-     //            <div class='tabcontent'><div id='tbctabledata'  
+     //            <div class='tabcontent'><div id='tbctabledata'
      //      style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div><div id='tbcchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . "</div></div></div>";
      //            } else if ($value == "lab_migration") {
      //                $pagecontent .= "<div class='tab-preview'>
@@ -2074,7 +2089,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //        <div id='lmtabledata' style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div>
      //        <div id='lmchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . "<div></div></div></div></div>";
      //            } else if ($value == "workshop") {
-                    
+
      //                $event_type = "Workshop";
      //                $pagecontent .= "<div class='tab-preview'>
      //            <input type='radio' id='tab-3' name='tab-group-1' >
@@ -2096,15 +2111,15 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //            <input type='radio' id='tab-6' name='tab-group-1' >
      //            <label for='tab-6'>Spoken Tutorial</label>
      //            <div class='tabcontent'>".spokentutorial_view_all($foss_type)."</div></div>";
-     //            } 
-            
-          
+     //            }
+
+
      //        } else {
      //            if ($value == "tbc") {
      //                $pagecontent .= "<div class='tab-preview'>
      //             <input type='radio' id='tab-1' name='tab-group-1' checked>
      //             <label for='tab-1'>Textbook Companion</label>
-     //           <div class='tabcontent'><div id='tbctabledata'  
+     //           <div class='tabcontent'><div id='tbctabledata'
           // >" . t("
           // <h5>TextBook Companion Project Not Present</h5>") . "</div></div></div>";
      //            } else if ($value == "lab_migration") {
@@ -2138,7 +2153,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //             <label for='tab-6'>Spoken Tutorial</label>
      //           <div class='tabcontent'>" . t("
           // <h5>Spoken Tutorial Not Present</h5>") . "</div></div>";
-     //            } 
+     //            }
      //        }
      //    }
      //    $form['default_load']['#markup'] = $pagecontent;
@@ -2153,60 +2168,60 @@ foreach ($optiondata as $value) {
 
  $tbcchartcheck=drupal_render(getchartforselectedProject($foss_type, 'TBC', $startdate, $enddate, $countryname, $statename, $cityname));
 
-                 } 
+                 }
                  elseif ($value == "lab_migration") {
                 $lmdatacheck= get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) ;
              $lmchartcheck=drupal_render(getchartforselectedProject($foss_type, 'LM', $startdate, $enddate, $countryname, $statename, $cityname));
-                 } 
+                 }
                  elseif ($value == "workshop") {
                      $event_type = "Workshop";
                     $workshopdatacheck= events_view_filter($foss_type, $event_type, $startdate, $enddate, $countryname, $statename, $cityname);
-                 } 
+                 }
                  elseif ($value == "self_workshop") {
                      $self_workshopdatacheck=getselfworkshoplcount($foss_type, $startdate, $enddate, $statename, $cityname);
-                 } 
+                 }
                  elseif ($value == "conference") {
                      $event_type = "Conference";
                     $conferencedatacheck= events_view_filter($foss_type, $event_type, $startdate, $enddate, $countryname, $statename, $cityname);
-                 } 
+                 }
                  elseif ($value == "spoken_tutorial") {
                    $spoken_tutorialdatacheck= spokentutorial_view_all($foss_type);
-                 } 
-            
-          
-             } 
+                 }
+
+
+             }
              else {
                  if ($value == "tbc") {
                            $tbcdatacheck="<h5>TextBook Companion Project Not Present</h5>";
           $tbcchartcheck="";
-                 } 
+                 }
                  elseif ($value == "lab_migration") {
                           $lmdatacheck="<h5>Lab Migration Project Not Present</h5>";
           $lmchartcheck="";
-                 } 
+                 }
                  elseif ($value == "workshop") {
                           $workshopdatacheck= "<h5> No Workshop were conducted </h5>";
-                 } 
+                 }
                  elseif ($value == "self_workshop") {
                $self_workshopdatacheck="<h5>No Self Workshop were conducted</h5>";
-                 } 
+                 }
                  elseif ($value == "conference") {
           $conferencedatacheck="<h5>No Conference were conducted</h5>";
-                 } 
+                 }
                  elseif ($value == "spoken_tutorial") {
-                     
+
         $spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
-                 } 
+                 }
              }
          }
-    
+
    // var_dump($tbcdatacheck."::::::".$lmdatacheck."::::::".$workshopdatacheck.":::::::".$self_workshopdatacheck.":::::::".$conferencedatacheck."::::::".$spoken_tutorialdatacheck);
 //die;
 
 
 
 
-         $form['default_load']['#markup'] = '<ul class="nav nav-tabs">                       
+         $form['default_load']['#markup'] = '<ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
@@ -2221,25 +2236,25 @@ foreach ($optiondata as $value) {
             </div>
             <div id="lmtabledata" class="tab-pane fade ">' . $lmdatacheck . '
         <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . $lmchartcheck . '</div>
-        </div>   
+        </div>
          <div id="workshopdata" class="tab-pane fade ">
          '. $workshopdatacheck . '</div>
         <div id="selfworkshopdata" class="tab-pane fade">' . $self_workshopdatacheck . '</div>
          <div id="conferencedata" class="tab-pane fade ">' . $conferencedatacheck . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . $spoken_tutorialdatacheck . '</div>
-        </div> 
+        </div>
                     ';
-                  
+
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
-    } 
+
+    }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Textbook Companion" && $foss_sub_project_status == "--------------") {
-       
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li></ul>
                         <div class="tab-content">
 
@@ -2248,13 +2263,13 @@ foreach ($optiondata as $value) {
         </div></div>';
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
-    } 
+
+    }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Lab Migration" && $foss_sub_project_status == "--------------") {
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                        <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li></ul>
                         <div class="tab-content">
 
@@ -2263,120 +2278,120 @@ foreach ($optiondata as $value) {
         </div>   </div>';
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
-    } 
+
+    }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Workshop") {
-        
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        
-        
+
+
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                        <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li></ul>
                         <div class="tab-content">
 
         <div id="workshopdata" class="tab-pane fade in active">' . events_view_filter($foss_type, $foss_sub_project, $startdate, $enddate, $countryname, $statename, $cityname) . '</div> </div>';
-        
+
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
-    } 
+
+    }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Self Workshop") {
-        
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-       
+
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                         <li><a data-toggle="tab" href="#selfworkshopdata">Self Workshop</a></li></ul>
                         <div class="tab-content">
 
        <div id="selfworkshopdata" class="tab-pane fade  in active">' . getselfworkshoplcount($foss_type, $startdate, $enddate, $statename, $cityname) . '</div></div>';
-        
+
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
+
     }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Conference") {
-        
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        
-        
+
+
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                          <li><a data-toggle="tab" href="#conferencedata">Conference </a></li></ul>
                         <div class="tab-content">
 
       <div id="conferencedata" class="tab-pane fade  in active">' . events_view_filter($foss_type, $foss_sub_project, $startdate, $enddate, $countryname, $statename, $cityname) . '</div></div>';
-        
+
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
+
     }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Spoken Tutorial") {
-        
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        
-        
+
+
         $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">                       
+        $pagecontent .= '<ul class="nav nav-tabs">
                          <li><a data-toggle="tab" href="#spokentutorialdata">Spoken Tutorial</a></li></ul>
                         <div class="tab-content">
 
        <div id="spokentutorialdata" class="tab-pane fade  in active ">' . spokentutorial_view_all($foss_type) . '</div></div>';
-        
+
         $form['default_load']['#markup'] = $pagecontent;
-        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load'])); 
+        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
 }
 
 /* else if ($foss_type != '--------------' && $foss_sub_project == "Postal Campaigns") {
-        
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        
-        
+
+
         $pagecontent = "";
         $pagecontent .= "<div class='tab-preview'>
                 <input type='radio' id='tab-1' name='tab-group-1' >
                 <label for='tab-1'>Postal Campaigns</label>
                 <div class='tabcontent'>" . postalcampaign_view_all($foss_type, $startdate, $enddate) . "</div></div>";
-        
+
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
+
     }*/
 
   elseif ($foss_type != '--------------' && ($foss_sub_project == "Textbook Companion" || $foss_sub_project == "Lab Migration") && $foss_sub_project_status != "--------------") {
         if ($foss_sub_project == "Textbook Companion" && $foss_sub_project_status == "Completed Books") {
             $title = "Textbook Companion";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', "completed", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
-        } 
+        }
         elseif ($foss_sub_project == "Lab Migration" && $foss_sub_project_status == "Completed Labs") {
             $title = "Lab Migration";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "completed", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
-        } 
+        }
         elseif ($foss_sub_project == "Textbook Companion" && $foss_sub_project_status == "Books in Progress") {
             $title = "Textbook Companion";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', "pending", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
-        } 
+        }
         elseif ($foss_sub_project == "Lab Migration" && $foss_sub_project_status == "Labs in Progress") {
             $title = "Lab Migration";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "pending", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
         }
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">     
+        $form['default_load']['#markup'] = '<ul class="nav nav-tabs">
         <li><a data-toggle="tab" href="#tabledata">' . $title . '</a></li></ul>
         <div class="tab-content">
         <div id="tabledata"class="tab-pane fade in active">'. $datatable . '</div>
         </div>';
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-        
+
     }
-    
+
     return array(
         '#type' => 'ajax',
         '#commands' => $commands
@@ -2400,12 +2415,12 @@ function bootstrap_table_format($headers, $rows) {
         $tbody .= "</tr>";
     }
     $table = "
-      
+
                 <table class='table table-bordered table-hover'>
                   <thead>{$thead}</thead>
                   <tbody>{$tbody}</tbody>
                 </table>
-      
+
             ";
     return $table;
 }
@@ -2451,14 +2466,14 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal } po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                         ':startdate' => $startdate,
@@ -2480,14 +2495,14 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                             ':startdate' => $startdate,
                             ':enddate' => $pending_enddate
                         ));
-                    } 
+                    }
                     else {
                         $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1  AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':startdate' => $startdate,
                             ':enddate' => $pending_enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                         ':startdate' => $startdate,
@@ -2499,7 +2514,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                     $plink = "<a href=" . $foss_detail->tbc_pending . " target='_blank'>" . $pendingbookcount . "</a>";
                     $pendingbookcount = $plink;
                 }
-                db_set_active('default'); // We need to call the main (drupal) db back      
+                db_set_active('default'); // We need to call the main (drupal) db back
                 db_set_active(); // without the paramater means set back to the default for the site
                 $item = array(
                     $foss_detail->foss_name,
@@ -2507,7 +2522,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                     $pendingbookcount
                 );
                 array_push($rows, $item);
-            } 
+            }
             else {
                 //For Python TBC
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -2529,7 +2544,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                     $plink = "<a href=" . $foss_detail->tbc_pending . " target='_blank'>" . $pendingbookcount . "</a>";
                     $pendingbookcount = $plink;
                 }
-                db_set_active('default'); // We need to call the main (drupal) db back      
+                db_set_active('default'); // We need to call the main (drupal) db back
                 db_set_active(); // without the paramater means set back to the default for the site
                 $item = array(
                     $foss_detail->foss_name,
@@ -2539,7 +2554,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
                 array_push($rows, $item);
             }
         }
-    } 
+    }
     else {
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
@@ -2587,7 +2602,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
             array_push($rows, $item);
         }
     }
-    db_set_active('default'); // We need to call the main (drupal) db back      
+    db_set_active('default'); // We need to call the main (drupal) db back
     db_set_active(); // without the paramater means set back to the default for the site
     $count = bootstrap_table_format($headers, $rows);
     return $count;
@@ -2596,28 +2611,28 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
 // This is used to return tables with count of TBC and LM but after applying all filters
 
 function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) {
-    
+
     //This is for sending values through URL as '%' is not allow through url
-    
+
     if ($cityname == "%") {
         $city = "null";
-    } 
+    }
     else {
         $city = $cityname;
     }
     if ($statename == "%") {
         $state = "null";
-    } 
+    }
     else {
         $state = $statename;
     }
     if ($countryname == "%") {
         $country = "null";
-    } 
+    }
     else {
         $country = $countryname;
     }
-    
+
     if ($status == "all") {
         $rows = array();
         if ($sub_type == 'TBC') {
@@ -2658,7 +2673,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
@@ -2668,7 +2683,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':enddate' => $enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
@@ -2680,18 +2695,18 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 }
                 $completedbookcount = $query2->fetchObject()->book_count;
                 if ($foss_detail->tbc_completed != "" && $foss_detail->tbc_completed != NULL && $link_flag != 1) {
-                    
+
                     //$clink = "<a href=" . $foss_detail->tbc_completed . " target='_blank'>" . $completedbookcount . "</a>";
                     if ($completedbookcount != 0 || $completedbookcount != "0") {
                         $clink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "completed" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $completedbookcount . "</a>";
                         $completedbookcount = $clink;
-                    } 
+                    }
                     else {
                         $completedbookcount = $completedbookcount;
                     }
-                    
+
                 }
-                 
+
                 /* For setting completion date for pending TBC and LM more */
                         $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( $enddate)));
 
@@ -2705,7 +2720,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':startdate' => $startdate,
                             ':enddate' => $pending_enddate
                         ));
-                    } 
+                    }
                     else {
                         $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                             ':city' => $cityname,
@@ -2715,7 +2730,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':enddate' => $pending_enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city   AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
@@ -2731,20 +2746,20 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     if ($pendingbookcount != 0 || $pendingbookcount != "0") {
                         $plink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "pending" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $pendingbookcount . "</a>";
                         $pendingbookcount = $plink;
-                    } 
+                    }
                     else {
                         $pendingbookcount = $pendingbookcount;
                     }
-                    
+
                 }
-                //db_set_active('default'); // We need to call the main (drupal) db back      
+                //db_set_active('default'); // We need to call the main (drupal) db back
                 //db_set_active(); // without the paramater means set back to the default for the site
                 $item = array(
                     $completedbookcount,
                     $pendingbookcount
                 );
                 array_push($rows, $item);
-            } 
+            }
             else {
                 //For Python TBC
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -2768,7 +2783,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     $plink = "<a href=" . $foss_detail->tbc_pending . " target='_blank'>" . $pendingbookcount . "</a>";
                     $pendingbookcount = $plink;
                 }
-                //db_set_active('default'); // We need to call the main (drupal) db back      
+                //db_set_active('default'); // We need to call the main (drupal) db back
                 //db_set_active(); // without the paramater means set back to the default for the site
                 $item = array(
                     $completedbookcount,
@@ -2776,7 +2791,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 );
                 array_push($rows, $item);
             }
-        } 
+        }
         else {
             $headers = array(
                 "Completed Labs",
@@ -2816,7 +2831,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 if ($completedlabcount != 0 || $completedlabcount != "0") {
                     $clink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "completed" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $completedlabcount . "</a>";
                     $completedlabcount = $clink;
-                } 
+                }
                 else {
                     $completedlabcount = $completedlabcount;
                 }
@@ -2834,7 +2849,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 if ($pendinglabcount != 0 || $pendinglabcount != "0") {
                     $plink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "pending" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $pendinglabcount . "</a>";
                     $pendinglabcount = $plink;
-                } 
+                }
                 else {
                     $pendinglabcount = $pendinglabcount;
                 }
@@ -2845,11 +2860,11 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
             );
             array_push($rows, $item);
         }
-        db_set_active('default'); // We need to call the main (drupal) db back      
+        db_set_active('default'); // We need to call the main (drupal) db back
         db_set_active(); // without the paramater means set back to the default for the site
         $count = bootstrap_table_format($headers, $rows);
         return $count;
-    } 
+    }
     elseif ($status == "completed") {
         $rows = array();
         if ($sub_type == 'TBC') {
@@ -2886,7 +2901,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':city' => $cityname,
@@ -2896,7 +2911,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':enddate' => $enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
@@ -2912,17 +2927,17 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     if ($completedbookcount != 0 || $completedbookcount != "0") {
                         $clink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "completed" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $completedbookcount . "</a>";
                         $completedbookcount = $clink;
-                    } 
+                    }
                     else {
                         $completedbookcount = $completedbookcount;
                     }
-                    
+
                 }
                 $item = array(
                     $completedbookcount
                 );
                 array_push($rows, $item);
-            } 
+            }
             else {
                 //For Python TBC
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -2941,7 +2956,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 );
                 array_push($rows, $item);
             }
-        } 
+        }
         else {
             $headers = array(
                 "Completed Labs"
@@ -2977,21 +2992,21 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 if ($completedlabcount != "0" || $completedlabcount != 0) {
                     $clink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "completed" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $completedlabcount . "</a>";
                     $completedlabcount = $clink;
-                } 
+                }
                 else {
                     $completedlabcount = $completedlabcount;
                 }
-                
+
             }
             $item = array(
                 $completedlabcount
             );
             array_push($rows, $item);
         }
-        db_set_active('default'); // We need to call the main (drupal) db back      
+        db_set_active('default'); // We need to call the main (drupal) db back
         db_set_active(); // without the paramater means set back to the default for the site
         $count = bootstrap_table_format($headers, $rows);
-    } 
+    }
     elseif ($status == "pending") {
         $rows = array();
         if ($sub_type == 'TBC') {
@@ -3028,7 +3043,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':startdate' => $startdate,
                             ':enddate' => $enddate
                         ));
-                    } 
+                    }
                     else {
                         $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate ", array(
                             ':city' => $cityname,
@@ -3038,7 +3053,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                             ':enddate' => $enddate
                         ));
                     }
-                } 
+                }
                 else {
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city  AND po.state LIKE :state AND po.country LIKE :country AND FROM_UNIXTIME(po.completion_date) >= :startdate AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':city' => $cityname,
@@ -3054,7 +3069,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     if ($pendingbookcount != "0" || $pendingbookcount != 0) {
                         $plink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "pending" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $pendingbookcount . "</a>";
                         $pendingbookcount = $plink;
-                    } 
+                    }
                     else {
                         $pendingbookcount = $pendingbookcount;
                     }
@@ -3063,7 +3078,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                     $pendingbookcount
                 );
                 array_push($rows, $item);
-            } 
+            }
             else {
                 //For Python TBC
                 db_set_active($foss_detail->foss_name); //Active other database
@@ -3082,7 +3097,7 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 );
                 array_push($rows, $item);
             }
-        } 
+        }
         else {
             $headers = array(
                 "Labs in Progress"
@@ -3118,18 +3133,18 @@ function get_tabledata_selectedFoss_TBC_LM($foss_type, $sub_type, $status, $star
                 if ($pendinglabcount != "0" || $pendinglabcount != 0) {
                     $plink = "<a href=" . $GLOBALS['base_url'] . "/get-list/" . $foss_type . "/" . $sub_type . "/" . "pending" . "/" . $startdate . "/" . $enddate . "/" . $country . "/" . $state . "/" . $city . " target='_blank'>" . $pendinglabcount . "</a>";
                     $pendinglabcount = $plink;
-                } 
+                }
                 else {
                     $pendinglabcount = $pendinglabcount;
                 }
-                
+
             }
             $item = array(
                 $pendinglabcount
             );
             array_push($rows, $item);
         }
-        db_set_active('default'); // We need to call the main (drupal) db back      
+        db_set_active('default'); // We need to call the main (drupal) db back
         db_set_active(); // without the paramater means set back to the default for the site
         $count = bootstrap_table_format($headers, $rows);
     }
@@ -3146,9 +3161,9 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
     if ($country!="--------------") {
     if ($foss_sub_project == "Textbook Companion") {
         $sub_project = "textbook_companion_proposal";
-        
+
         db_set_active($foss_type); //Active other database
-        
+
         $options[0] = '--------------';
         $query = "
        SELECT * FROM " . $sub_project . "
@@ -3161,11 +3176,11 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
         while ($state_detail = $result->fetchObject()) {
             $options[$state_detail->state] = $state_detail->state;
         }
-        
-    } 
+
+    }
     elseif ($foss_sub_project == "Lab Migration") {
         $sub_project = "lab_migration_proposal";
-        
+
         db_set_active($foss_type); //Active other database
         //$options    = array();
         $options[0] = '--------------';
@@ -3180,12 +3195,12 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
         while ($state_detail = $result->fetchObject()) {
             $options[$state_detail->state] = $state_detail->state;
         }
-        
-    } 
+
+    }
     elseif ($foss_sub_project == "Workshop") {
         $sub_project = "workshop";
         $foss_type_db = 'default';
-        
+
         db_set_active($foss_type_db); //Active other database
         //$options    = array();
         $options[0] = '--------------';
@@ -3205,7 +3220,7 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
     elseif ($foss_sub_project == "Conference") {
         $sub_project = "workshop";
         $foss_type_db = 'default';
-        
+
         db_set_active($foss_type_db); //Active other database
         //$options    = array();
         $options[0] = '--------------';
@@ -3226,7 +3241,7 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
 
 
         //Get self workshop foss number for spoken
-    
+
   $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -3253,7 +3268,7 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
 
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
-    
+
             }
 
     }
@@ -3261,17 +3276,17 @@ function ajax_state_list_dependent_dropdown_callback($form, &$form_state) {
     else{
    $options[0] = '--------------';
     }
-    
-    db_set_active('default'); // We need to call the main (drupal) db back      
-    
+
+    db_set_active('default'); // We need to call the main (drupal) db back
+
     $form['statename']['#options'] = $options;
     $commands[] = ajax_command_replace("#load_state", drupal_render($form['statename']));
-    
+
     $optionscity = array();
     $optionscity[0] = '--------------';
     $form['cityname']['#options'] = $optionscity;
     $commands[] = ajax_command_replace("#load_city", drupal_render($form['cityname']));
-    
+
     return array(
         '#type' => 'ajax',
         '#commands' => $commands
@@ -3286,7 +3301,7 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
     $state = $form['statename']['#options'][$form_state['values']['statename']];
     if ($foss_sub_project == "Textbook Companion") {
         $sub_project = "textbook_companion_proposal";
-        
+
         db_set_active($foss_type); //Active other database
         $options = array();
         $options[0] = '--------------';
@@ -3302,11 +3317,11 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
         while ($city_detail = $result->fetchObject()) {
             $options[$city_detail->city] = $city_detail->city;
         }
-        
-    } 
+
+    }
     elseif ($foss_sub_project == "Lab Migration") {
         $sub_project = "lab_migration_proposal";
-        
+
         db_set_active($foss_type); //Active other database
         $options = array();
         $options[0] = '--------------';
@@ -3322,12 +3337,12 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
         while ($city_detail = $result->fetchObject()) {
             $options[$city_detail->city] = $city_detail->city;
         }
-        
-    } 
+
+    }
     elseif ($foss_sub_project == "Workshop") {
         $sub_project = "workshop";
         $foss_type_db = 'default';
-        
+
         db_set_active($foss_type_db); //Active other database
         $options = array();
         $options[0] = '--------------';
@@ -3348,7 +3363,7 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
     elseif ($foss_sub_project == "Conference") {
         $sub_project = "workshop";
         $foss_type_db = 'default';
-        
+
         db_set_active($foss_type_db); //Active other database
         $options = array();
         $options[0] = '--------------';
@@ -3369,7 +3384,7 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
     elseif ($foss_sub_project == "Self Workshop") {
 
   //Get self workshop foss number for spoken
-    
+
   $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -3397,17 +3412,17 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
 
             while ($city_detail = $result->fetchObject()) {
                 $options[$city_detail->city] = $city_detail->city;
-    
+
             }
 
      }
-    
-    
-    db_set_active('default'); // We need to call the main (drupal) db back      
-    
+
+
+    db_set_active('default'); // We need to call the main (drupal) db back
+
     $form['cityname']['#options'] = $options;
     $commands[] = ajax_command_replace("#load_city", drupal_render($form['cityname']));
-    
+
     return array(
         '#type' => 'ajax',
         '#commands' => $commands
@@ -3416,10 +3431,10 @@ function ajax_city_list_dependent_dropdown_callback($form, &$form_state) {
 
 //Get list of country
 function get_country_list($foss_type, $foss_sub_project) {
-    
+
      if ($foss_type!= 0) {
         if ($foss_sub_project != 0) {
-            
+
             $query = db_select('foss_type');
             $query->fields('foss_type', array(
                 'id'
@@ -3432,45 +3447,45 @@ function get_country_list($foss_type, $foss_sub_project) {
             $foss_detail = $result->fetchObject();
             $foss_type_name = $foss_detail->foss_name;
             $options = array();
-            
+
             if ($foss_sub_project == 1 && $foss_type!=3) {
-    
+
                 $sub_project = "textbook_companion_proposal";
-                
+
                 db_set_active($foss_type_name); //Active other database
-                
+
                 $options[0] = '--------------';
                 $query = "
        SELECT Distinct(country) FROM " . $sub_project . "
        ";
-                
+
                 $result = db_query($query);
                 while ($country_detail = $result->fetchObject()) {
                     $options[$country_detail->country] = $country_detail->country;
                 }
-    
-                
-            } 
+
+
+            }
             elseif ($foss_sub_project == 2 && $foss_type!=3) {
                 $sub_project = "lab_migration_proposal";
-                
+
                 db_set_active($foss_type_name); //Active other database
                 // $options    = array();
                 $options[0] = '--------------';
                 $query = "
        SELECT Distinct(country) FROM " . $sub_project . "
        ";
-                
+
                 $result = db_query($query);
                 while ($country_detail = $result->fetchObject()) {
                     $options[$country_detail->country] = $country_detail->country;
                 }
-                
-            } 
+
+            }
             elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
                 $sub_project = "workshop";
                 $foss_type_db = 'default';
-                
+
                 db_set_active($foss_type_db); //Active other database
                 //$options    = array();
                 $options[0] = '--------------';
@@ -3485,21 +3500,21 @@ function get_country_list($foss_type, $foss_sub_project) {
                 while ($country_detail = $result->fetchObject()) {
                     $options[$country_detail->country] = $country_detail->country;
                 }
-                
+
             }
             elseif ($foss_sub_project == 4) {
-                
+
                 $options[0] = '--------------';
                 $options[1] = 'India';
-                              
+
             }
-            
-            
-            db_set_active('default'); // We need to call the main (drupal) db back 
-            
-            
+
+
+            db_set_active('default'); // We need to call the main (drupal) db back
+
+
             return $options;
-        } 
+        }
         else {
             $options = array();
             $options[0] = '--------------';
@@ -3511,7 +3526,7 @@ function get_country_list($foss_type, $foss_sub_project) {
 //Get list of state
 function get_state_list($foss_type, $foss_sub_project, $country) {
    if (($foss_type != 0) && $foss_sub_project != 0 && $country != "") {
-        
+
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -3528,13 +3543,13 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
         $foss_type_name = $foss_detail->foss_name;
   $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
         $options = array();
-       
+
         if ($foss_sub_project == 1 && $foss_type!=3) {
     $options = array();
             $sub_project = "textbook_companion_proposal";
-            
+
             db_set_active($foss_type_name); //Active other database
-            
+
             $options[0] = '--------------';
             $query = "
        SELECT * FROM " . $sub_project . "
@@ -3547,13 +3562,13 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
             }
-            
-        } 
+
+        }
         elseif ($foss_sub_project == 2 && $foss_type!=3) {
             $sub_project = "lab_migration_proposal";
             $options = array();
             db_set_active($foss_type_name); //Active other database
-           
+
             $options[0] = '--------------';
             $query = "
        SELECT * FROM " . $sub_project . "
@@ -3566,15 +3581,15 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
             }
-            
-        } 
+
+        }
         elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
             $options = array();
             $sub_project = "workshop";
             $foss_type_db = 'default';
-            
+
             db_set_active($foss_type_db); //Active other database
-           
+
             $options[0] = '--------------';
             $query = "SELECT * FROM " . $sub_project . "
        WHERE country = :country and foss_name = :foss_name
@@ -3587,10 +3602,10 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
             }
-            
-        } 
+
+        }
         elseif ($foss_sub_project == 4) {
-           
+
             db_set_active('selfworkshop'); //Active other database
             $options[0] = '--------------';
             $query = "SELECT distinct (s.name) as state FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id )
@@ -3604,12 +3619,12 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
                 $options[$state_detail->state] = $state_detail->state;
 
             }
-           
+
         }
-        db_set_active('default'); // We need to call the main (drupal) db back 
-        
+        db_set_active('default'); // We need to call the main (drupal) db back
+
         return $options;
-    } 
+    }
     else {
         $options = array();
         $options[0] = '--------------';
@@ -3618,9 +3633,9 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
 }
 //Get List of City
 function get_city_list($foss_type, $foss_sub_project, $country, $state) {
-    
+
      if (($foss_type != 0 ) && $foss_sub_project != 0 && $country != "" && $state != "") {
-       
+
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -3653,8 +3668,8 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
             while ($city_detail = $result->fetchObject()) {
                 $options[$city_detail->city] = $city_detail->city;
             }
-            
-        } 
+
+        }
         elseif ($foss_sub_project == 2  && $foss_type!="Python") {
             $sub_project = "lab_migration_proposal";
             db_set_active($foss_type); //Active other database
@@ -3672,13 +3687,13 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
             while ($city_detail = $result->fetchObject()) {
                 $options[$city_detail->city] = $city_detail->city;
             }
-            
-            
-        } 
+
+
+        }
         elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
             $sub_project = "workshop";
             $foss_type_db = 'default';
-            
+
             db_set_active($foss_type_db); //Active other database
             $options = array();
             $options[0] = '--------------';
@@ -3695,10 +3710,10 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
             while ($city_detail = $result->fetchObject()) {
                 $options[$city_detail->city] = $city_detail->city;
             }
-        } 
+        }
         elseif ($foss_sub_project == 4) {
 
-    
+
   db_set_active('selfworkshop'); //Active other database
         $options[0] = '--------------';
 
@@ -3712,18 +3727,18 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
 
             while ($city_detail = $result->fetchObject()) {
                 $options[$city_detail->city] = $city_detail->city;
-    
+
             }
-  
+
   }
-        
-        
-        
-        db_set_active('default'); // We need to call the main (drupal) db back 
-        
-        
+
+
+
+        db_set_active('default'); // We need to call the main (drupal) db back
+
+
         return $options;
-    } 
+    }
     else {
         $options = array();
         $options[0] = '--------------';
@@ -3735,7 +3750,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
   Same form is used for editing existing events
 */
 function workshop_add_form($form, &$form_state, $workshop_id = 0, $no_js_use = FALSE) {
- 
+
 $query = "
        SELECT * FROM workshop
        WHERE w_id = :workshop_id
@@ -3746,7 +3761,7 @@ $query = "
     $result = db_query($query, $args);
     $row = $result->fetchObject();
     $form = array();
-   
+
     if ($workshop_id == 0) {
         $form['foss_select'] = array(
             '#type' => 'select',
@@ -3754,7 +3769,7 @@ $query = "
             '#options' => get_first_dropdown_options_foss_name(),
             '#default_value' => '',
             "#required" => TRUE
-        ); 
+        );
         $form['type'] = array(
             '#type' => 'select',
             '#title' => t('Selected Type'),
@@ -3901,7 +3916,7 @@ $query = "
                 'placeholder' => 'Enter pincode....'
             )
         );
-        
+
         $form["no_of_participant"] = array(
             "#type" => "textfield",
             "#title" => "Number Of Participants",
@@ -3989,7 +4004,7 @@ $query = "
             unset($form['speakers_fieldset']['add_speakers']['#ajax']);
         }
 
-  
+
   // adding testimonial fieldset
 
         $form['testimonial_fieldset'] = array(
@@ -4094,7 +4109,7 @@ $query = "
                 "#title" => "Link: ",
                 "#default_value" => ""
             );
-            
+
         }
         $form["videolink_count"] = array(
             "#type" => "hidden",
@@ -4186,7 +4201,7 @@ $query = "
             }
             unset($form['names_fieldset']['add_name']['#ajax']);
         }
-    } 
+    }
     else {
         $form = array();
         $form['foss_select'] = array(
@@ -4360,7 +4375,7 @@ $query = "
             "#type" => "textfield",
             "#title" => "Link to event's website",
             "#default_value" => $row->event_link
-           
+
         );
 
         $form["body"] = array(
@@ -4414,7 +4429,7 @@ $query = "
                     "#title" => "Place",
                     "#default_value" => $row_s->place
                 );
-                
+
                 $i++;
             }
 
@@ -4424,7 +4439,7 @@ $query = "
                 "#value" => $temp
             );
 
-        } 
+        }
         else {
             if (empty($form_state['num_speakers'])) {
                 $form_state['num_speakers'] = 1;
@@ -4451,7 +4466,7 @@ $query = "
                     "#title" => "University",
                     "#default_value" => ""
                 );
-               
+
             }
             $form["speakers_count"] = array(
                 "#type" => "hidden",
@@ -4532,7 +4547,7 @@ $query = "
                     "#title" => "Institute",
                     "#default_value" => $row_v->link
                 );
-                
+
                 $i++;
             }
 
@@ -4542,7 +4557,7 @@ $query = "
                 "#value" => $temp
             );
 
-        } 
+        }
         else {
             if (empty($form_state['num_videolink'])) {
                 $form_state['num_videolink'] = 1;
@@ -4564,8 +4579,8 @@ $query = "
                     "#title" => "Link: ",
                     "#default_value" => ""
                 );
-                
-               
+
+
             }
             $form["videolink_count"] = array(
                 "#type" => "hidden",
@@ -4663,7 +4678,7 @@ $query = "
                 "#type" => "hidden",
                 "#value" => $temp
             );
-        } 
+        }
         else {
             if (empty($form_state['num_testimonial'])) {
                 $form_state['num_testimonial'] = 1;
@@ -4758,7 +4773,7 @@ $query = "
             '#prefix' => '',
             '#suffix' => '</tr></table></div>'
         );
-        
+
         $form['names_fieldset'] = array(
             '#type' => 'fieldset',
             '#tree' => TRUE,
@@ -4830,25 +4845,25 @@ function workshop_add_form_validate($form, &$form_state) {
         if ($form_state['values']['other_country'] == '') {
             form_set_error('other_country', t('Enter country name'));
             // $form_state['values']['country'] = $form_state['values']['other_country'];
-        } 
+        }
         else {
             $form_state['values']['country'] = $form_state['values']['other_country'];
         }
         if ($form_state['values']['other_state'] == '') {
             form_set_error('other_state', t('Enter state name'));
             // $form_state['values']['country'] = $form_state['values']['other_country'];
-        } 
+        }
         else {
             $form_state['values']['all_state'] = $form_state['values']['other_state'];
         }
         if ($form_state['values']['other_city'] == '') {
             form_set_error('other_city', t('Enter city name'));
             // $form_state['values']['country'] = $form_state['values']['other_country'];
-        } 
+        }
         else {
             $form_state['values']['city'] = $form_state['values']['other_city'];
         }
-    } 
+    }
     else {
         if ($form_state['values']['country'] == '') {
             form_set_error('country', t('Select country name'));
@@ -5054,7 +5069,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         $speakersupload++;
                     }
                 }
-            } 
+            }
              else {
                 if ($v['speakers_fieldset'][$i]["speakername"] != "") {
                     $speakersquery = "
@@ -5093,7 +5108,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     $query->fields(array(
                         'title' => $v['videolink_fieldset'][$i]["videolink_title"],
                         'link' => $v['videolink_fieldset'][$i]["videolink_link"]
-                       
+
                     ));
                     $query->condition('v_id', $v['videolink_fieldset'][$i]["v_id"]);
                     $result = $query->execute();
@@ -5101,7 +5116,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         $videolink_upload++;
                     }
                 }
-            } 
+            }
             else {
                 if ($v['videolink_fieldset'][$i]["videolink_title"] != "") {
                     $videolinkquery = "
@@ -5114,7 +5129,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         ":w_id" => $v["workshop_id"],
                         ":title" => $v['videolink_fieldset'][$i]["videolink_title"],
                         ":link" => $v['videolink_fieldset'][$i]["videolink_link"]
-                       
+
                     );
                     /* storing the row id in $result */
                     $videolinkresult = db_query($videolinkquery, $videolinkargs, array(
@@ -5149,7 +5164,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         $testimonialupload++;
                     }
                 }
-            } 
+            }
             else {
                 if ($v['testimonial_fieldset'][$i]["t_name"] != "") {
                     $testimonialquery = "
@@ -5193,7 +5208,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     if ($delete_img != 0) {
                         $deletecounter++;
                     }
-                } 
+                }
                 else {
                     drupal_set_message(t('Error Could not delete :') . $filename . t(', file does not exist'), 'error');
                 }
@@ -5222,7 +5237,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     ), 'error');
                     return;
                 }
-                
+
                 /* uploading file */
                 if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
                     $imagequery = "
@@ -5244,7 +5259,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         $imageupload++;
                     }
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
-                } 
+                }
                 else {
                     drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
@@ -5252,7 +5267,7 @@ function workshop_add_form_submit($form, &$form_state) {
         }
         if (!$result && $imageupload == 0 && $deletecounter == 0 &&$videolink_upload==0) {
             drupal_set_message(t("Something went wrong, please try again."), "error");
-        } 
+        }
         else {
             drupal_set_message(t("Workshop updated successfully"), "status");
             if ($imageupload != 0) {
@@ -5262,7 +5277,7 @@ function workshop_add_form_submit($form, &$form_state) {
                 drupal_set_message(t("Event's Pictures are deleted successfully"), "status");
             }
         }
-    } 
+    }
     else {
         $eventfolder = str_replace(' ', '_', $v["name"]) . time();
         $query = "
@@ -5346,7 +5361,7 @@ function workshop_add_form_submit($form, &$form_state) {
             }
         }
 
-  /* Adding video links  */ 
+  /* Adding video links  */
 
   $videolinkupload = 0;
         for ($i = 0; $i <= $v["videolink_count"]; $i++) {
@@ -5376,7 +5391,7 @@ function workshop_add_form_submit($form, &$form_state) {
         /* For adding images of events*/
         $items = array();
         $root_path = events_images_path();
-        
+
         $dest_path = $eventfolder . '/';
         if (!is_dir($root_path . $dest_path)) {
             mkdir($root_path . $dest_path);
@@ -5412,7 +5427,7 @@ function workshop_add_form_submit($form, &$form_state) {
                         $imageupload++;
                     }
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
-                } 
+                }
                 else {
                     drupal_set_message($file_name . $dest_path . ' was having an error while uploading :' , 'error');
                 }
@@ -5420,7 +5435,7 @@ function workshop_add_form_submit($form, &$form_state) {
         }
         if (!$result) {
             drupal_set_message(t("Something went wrong, please try again."), "error");
-        } 
+        }
         else {
             drupal_set_message(t("Workshop added successfully"), "status");
             if ($imageupload != 0) {
@@ -5529,7 +5544,7 @@ function workshop_view_selected_testimonial($id = 0) {
                                               <br>
             <br>
                                                 <p style='text-align:right;margin-top:-30px'>{$row->name},{$row->department},</p>
-                                                <p style='text-align:right;margin-top:-15px''>{$row->university}.</p> 
+                                                <p style='text-align:right;margin-top:-15px''>{$row->university}.</p>
                                                 </li><ul>";
     return $page_content;
 }
@@ -5537,7 +5552,7 @@ function workshop_view_selected_testimonial($id = 0) {
 
 function workshop_view_all_testimonials($workshop_id = 0) {
     $page_content = "";
-   
+
     $query = db_select('testimonials');
     $query->fields('testimonials');
     $query->condition('w_id', $workshop_id);
@@ -5556,13 +5571,13 @@ function workshop_view_all_testimonials($workshop_id = 0) {
                     {$row->body}
                     <div class='author'>
                         - {$row->name}, {$row->department}, {$row->university}<br>
-                       
+
                     </div>
                 </div>
             ";
     }
     $page_content .= "</div> <!-- /#testimonials-wrapper -->";
-  
+
     $page_content .= theme('pager', array(
         'header' => NULL,
         'rows' => 4
@@ -5626,13 +5641,13 @@ function workshop_delete_all($workshop_id = 0) {
         if (!$res) {
             drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
             return;
-        } 
+        }
         else {
             $query2 = db_delete('workshop_images');
             $query2->condition('w_id', $workshop_id);
             $result2 = $query2->execute();
         }
-    } 
+    }
     else {
         drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
     }
@@ -5642,14 +5657,14 @@ function workshop_delete_all($workshop_id = 0) {
     $query3 = db_delete('workshop');
     $query3->condition('w_id', $workshop_id);
     $result3 = $query3->execute();
-   
+
     if (!$result3) {
         drupal_set_message(t("Something went wrong, please try again."), "error");
-    } 
+    }
     else {
         if (!$result2 && (!$result_t)) {
             drupal_set_message(t("Workshop Deleted successfully"), "status");
-        } 
+        }
         else {
             drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
         }
@@ -5663,7 +5678,7 @@ function workshop_edit_all($workshop_id = 0) {
     if ($workshop_id) {
         $workshop_add_form = drupal_get_form("workshop_add_form", $workshop_id);
         $page_content = drupal_render($workshop_add_form);
-    } 
+    }
     else {
         $query = db_select('workshop');
         $query->fields('workshop');
@@ -5698,9 +5713,9 @@ function workshop_edit_all($workshop_id = 0) {
 }
 
 
-function events_view_filter($foss_name, $event_type, $startdate, $enddate, 
+function events_view_filter($foss_name, $event_type, $startdate, $enddate,
     $countryname, $statename, $cityname) {
-   
+
     $page_content = "";
     $headers = array(
         "Name",
@@ -5711,41 +5726,41 @@ function events_view_filter($foss_name, $event_type, $startdate, $enddate,
     );
     if ($startdate == "") {
         $startdate = '1960-01-01';
-    } 
+    }
     else {
         $startdate = $startdate;
     }
-    
+
     if ($enddate == "") {
         $enddate = date("Y-m-d");
         //$enddate = "";
-    } 
+    }
     else {
         $enddate = $enddate;
     }
-    
+
     if (trim($countryname) == "0") {
         $countryname = '%';
-    } 
+    }
     else {
         $countryname = trim($countryname);
     }
-    
+
     if (trim($statename) == "0") {
         $statename = '%';
-    } 
+    }
     else {
         $statename = trim($statename);
     }
-    
+
     if (trim($cityname) == "0") {
         $cityname = '%';
-    } 
+    }
     else {
         $cityname = trim($cityname);
     }
-    
-   
+
+
     $rows = array();
     $query = db_select('workshop');
     $query->fields('workshop');
@@ -5758,7 +5773,7 @@ function events_view_filter($foss_name, $event_type, $startdate, $enddate,
     $query->condition('startdate', $enddate, '<=');
     $query->orderBy('startdate', 'DESC');
     $result = $query->execute();
-    
+
     while ($row = $result->fetchObject()) {
         $item = array(
             $row->w_name,
@@ -5770,7 +5785,7 @@ function events_view_filter($foss_name, $event_type, $startdate, $enddate,
         array_push($rows, $item);
     }
     $page_content .= bootstrap_table_format($headers, $rows);
-    
+
     return $page_content;
 }
 
@@ -5778,14 +5793,14 @@ function events_view_filter($foss_name, $event_type, $startdate, $enddate,
 function workshop_view_all($workshop_id, $startdate, $enddate) {
     if ($startdate == "") {
         $startdate = "2015-08-01";
-    } 
+    }
     else {
         $startdate = $startdate;
     }
     if ($enddate == "") {
         $enddate = date("Y-m-d");
         //$enddate="";
-    }  
+    }
     else {
         $enddate = $enddate;
     }
@@ -5797,7 +5812,7 @@ function workshop_view_all($workshop_id, $startdate, $enddate) {
         "No of Participants",
         ""
     );
-    
+
     $rows1 = array();
     $query1 = db_select('workshop');
     $query1->fields('workshop');
@@ -5812,7 +5827,7 @@ function workshop_view_all($workshop_id, $startdate, $enddate) {
             $row->startdate,
             $row->venue,
             $row->no_of_participant,
-          
+
             "<a href=" . $GLOBALS['base_url'] . "/events/view_details/{$row->w_id} target='_blank' title='Click to view detail'>Details</a>"
         );
         array_push($rows1, $item);
@@ -5843,7 +5858,7 @@ function conference_seminar_view_all($workshop_id, $startdate, $enddate) {
             $row->startdate,
             $row->venue,
             $row->no_of_participant,
-           
+
             "<a href=" . $GLOBALS['base_url'] . "/events/view_details/{$row->w_id} target='_blank' title='Click to view detail'>Details</a>"
         );
         array_push($rows1, $item);
@@ -5852,7 +5867,7 @@ function conference_seminar_view_all($workshop_id, $startdate, $enddate) {
     return $page_content;
 }
 
-function event_activities_all() { 
+function event_activities_all() {
     //This is used for displaying text (tab sta)
     $form['displaytext'] = array(
         '#type' => 'markup',
@@ -5864,24 +5879,24 @@ function event_activities_all() {
     $form['tbctable'] = array(
         '#type' => 'item',
         '#prefix' => '<div id="default_load" >',
-        '#markup' => '<ul class="nav nav-tabs">                       
-                       
+        '#markup' => '<ul class="nav nav-tabs">
+
                           <li class="active"><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
-                          
+
                             <li><a data-toggle="tab" href="#conferencedata">Conference </a></li>
-                            
+
                       </ul>'
      );
-   
+
      $form['tab_content'] = array(
         '#type' => 'item',
         '#markup' => '<div class="tab-content">
 
-        
+
 
         <div id="workshopdata" class="tab-pane fade  in active">' . workshop_view_all(0, 1960-01-01, date("Y-m-d")) . '</div>
-       
-       
+
+
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, "", "") . '</div>
 
  </div>'
@@ -5916,7 +5931,7 @@ function event_seminar_view_all($workshop_id, $startdate, $enddate) {
             $row->startdate,
             $row->venue,
             $row->no_of_participant,
-           
+
             "<a href=" . $GLOBALS['base_url'] . "/events/view_details/{$row->w_id} target='_blank' title='Click to view detail'>Details</a>"
         );
         array_push($rows1, $item);
@@ -5928,11 +5943,11 @@ function event_seminar_view_all($workshop_id, $startdate, $enddate) {
 function workshop_view_details_all($workshop_id = 0) {
     $testimonial_scroll_js = "(function ($) {
 $(document).ready(function(){
-  
+
   $('#testimonials_front li').hide().eq(0).show();
-  
+
   (function showNextTestimonial(){
-    
+
     $('#testimonials_front li:visible').delay(12000).fadeOut('slow',function(){
       $(this).appendTo('#testimonials_front ul');
       if($(this).next().length > 0)
@@ -5949,7 +5964,7 @@ $(document).ready(function(){
         }
     });
   })();
-  
+
 });
 })(jQuery);";
     drupal_add_js($testimonial_scroll_js, 'inline', 'header');
@@ -5992,7 +6007,7 @@ $(document).ready(function(){
         border-radius:12px;
         box-shadow: 1px 1px 4px 1px #888888;
         height:135px;
-        
+
 }
 #testimonials_front a{
         /* float:left; */
@@ -6000,7 +6015,7 @@ $(document).ready(function(){
 
 .testimonial_head
 {
-        
+
         text-align:left;
         margin-top:-14px;
         font-size:16px;
@@ -6014,7 +6029,7 @@ $(document).ready(function(){
 #testimonials_front h4{
 color:#424242;
 margin-top:-20px;
-        
+
 }
 
 #testimonials_one{
@@ -6030,7 +6045,7 @@ margin-top:-20px;
         box-shadow: 1px 1px 4px 1px #888888;
         width: 94%;
 margin: 30px;
-        
+
 }
 
 
@@ -6049,7 +6064,7 @@ margin: 30px;
 color:#424242;
 margin-top:-20px;
 
-  
+
 }
 
 ";
@@ -6124,7 +6139,7 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
             $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . " /></a>";
         }
         $page_content .= "</td></tr></table>";
-    } 
+    }
     else {
         $page_content .= "</table>";
     }
@@ -6148,21 +6163,21 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
                         $page_testimonial = "<li><i><p style='margin-top:-7px ;color:#413E3E;'>{$cut}</i><a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
-                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>  
+                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
-                    } 
+                    }
                     else {
                         $page_testimonial = "<li><i><p style='margin-top:-7px;color:#413E3E;'>{$row->body}</i></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
-                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>  
+                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
                     }
                 }
                 $page_content .= $page_testimonial;
             }
             $page_content .= "</ul></div>";
-        }   
+        }
           else {
             $page_content .= "<div id='testimonials_one'><div><br>
 <a href=" . $GLOBALS['base_url'] . "/events/testimonials/{$workshop_id} target='_blank' title='Click to view all testimonials'><h4 style='color:#3399FF'>Testimonials</h4></a>
@@ -6176,14 +6191,14 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
                         $page_testimonial = "<li><i><p style='margin-top:-7px;color:#413E3E;'>{$cut}</i><a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
-                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>  
+                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
-                    } 
+                    }
                     else {
                         $page_testimonial = "<li><i><p style='margin-top:-7px ;color:#413E3E;'>$row->body</i></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
-                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>  
+                                                <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
                     }
                 }
@@ -6201,18 +6216,18 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
     $videolink_of_results = $videolink_result->rowCount();
 
   if ($videolink_of_results!=0) {
-  
+
   $page_content .= "<br><h3>Video Links</h3>";
   $page_content .= '<ul style="list-style-type:square">';
    while ($videolink_row = $videolink_result->fetchObject()) {
-  
+
   $page_content .='<li><a href="' . $videolink_row->link . '" target="_blank" title="Click to watch video">' . $videolink_row->title . '</a>' . '</li><br>';
-  
-  
+
+
          }
   $page_content .= '</ul>';
   }
-  
+
     return $page_content;
 }
 
@@ -6259,28 +6274,28 @@ function getselfworkshoplcount($foss_name, $startdate, $enddate, $state, $city) 
 
   if ($city == "" || $city == "null") {
         $city = "%";
-    } 
+    }
     else {
         $city = $city;
     }
 
     if ($state == "" || $state == "null") {
         $state= "%";
-    } 
+    }
     else {
         $state = $state;
     }
-  if ($startdate == "") {
+    if ($startdate == "") {
         $startdate = '1960-01-01';
-    } 
+    }
     else {
         $startdate = $startdate;
     }
-    
+
     if ($enddate == "") {
         $enddate = date("Y-m-d");
         //$enddate = "";
-    } 
+    }
     else {
         $enddate = $enddate;
     }
@@ -6289,7 +6304,7 @@ function getselfworkshoplcount($foss_name, $startdate, $enddate, $state, $city) 
     $headers = array(
         "FOSS Name",
         "No. of Workshops Conducted",
-        
+
     );
     $query = db_select('foss_type');
     $query->fields('foss_type', array(
@@ -6305,115 +6320,115 @@ function getselfworkshoplcount($foss_name, $startdate, $enddate, $state, $city) 
     $query->condition('foss_selfworkshop_no', "null", '!=');
     $result = $query->execute();
     if ($result!=NULL) {
-  $page_content = "";
+      $page_content = "";
 
-if ($city == "%"&&$state!="%") {
-$city="NONE";
-while ($foss_detail = $result->fetchObject()) {
+      if ($city == "%"&&$state!="%") {
+      $city="NONE";
+      while ($foss_detail = $result->fetchObject()) {
 
-      db_set_active('selfworkshop');
-      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
-        ':state' => $state,
-        ':startdate' => $startdate,
-        ':enddate'  => $enddate,
-                            ));
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
+              ':state' => $state,
+              ':startdate' => $startdate,
+              ':enddate'  => $enddate,
+                                  ));
 
-      $count = $query2->fetchObject()->count;
+            $count = $query2->fetchObject()->count;
 
-      db_set_active('default'); // We need to call the main (drupal) db back
-            db_set_active();
-        $item = array(
-            $foss_detail->foss_name,
-            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-          );
-    
-        array_push($rows, $item);
-    }
+            db_set_active('default'); // We need to call the main (drupal) db back
+                  db_set_active();
+              $item = array(
+                  $foss_detail->foss_name,
+                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+                );
+
+              array_push($rows, $item);
+          }
 
 
-}
-elseif ($state == "%"&&$city!="%") {
-$state="NONE";
-while ($foss_detail = $result->fetchObject()) {
+      }
+      elseif ($state == "%"&&$city!="%") {
+      $state="NONE";
+      while ($foss_detail = $result->fetchObject()) {
 
-      db_set_active('selfworkshop');
-      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city  AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
-        ':city' => $city,
-        
-        ':startdate' => $startdate,
-        ':enddate' => $enddate,
-                            ));
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city  AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
+              ':city' => $city,
 
-      $count = $query2->fetchObject()->count;
+              ':startdate' => $startdate,
+              ':enddate' => $enddate,
+                                  ));
 
-      db_set_active('default'); // We need to call the main (drupal) db back
-            db_set_active();
-        $item = array(
-            $foss_detail->foss_name,
-            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-          );
-    
-        array_push($rows, $item);
-    }
+            $count = $query2->fetchObject()->count;
 
-}
-elseif ($city == "%"&&$state == "%")  {
-$city="NONE";
-$state="NONE";
-while ($foss_detail = $result->fetchObject()) {
+            db_set_active('default'); // We need to call the main (drupal) db back
+                  db_set_active();
+              $item = array(
+                  $foss_detail->foss_name,
+                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+                );
 
-      db_set_active('selfworkshop');
-      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
-        
-        ':startdate' => $startdate,
-        ':enddate' => $enddate,
-                            ));
+              array_push($rows, $item);
+          }
 
-      $count = $query2->fetchObject()->count;
+      }
+      elseif ($city == "%"&&$state == "%")  {
+      $city="NONE";
+      $state="NONE";
+      while ($foss_detail = $result->fetchObject()) {
 
-      db_set_active('default'); // We need to call the main (drupal) db back
-            db_set_active();
-        $item = array(
-            $foss_detail->foss_name,
-            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-          );
-    
-        array_push($rows, $item);
-    }
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
 
-}
-else{
+              ':startdate' => $startdate,
+              ':enddate' => $enddate,
+                                  ));
 
-while ($foss_detail = $result->fetchObject()) {
+            $count = $query2->fetchObject()->count;
 
-      db_set_active('selfworkshop');
-      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
-        ':city' => $city,
-        ':state' => $state,
-        ':startdate' => $startdate,
-        ':enddate' => $enddate,
-                            ));
+            db_set_active('default'); // We need to call the main (drupal) db back
+                  db_set_active();
+              $item = array(
+                  $foss_detail->foss_name,
+                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+                );
 
-      $count = $query2->fetchObject()->count;
+              array_push($rows, $item);
+          }
 
-      db_set_active('default'); // We need to call the main (drupal) db back
-            db_set_active();
-        $item = array(
-            $foss_detail->foss_name,
-            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-          );
-    
-        array_push($rows, $item);
-    }
+      }
+      else{
 
-}
-    
+      while ($foss_detail = $result->fetchObject()) {
+
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
+              ':city' => $city,
+              ':state' => $state,
+              ':startdate' => $startdate,
+              ':enddate' => $enddate,
+                                  ));
+
+            $count = $query2->fetchObject()->count;
+
+            db_set_active('default'); // We need to call the main (drupal) db back
+                  db_set_active();
+              $item = array(
+                  $foss_detail->foss_name,
+                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+                );
+
+              array_push($rows, $item);
+          }
+
+      }
+
     $page_content .= bootstrap_table_format($headers, $rows);
-    
+
 
    }
    else{
@@ -6424,7 +6439,7 @@ while ($foss_detail = $result->fetchObject()) {
 }
 
 
-function completed_workshops_list($String, $foss_id, $city, $state, $startdate, $enddate) {     
+function completed_workshops_list($String, $foss_id, $city, $state, $startdate, $enddate) {
 
     $query = db_select('foss_type');
         $query->fields('foss_type', array(
@@ -6433,13 +6448,13 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
        $query->fields('foss_type', array(
           'foss_name'
         ));
-        
+
       $query->condition('foss_selfworkshop_no', $foss_id);
       $result = $query->execute();
     $fossdetail = $result->fetchObject();
     $fossname=$fossdetail->foss_name;
     $caption="<h4>List of Workshop under FOSS : " . $fossname . "<br><br><h4>";
-  
+
     if ($city == "NONE") {
        $city = "%";
     }
@@ -6452,12 +6467,12 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
     else{
        $state = $state;
     }
-  
+
     $query = "";
     $count_query = "";
     $rows = array();
     db_set_active('selfworkshop');
-  
+
 
       $header = array(
       array('data' => 'Institution', 'field' => 'ac.institution_name'),
@@ -6466,7 +6481,7 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
       array('data' => 'No. of students', 'field' => 't.participant_count'),
       array('data' => ''),
     );
-    
+
 
     db_set_active('workshop_info');
     $query = db_select('events_training', 't');
@@ -6485,21 +6500,21 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
         $query->condition('t.tdate', $enddate, '<=');
     $result = $query->extend('PagerDefault')->limit(50)->extend('TableSort')->orderByHeader($header)->execute();
     $number_of_rows = $result->rowCount();
-    
-    
+
+
     while ($row = $result->fetchObject()) {
       $item = array($row->institution_name, $row->city, $row->tdate, $row->participant_count,
     "<a href=" . $GLOBALS['base_url'] . "/view-completed-workshop/" . $row->id . " target='_blank' title='Click to view detail'>View</a>",
     );
         array_push($rows, $item);
     }
-    
+
 
     if ($number_of_rows==0) {
       $output .= '<div style="color:red;text-align:center;">List is empty.</div>';
-    } 
+    }
       else {
-      
+
       $build['pager_table'] = array(
           '#theme' => 'table',
           '#header' => $header,
@@ -6514,19 +6529,19 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
         $build['pager_pager'] = array('#theme' => 'pager');
       $output = $build;
 
-      
+
     }
 
     db_set_active('default');
     return $output;
-    
+
   }
 
 
 function view_completed_workshop($id = NULL) {
 
     if ($id) {
-      
+
       db_set_active('selfworkshop');
       $query = db_select('events_training', 't');
       $query->join('events_academiccenter', 'ac', 'ac.id = t.academic_id');
@@ -6539,7 +6554,7 @@ function view_completed_workshop($id = NULL) {
       $query->fields('t', array('organiser_id', 'training_code', 'tdate', 'participant_count'));
       $query->condition('t.id', $id);
       $result = $query->execute();
-      
+
       if ($result) {
 
         $item = $result->fetchObject();
@@ -6555,7 +6570,7 @@ function view_completed_workshop($id = NULL) {
         //$result = db_query($query);
         db_set_active('default');
         $organiser = $result->fetchObject();
-        
+
         $output .= '<table width="100%" cellpadding="6" class="table table-bordered table-hover">';
         $output .= '<tr><td><b>Workshop Code</b></td><td><b>' . $item->training_code . '</b></td></tr>';
         $output .= '<tr><td><b>Foss Category</b></td><td><b>' . $item->foss . '</b></td></tr>';
@@ -6564,13 +6579,13 @@ function view_completed_workshop($id = NULL) {
         $output .= '<tr><td><b>Organiser </b></td><td><b>' . $organiser->first_name . ' ' . $organiser->last_name . '
         </b></td></tr>';
         $output .= '<tr><td colspan="2"><div Style="height:20px"></div></td></tr>';
-        
+
         $output .= '<tr><td><b>Academic Center Code</b></td><td><b>' . $item->academic_code . '</b></td></tr>';
         $output .= '<tr><td><b>Institution Name</b></td><td><b>' . $item->institution_name . '</b></td></tr>';
         $output .= '<tr><td><b>Street</b></td><td><b>' . $item->address . '</b></td></tr>';
         $output .= '<tr><td><b>City</b></td><td><b>' . $item->city . '</b></td></tr>';
         $output .= '</table>';
-        
+
         return $output;
       }
       else {
@@ -6600,7 +6615,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
     $result = db_query($query, $args);
     $row = $result->fetchObject();
     $form = array();
-   
+
     if ($postalcampaign_id == 0) {
         $form['foss_select'] = array(
             '#type' => 'select',
@@ -6609,7 +6624,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             '#default_value' => '',
             "#required" => TRUE
         );
-     
+
         $form["name"] = array(
             "#type" => "textfield",
             "#title" => "Name",
@@ -6629,14 +6644,14 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             ),
             "#required" => TRUE
         );
-        
+
         $form["body"] = array(
             "#type" => "textarea",
             "#title" => "Details",
             "#default_value" => '',
             "#required" => TRUE
         );
-        
+
         $form['poster_fieldset'] = array(
             '#type' => 'fieldset',
             '#tree' => TRUE,
@@ -6687,7 +6702,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             }
             unset($form['poster_fieldset']['add_name']['#ajax']);
         }
-    } 
+    }
     else {
         $form = array();
         $form['foss_select'] = array(
@@ -6724,7 +6739,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         );
         /*Edit Speakers*/
         /*Edit Testimonial*/
-        
+
         $form['uploadphotos'] = array(
             '#markup' => '<h5><p> Edit Poster</p></h5>(Select Check box to delete existing poster)',
             '#prefix' => '<div id="uploaded_poster"><table><tr>',
@@ -6753,8 +6768,8 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             $form['postercheck@' . $row1->id] = array(
                 '#type' => 'checkbox',
     '#field_suffix' => $suffix,
-    
-    
+
+
 
             );
         }
@@ -6763,7 +6778,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             '#prefix' => '',
             '#suffix' => '</tr></table></div>'
         );
-        
+
         $form['poster_fieldset'] = array(
             '#type' => 'fieldset',
             '#tree' => TRUE,
@@ -6839,7 +6854,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         ));
         $query->condition('p_id', $v["postercampaign_id"]);
         $result = $query->execute();
-  
+
         /* For editing Event images */
         /* For deleting existing images */
         /* For deleting existing images */
@@ -6859,7 +6874,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                     if ($delete_poster != 0) {
                         $deletecounter++;
                     }
-                } 
+                }
                 else {
                     drupal_set_message(t('Error Could not delete :') . $row_poster->name . t(', file does not exist'), 'error');
                 }
@@ -6904,7 +6919,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                         $posterupload++;
                     }
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
-                } 
+                }
                 else {
                     drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
@@ -6912,7 +6927,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         }
         if (!$result && $posterupload == 0 && $deletecounter == 0) {
             drupal_set_message(t("Something went wrong, please try again."), "error");
-        } 
+        }
         else {
             drupal_set_message(t("Postal Campaign updated successfully"), "status");
             if ($posterupload != 0) {
@@ -6922,7 +6937,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                 drupal_set_message(t("Event's Poster are deleted successfully"), "status");
             }
         }
-    } 
+    }
     else {
         $query = "
   INSERT INTO {postercampaign}
@@ -6939,7 +6954,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         $result = db_query($query, $args, array(
             'return' => Database::RETURN_INSERT_ID
         ));
-       
+
         /* For adding poster of events*/
         $items = array();
         $root_path = posters_path();
@@ -6979,7 +6994,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                         $posterupload++;
                     }
                     drupal_set_message($file_name . ' uploaded successfully.', 'status');
-                } 
+                }
                 else {
                     drupal_set_message($file_name . $dest_path . t('was having an error while uploading :') , 'error');
                 }
@@ -6987,7 +7002,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         }
         if (!$result) {
             drupal_set_message(t("Something went wrong, please try again."), "error");
-        } 
+        }
         else {
             drupal_set_message(t("Postal Campaign added successfully"), "status");
             if ($posterupload != 0) {
@@ -7035,19 +7050,19 @@ function postalcampaign_add_form_validate($form, &$form_state) {
                 $temp_extension = end($allowed_ext);
                 if (!in_array($temp_extension, $allowed_extensions))
                     form_set_error($file_form_name, t('Only file with') . $allowed_extensions_str . t(',extensions can be uploaded.'));
-                
+
             }
         }
     }
 }
 
- 
+
 function postalcampaign_edit_all($postercampaign_id = 0) {
     $page_content = "";
     if ($postercampaign_id) {
         $postalcampaign_add_form = drupal_get_form("postalcampaign_add_form", $postercampaign_id);
         $page_content = drupal_render($postalcampaign_add_form);
-    } 
+    }
     else {
         $query = db_select('postercampaign');
         $query->fields('postercampaign');
@@ -7094,28 +7109,28 @@ function postalcampaign_delete_all($postercampaign_id = 0) {
         if (!$res) {
             drupal_set_message(t("Cannot delete Campaign directory :") . $dir_path . t(",Please contact administrator."), 'error');
             return;
-        } 
+        }
         else {
             $query2 = db_delete('postercampaign_poster');
             $query2->condition('p_id', $postercampaign_id);
             $result2 = $query2->execute();
         }
-    } 
+    }
     else {
         drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
     }
-  
+
     $query3 = db_delete('postercampaign');
     $query3->condition('p_id', $postercampaign_id);
     $result3 = $query3->execute();
-   
+
     if (!$result3) {
         drupal_set_message(t("Something went wrong, please try again."), "error");
-    } 
+    }
     else {
         if (!$result2) {
             drupal_set_message(t("Campaign Deleted successfully"), "status");
-        } 
+        }
         else {
             drupal_set_message(t("Campaign, related poster material are deleted successfully"), "status");
         }
@@ -7148,7 +7163,7 @@ function postalcampaign_view_details_all($postalcampaign_id = 0) {
 
  <a style='float:right' title='Download all material of Campign' href=" . $GLOBALS['base_url'] . "/postalcampaign/download/" . $eventfolder . ">Click to Download</a></td>";
 $page_content .="</tr>";
-  
+
     $query = db_select('postercampaign_poster');
     $query->fields('postercampaign_poster');
     $query->condition('p_id', $postalcampaign_id);
@@ -7179,12 +7194,12 @@ $page_content .="</tr>";
 
   }
   }
-  
-    } 
+
+    }
     else {
         $page_content .= "</table>";
     }
-    
+
     return $page_content;
 }
 
@@ -7234,21 +7249,21 @@ function postalcampaign_view_all($foss_name, $startdate, $enddate) {
 
     if ($startdate == "") {
         $startdate = "1960-01-01";
-    } 
+    }
     else {
         $startdate = $startdate;
     }
     if ($enddate == "") {
         $enddate = date("Y-m-d");
         //$enddate="";
-    } 
+    }
     else {
         $enddate = $enddate;
     }
 
     if (strlen($foss_name) == 0 || $foss_name == "NULL") {
         $foss_name= "%";
-    } 
+    }
     else {
         $foss_name = $foss_name;
     }
@@ -7258,7 +7273,7 @@ function postalcampaign_view_all($foss_name, $startdate, $enddate) {
         "Date",
         ""
     );
-    
+
     $rows1 = array();
     $query1 = db_select('postercampaign');
     $query1->fields('postercampaign');
@@ -7271,7 +7286,7 @@ function postalcampaign_view_all($foss_name, $startdate, $enddate) {
         $item = array(
             $row->p_name,
             $row->startdate,
-          
+
             "<a href=" . $GLOBALS['base_url'] . "/postalcampaign/view_details/{$row->p_id} target='_blank' title='Click to view detail'>Details</a>"
         );
         array_push($rows1, $item);
@@ -7311,14 +7326,14 @@ $query = "
             '#default_value' => '',
             "#required" => TRUE
         );
-     
+
         $form["count"] = array(
             "#type" => "textfield",
             "#title" => "Count of Videos :",
             "#default_value" => '',
             "#required" => TRUE
         );
-  
+
   $form["videolink"] = array(
             "#type" => "textfield",
             "#title" => "Link of Video :",
@@ -7366,14 +7381,14 @@ $query = "
 
 function spokentutorial_add_form_submit($form, &$form_state) {
   $v = $form_state["values"];
- 
+
     if ($v["spokentutorial_id"]) {
   $query = db_update('spokentutorial');
         $query->fields(array(
             'foss_name' => $v["foss_select"],
             'count' => $v["count"],
             'link' => $v["videolink"],
-            
+
         ));
         $query->condition('v_id', $v["spokentutorial_id"]);
         $result = $query->execute();
@@ -7388,27 +7403,27 @@ function spokentutorial_add_form_submit($form, &$form_state) {
             ":foss_name" => $v["foss_select"],
             ":count" => $v["count"],
             ":link" => $v["videolink"]
-           
+
         );
         /* storing the row id in $result */
         $result = db_query($query, $args, array(
             'return' => Database::RETURN_INSERT_ID
         ));
   }
-  
+
    if (!$result) {
             drupal_set_message(t("Something went wrong, please try again."), "error");
-        } 
+        }
         else {
             drupal_set_message(t("Spoken tutorial details added successfully"), "status");
-            
+
         }
 }
 function spokentutorial_view_all($foss_name) {
 
   if (strlen($foss_name) == 0 || $foss_name == "NULL") {
         $foss_name= "%";
-    } 
+    }
     else {
         $foss_name = $foss_name;
     }
@@ -7416,9 +7431,9 @@ function spokentutorial_view_all($foss_name) {
     $headers = array(
         "Foss Type",
         "Count of Video"
-        
+
     );
-    
+
     $rows1 = array();
     $query1 = db_select('spokentutorial');
     $query1->fields('spokentutorial');
@@ -7458,7 +7473,7 @@ class MYPDF extends TCPDF {
     // Page footer
     public function Footer() {
         // Position at 15 mm from bottom
-  
+
         $this->SetY(-15);
         // Set font
         $this->SetFont('helvetica', 'I', 8);
@@ -7517,7 +7532,7 @@ if (@file_exists(dirname(__FILE__) . '/lang/eng.php')) {
 
 // add a page
 $pdf->AddPage();
-  
+
     $page_content = "<h3>Event Detail :</h3><br>";
     $page_content .= '<div style="justify-content: space-around;">';
     $row = "";
@@ -7541,17 +7556,17 @@ $pdf->AddPage();
     }
    }
 
-    
+
     $startdate = $row->startdate;
     $enddate = $row->enddate;
     $date = $row->startdate . " , " . $row->enddate;
-    
+
     $daylen = 60 * 60 * 24;
     $date1 = $row->enddate;
     $date2 = $row->startdate;
-    
+
     $dayCount = ((strtotime($date1) - strtotime($date2)) / $daylen) + 1;
-   
+
  $page_content .= '<table cellpadding="3" width="100%" cellspacing="1" bordercolor="RED" border="1" style="text-align:left;border-collapse: collapse;"><tbody>';
     $page_content .= '
    <tr><td width="20%"><b>Name</b></td><td width="80%" >' . $row->w_name . '</td></tr>
@@ -7574,9 +7589,9 @@ if (trim(strlen($row->event_link))!=0) {
  $page_content .= '<tr><td width="20%"><b>Event website</b></td><td width="80%" style="color:blue"><a href="' . $row->event_link . '" target="_blank">' . $row->event_link . '</a></td></tr>';
 }
 $page_content .= '</tbody></table>';
-  
+
      /* For adding images to PDF*/
-   
+
     $query = db_select('workshop_images');
     $query->fields('workshop_images');
     $query->condition('w_id', $workshop_id);
@@ -7603,8 +7618,8 @@ $page_content .= '</tbody></table>';
 
   }
 
-        }  
-       
+        }
+
    $page_content .= "</tr></table>";
 
    }
@@ -7623,7 +7638,7 @@ $page_content .= '</tbody></table>';
   $page_content .= "<br><h3>Testimonials</h3>";
   $page_content .= '<ul style="list-style-type:square">';
    while ($testimonial_row = $testimonial_result->fetchObject()) {
-  
+
   $page_content .= '<li>' . $testimonial_row->body . '   <sub>~' . $testimonial_row->name . ', ' . $testimonial_row->department . ' ' . $testimonial_row->university . '</sub>' . '</li><br>';
   $counter++;
 
@@ -7631,7 +7646,7 @@ $page_content .= '</tbody></table>';
     break;
     }
   }
-  
+
   $page_content .= '</ul>';
          }
 
@@ -7646,21 +7661,21 @@ $page_content .= '</tbody></table>';
     $videolink_of_results = $videolink_result->rowCount();
 
   if ($videolink_of_results!=0) {
-  
+
   $page_content .= "<br><h3>Video Links</h3>";
   $page_content .= '<ul style="list-style-type:square">';
    while ($videolink_row = $videolink_result->fetchObject()) {
-  
+
   $page_content .='<li><a href="' . $videolink_row->link . '" target="_blank" title="Click to watch video">' . $videolink_row->title . '</a>' . '</li><br>';
-  
-  
+
+
          }
   $page_content .= '</ul>';
   }
 
 
 $page_content .= '</div>';
- 
+
 // output the HTML content
 $pdf->writeHTML($page_content, TRUE, FALSE, TRUE, FALSE, '');
 
@@ -7691,4 +7706,171 @@ function fossee_stats_init() {
     //drupal_add_css(drupal_get_path("module", "fossee_stats") . "/css/fossee_stats_main.css");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/confirm.js");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/testimonials_script.js");
+}
+
+function fossee_map_form($form, $form_state) {
+
+  /* First Dropdown for Foss type */
+
+  $options_first = _ajax_example_get_first_dropdown_options();
+  if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
+      $foss_project = isset($form_state['values']['foss_type']) ? $form_state['values']['foss_type'] : key($options_first);
+  }
+  else {
+      $foss_project = '';
+  }
+  $form['foss_type'] = array(
+      '#type' => 'select',
+      '#prefix' => '<div class="content"><div><table ><tr><td>',
+      '#suffix' => '</td>',
+      '#title' => t('FOSS Type'),
+      '#multiple' => FALSE,
+      '#options' => $options_first,
+      //'#default_value' => $foss_project,
+      '#validated' => TRUE,
+      '#ajax' => array(
+          'callback' => 'ajax_foss_type_dependent_dropdown_callback',
+          'wrapper' => 'dropdown-second-replace',
+          'progress' => array(
+              'message' => ''
+          )
+      )
+  );
+ /* Second Dropdown for Activities like TBC, LM and other */
+
+  if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
+      $foss_sub_project = isset($form_state['values']['foss_sub_project']) ? $form_state['values']['foss_sub_project'] : key(get_activities_list($foss_project));
+  }
+  else {
+      $foss_sub_project = '';
+  }
+  $form['foss_sub_project'] = array(
+      '#type' => 'select',
+      '#title' => t('Activities'),
+      '#options' => get_activities_list($foss_project),
+      '#prefix' => '<td><div id="dropdown-second-replace" style="width:250px;padding-left:25px" >',
+      '#suffix' => '</div>',
+      '#default_value' => "--------------",
+      '#validated' => TRUE,
+      '#ajax' => array(
+          'callback' => 'ajax_foss_sub_project_dependent_dropdown_callback',
+          'wrapper' => 'dropdown-third-replace',
+          'progress' => array(
+              'message' => ''
+          )
+      ),
+
+      '#states' => array(
+          'invisible' => array(
+              ':input[name="foss_type"]' => array(
+                  'value' => ""
+              )
+          )
+      )
+  );
+
+ /* third Dropdown for Status like Completed and In Progress */
+  if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
+      $foss_sub_project_status = isset($form_state['values']['$foss_sub_project_status']) ? $form_state['values']['$foss_sub_project_status'] : '';
+  }
+  else {
+      $foss_sub_project_status = '';
+  }
+  $form['foss_sub_project_status'] = array(
+      '#type' => 'select',
+      '#title' => t('Status'),
+      '#options' => _ajax_example_get_third_dropdown_options($foss_sub_project),
+      '#prefix' => '<td><div id="dropdown-third-replace" style="width:250px">',
+      '#suffix' => '</div></td></tr>',
+      '#default_value' => $foss_sub_project_status,
+      '#validated' => TRUE,
+      '#states' => array(
+          'invisible' => array(
+              array(
+                  array(
+                      ':input[name="foss_sub_project"]' => array(
+                          'value' => 0
+                      )
+                  ),
+                  'or',
+                  array(
+                      ':input[name="foss_type"]' => array(
+                          'value' => ""
+                      )
+
+                  )
+              )
+          )
+      )
+  );
+   /* Start Date for Filter */
+  $form['start_date'] = array(
+      '#type' => 'date_popup',
+      '#title' => t('From Date:'),
+      '#date_label_position' => '',
+      '#description' => '',
+      '#default_value' => '',
+      '#date_format' => 'Y-m-d',
+      '#date_increment' => 0,
+      '#date_year_range' => '2011:+0',
+      '#prefix' => '<tr><td><div id="startdate">',
+      '#suffix' => '</div></td>',
+      '#datepicker_options' => array(
+          'maxDate' => 0
+      ),
+      '#states' => array(
+          'invisible' => array(
+              ':input[name="foss_type"]' => array(
+                  'value' => ""
+              )
+          )
+      )
+  );
+/* End Date for Filter */
+  $form['end_date'] = array(
+      '#type' => 'date_popup',
+      '#title' => t('To Date:'),
+      '#date_label_position' => '',
+      '#description' => '',
+      '#default_value' => '',
+      '#date_format' => 'Y-m-d',
+      '#date_increment' => 0,
+      '#date_year_range' => '2011:+0',
+      '#prefix' => '<td><div id="enddate" style="padding-left:15px;">',
+      '#suffix' => '</div></td>',
+      '#datepicker_options' => array(
+          'maxDate' => 0
+      ),
+      '#states' => array(
+          'invisible' => array(
+              ':input[name="foss_type"]' => array(
+                  'value' => ""
+              )
+          )
+      )
+  );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#ajax' => array(
+          'callback' => 'ajax_submit_for_map',
+          'progress' => array(
+              'message' => ''
+          )
+      ),
+      '#value' => t('Filter'),
+      '#prefix' => '<tr><td align="center">',
+      '#suffix' => ''
+  );
+  $form['reset'] = array(
+      '#type' => 'submit',
+      '#value' => t('Reset'),
+      '#prefix' => '',
+      '#suffix' => '</td></tr></table></div>'
+  );
+  return $form;
+}
+
+/* Form submit for map */
+function ajax_submit_for_map($form, &$form_state){
+  
 }

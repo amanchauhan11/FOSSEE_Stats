@@ -5055,13 +5055,27 @@ function upload_csv_form_submit($form, &$form_state) {
     $fields = array_keys($csv->data[0]);
     array_push($fields, 'images_folder');
     $insertquery = db_insert('workshop')->fields($fields);
-    foreach($csv->data as $record)
+
+    $eventsfolder = array();
+    foreach($csv->data as $i=>$rows)
+    {
+        $foldername = str_replace(' ', '_', $rows["w_name"]) . time();
+        $root_path = events_images_path();
+        $dest_path = $foldername . '/';
+        if (!is_dir($root_path . $dest_path)) {
+            mkdir($root_path . $dest_path);
+        }
+        array_push($eventsfolder, $foldername);
+    }
+
+    $eventfolder = str_replace(' ', '_', $csv->data["name"]) . time();
+    foreach($csv->data as $i=>$record)
     {   
         if($record['starttime'] == NULL or $record['starttime'] == '')
             $record['starttime'] = "00:00";
         else if($record['endtime'] == NULL or $record['endtime'] == '')
             $record['endtime'] = "00:00";
-        $record['images_folder'] = '';
+        $record['images_folder'] = $eventsfolder[$i];
         $insertquery->values($record);
     }
     $insertquery->execute();

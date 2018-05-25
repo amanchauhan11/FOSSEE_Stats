@@ -102,6 +102,15 @@ function fossee_stats_menu() {
         ),
         "type" => MENU_CALLBACK
     );
+    $items["events/add/csv"] = array(
+        "title" => "Add Events through CSV file",
+        "page callback" => "drupal_get_form",
+        "page arguments" => array("upload_csv_form"),
+        "access arguments" => array(
+            "manage workshop"
+        ),
+        "type" => MENU_CALLBACK,
+    );
   //To edit existing events detail
     $items["events/edit"] = array(
         "title" => "Edit Events",
@@ -4970,6 +4979,93 @@ function workshop_display_all() {
     $workshop_add_form = drupal_get_form("workshop_add_form");
     $page_content = drupal_render($workshop_add_form);
     return $page_content;
+}
+
+require 'parsecsv-for-php/parsecsv.lib.php';
+
+
+function upload_csv_form($form, &$form_state) {
+
+    $form['csv_file'] = array(
+    '#name' => 'files[csv_file]',
+    '#type' => 'file', //you can find a list of available types in the form api
+    '#title' => 'Upload csv file form events',
+   // '#size' => 1000000000,
+    );
+    
+    $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Done'),
+    );
+    
+    return $form;    
+}
+
+function upload_csv_form_validate($form, &$form_state) {
+
+    if(!isset($_FILES['files']['name']['csv_file']))
+        drupal_set_message(t("!Error uploading csv file"));
+
+    $file_path = $_FILES['files']['tmp_name']['csv_file'];
+    $csv = new ParseCsv\Csv($file_path);
+
+    //validating csv header
+
+    $std_header = array('foss_name'=>0, 'type'=>0, 'w_name'=>0, 'body'=>0, 'no_of_participant'=>0, 'event_link'=>0, 'startdate'=>0, 'starttime'=>0, 'enddate'=>0, 'endtime'=>0, 'venue'=>0, 'street'=>0, 'country'=>0, 'state'=>0, 'city'=>0, 'pincode'=>0);
+
+    $user_header = array_keys($csv->data[0]);
+
+    foreach($user_header as $i=>$value)
+    {
+        if(!in_array($value, array_keys($std_header)))
+            { drupal_set_message(t('Field '.$i.' does not match any expected field')); $form_state['csv_error_flag'] = TRUE; }
+        else
+            $std_header[$value]++;
+    }
+    foreach($std_header as $key=>$value)
+    {
+        if($value > 1)
+           { drupal_set_message(t("Multiple values for field ".$key)); $form_state['csv_error_flag'] = TRUE; }
+        else if($value == 0 and !in_array($key, array('event_link', 'starttime', 'endtime')))
+           { drupal_set_message(t("Field ".$key." is missing")); $form_state['csv_error_flag'] = TRUE; }
+    }
+
+    if(isset($form_state['csv_error_flag']))
+        return;
+
+    //validating csv data
+    foreach($csv->data as $rno=>$row)
+    {
+        foreach($row as $key=>$value)
+        {
+            if( !in_array($key, array('event_link', 'starttime', 'endtime')) and ($value == '' or $value == NULL))
+                { drupal_set_message(t("Missing value for field ".$key." in row ".$rno)); $form_state['csv_error_flag'] = TRUE; }
+        }
+    }
+}
+
+function upload_csv_form_submit($form, &$form_state) {
+
+    if(isset($form_state['csv_error_flag']))
+        return;
+
+    $file_path = $_FILES['files']['tmp_name']['csv_file'];
+    $csv = new ParseCsv\Csv($file_path);
+
+    $fields = array_keys($csv->data[0]);
+    array_push($fields, 'images_folder');
+    $insertquery = db_insert('workshop')->fields($fields);
+    foreach($csv->data as $record)
+    {   
+        if($record['starttime'] == NULL or $record['starttime'] == '')
+            $record['starttime'] = "00:00";
+        else if($record['endtime'] == NULL or $record['endtime'] == '')
+            $record['endtime'] = "00:00";
+        $record['images_folder'] = '';
+        $insertquery->values($record);
+    }
+    $insertquery->execute();
+    drupal_set_message(t("Successfully submitted"));
 }
 
 

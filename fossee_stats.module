@@ -4751,17 +4751,27 @@ $query = "
         $query->condition('w_id', $workshop_id);
         $result = $query->execute();
         $row = $result->fetchObject();
-        $eventfolder = str_replace(' ',  '_', $row->w_name) ;
-        $query1 = db_select('workshop_images');
-        $query1->fields('workshop_images');
-        $query1->condition('w_id', $workshop_id);
-        $result1 = $query1->execute();
-        while ($row1 = $result1->fetchObject()) {
-            $form['imagecheck@' . $row1->id] = array(
-                '#type' => 'checkbox',
-                '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . ' />'
-            );
+
+        if($row->images_folder == '')
+        {
+            $form['noimagestillnow'] = array(
+                '#markup' => '<p>No Images uploaded till now</p>'
+                );
         }
+        else
+        {   
+            $query1 = db_select('workshop_images');
+            $query1->fields('workshop_images');
+            $query1->condition('w_id', $workshop_id);
+            $result1 = $query1->execute();
+            while ($row1 = $result1->fetchObject()) {
+                $form['imagecheck@' . $row1->id] = array(
+                    '#type' => 'checkbox',
+                    '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" .$row1->path . ' />'
+                );
+            }
+        }
+
         $form['enduploadphotos'] = array(
             '#markup' => '',
             '#prefix' => '',
@@ -5334,17 +5344,19 @@ function workshop_add_form_submit($form, &$form_state) {
                 }
                 
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $sanitized_file_name)) {
                     $imagequery = "
-  INSERT INTO workshop_images
-  (w_id,name,path)
-  VALUES
-  (:w_id,:name, :path)
-  ";
+                                  INSERT INTO workshop_images
+                                  (w_id,name,path)
+                                  VALUES
+                                  (:w_id, :name, :path)
+                                  ";
+   // $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
                     $imageargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":name" => $file_name,//$_FILES['files']['name'][$file_form_name],
+                        ":path" => $dest_path . $sanitized_file_name,//$_FILES['files']['name'][$file_form_name]
                     );
                     /* storing the row id in $result */
                     $imageresult = db_query($imagequery, $imageargs, array(

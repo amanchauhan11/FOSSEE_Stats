@@ -43,8 +43,3 @@ function events_settings_form_submit($form, &$form_state)
    variable_set('events_poster_extensions', $form_state['values']['poster']);
    drupal_set_message(t('Settings updated'), 'status');
 }
-
-// Displaying Map
-function stats_map(){
-
-}

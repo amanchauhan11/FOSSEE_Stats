@@ -293,6 +293,12 @@ function fossee_stats_menu() {
         "type" => MENU_NORMAL_ITEM
     );
 
+    $items['state-details'] = array(
+      'page callback'=>'$state_details',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
     return $items;
 }
 
@@ -7737,7 +7743,7 @@ function fossee_map_form($form, $form_state) {
       )
   );
  /* Second Dropdown for Activities like TBC, LM and other */
-
+ /*
   if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
       $foss_sub_project = isset($form_state['values']['foss_sub_project']) ? $form_state['values']['foss_sub_project'] : key(get_activities_list($foss_project));
   }
@@ -7767,7 +7773,7 @@ function fossee_map_form($form, $form_state) {
               )
           )
       )
-  );
+  );*/
 
   $form['submit'] = array(
       '#type' => 'submit',
@@ -7793,6 +7799,8 @@ function fossee_map_form($form, $form_state) {
       '#markup' => '',
       '#suffix' => '</div>'
    );
+   drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
+   drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
   return $form;
 }
 
@@ -7803,7 +7811,7 @@ function ajax_submit_for_map($form, &$form_state){
   $commands = array();
   $foss_type = $form['foss_type']['#options'][$form_state['values']['foss_type']];
   $foss_sub_project = $form['foss_sub_project']['#options'][$form_state['values']['foss_sub_project']];
-  $data = get_map_data($foss_type, $foss_sub_project);
+  $data = get_map_data($foss_type, "--------------");
 
   $form['load_map']['#markup'] = $data;
   $commands[] = ajax_command_html("#load_map", drupal_render($form['load_map']));
@@ -7876,7 +7884,7 @@ function get_map_data($type, $project){
         db_set_active('default');
         db_set_active();
       }
-  }elseif ($project == "--------------") {
+  }/*elseif ($project == "--------------") {
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'lab_migration',
@@ -7916,7 +7924,7 @@ function get_map_data($type, $project){
     /*
       Self Workshop space
     */
-
+/*
     db_set_active($type);
     // Lab Migration
     if($query->lab_migration){
@@ -7933,7 +7941,7 @@ function get_map_data($type, $project){
     }
     db_set_active('default');
     db_set_active();
-  }else{
+  }*/else{
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'lab_migration',
@@ -7944,7 +7952,7 @@ function get_map_data($type, $project){
       ->execute()
       ->fetchObject();
     // Workshop
-    if($query->workshop && $project == 2){
+  if($query->workshop/* && $project == 2*/){
       $query1 = db_select('workshop', 'w')
         ->fields('w', array('state'))
         ->condition('type','workshop')
@@ -7957,7 +7965,7 @@ function get_map_data($type, $project){
       }
     }
     // Conference
-    if($query->conference && $project == 3){
+  if($query->conference/* && $project == 3*/){
       $query1 = db_select('workshop', 'w')
         ->fields('w',array('state'))
         ->condition('type','conference')
@@ -7975,7 +7983,7 @@ function get_map_data($type, $project){
 
     db_set_active($type);
     // Lab Migration
-    if($query->lab_migration && $project == 1){
+  if($query->lab_migration/* && $project == 1*/){
       $query1 = db_select('lab_migration_proposal','u')
         ->fields('u', array('state'))
         ->condition('approval_status', 3)
@@ -7990,11 +7998,25 @@ function get_map_data($type, $project){
     db_set_active('default');
     db_set_active();
   }
-  print_r($states);
+  $key = array_keys($states);
+  $i =0;
+  foreach ($states as $s) {
+    if($s > 10){
+      $states[$key[$i]]='#cccccc';
+    }else if ($s<10 && $s>1) {
+      $states[$key[$i]]='#90b2ce';
+    }else{
+      $states[$key[$i]]='#428cc9';
+    }
+    $i++;
+  }
+  //print_r($states);
+  require_once('fossee_stats_map.inc');
+  $out = stats_map($states);
   return $out;
 
 }
-
+/*
 // Activities List for Map
 function get_activities_list_for_map($foss_project) {
     if ($foss_project != NULL) {
@@ -8037,4 +8059,105 @@ function get_activities_list_for_map($foss_project) {
         return $options;
     }
 
+}
+*/
+function state_details() {
+  $type = $_GET['type'];
+  $state = $_GET['state'];
+  $workshop = 0;
+  $conference = 0;
+  $lab_migration = 0;
+  if($type == "--------------"){
+    $query = db_select('foss_type','u')
+      ->fields('u', array(
+        'foss_name',
+        'lab_migration',
+        'workshop',
+        'conference'
+      ))
+      ->execute();
+      while($foss = $query->fetchObject()){
+        $name = $foss->foss_name;
+
+        // Workshop
+        if($foss->workshop){
+          $query1 = db_select('workshop')
+            ->addExpression('count(*)','count')
+            ->condition('type','workshop')
+            ->condition('state',$state)
+            ->execute();
+          $workshop += $query1;
+        }
+        // Conference
+        if($foss->conference){
+          $query1 = db_select('workshop')
+            ->addExpression('count(*)','count')
+            ->condition('type','conference')
+            ->condition('state',$state)
+            ->execute();
+          $conference += $query1;
+        }
+        /*
+          Self Workshop space
+        */
+
+        db_set_active($name);
+        // Lab Migration
+        if($foss->lab_migration){
+          $query1 = db_select('lab_migration_proposal')
+            ->addExpression('count(*)','count')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute();
+          $lab_migration += $query1;
+        }
+        db_set_active('default');
+        db_set_active();
+      }
+  }else{
+    $query = db_select('foss_type','u')
+      ->fields('u', array(
+        'lab_migration',
+        'workshop',
+        'conference'
+      ))
+      ->condition('foss_name',$type)
+      ->execute()
+      ->fetchObject();
+    // Workshop
+    if($foss->workshop){
+      $query1 = db_select('workshop')
+        ->addExpression('count(*)','count')
+        ->condition('type','workshop')
+        ->condition('state',$state)
+        ->execute();
+      $workshop += $query1;
+    }
+    // Conference
+    if($foss->conference){
+      $query1 = db_select('workshop')
+        ->addExpression('count(*)','count')
+        ->condition('type','conference')
+        ->condition('state',$state)
+        ->execute();
+      $conference += $query1;
+    }
+    /*
+      Self Workshop space
+    */
+
+    db_set_active($name);
+    // Lab Migration
+    if($foss->lab_migration){
+      $query1 = db_select('lab_migration_proposal')
+        ->addExpression('count(*)','count')
+        ->condition('approval_status', 3)
+        ->condition('state',$state)
+        ->execute();
+      $lab_migration += $query1;
+    }
+    db_set_active('default');
+    db_set_active();
+  }
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.'}';
 }

@@ -1870,7 +1870,8 @@ function stats_map($states){
   c-1.703,0.203-3.508-0.07-5.212,0.038c0.086,2.032-2.542,1.678-2.325,4.175c-2.604,0.165-3.661-0.67-5.962-1.407
   c-0.762-0.244-1.555-0.321-2.358-0.283"/>
 
-</svg>';
+</svg>
+<div><table><tr><td><svg width="100" height="40"><rect width="100" height="40" fill="#cccccc"/></svg></td><td> - </td><td><h3>States above 10</h3></td></tr></table></div>';
   $key = array_keys($map);
   $key2 = array_keys($states);
   $i=0;

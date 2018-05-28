@@ -294,7 +294,7 @@ function fossee_stats_menu() {
     );
 
     $items['state-details'] = array(
-      'page callback'=>'$state_details',
+      'page callback'=>'state_details',
       'access callback'=>'user_access',
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
@@ -7742,38 +7742,7 @@ function fossee_map_form($form, $form_state) {
           )
       )
   );
- /* Second Dropdown for Activities like TBC, LM and other */
- /*
-  if (isset($form_state['values']['foss_sub_project']) && isset($form_state['values']['foss_type']) && isset($form_state['values']['foss_sub_project_status'])) {
-      $foss_sub_project = isset($form_state['values']['foss_sub_project']) ? $form_state['values']['foss_sub_project'] : key(get_activities_list($foss_project));
-  }
-  else {
-      $foss_sub_project = '';
-  }
-  $form['foss_sub_project'] = array(
-      '#type' => 'select',
-      '#title' => t('Activities'),
-      '#options' => get_activities_list_for_map($foss_project),
-      '#prefix' => '<td><div id="dropdown-second-replace" style="width:350px;padding-left:25px" >',
-      '#suffix' => '</div>',
-      '#default_value' => "--------------",
-      '#validated' => TRUE,
-      '#ajax' => array(
-          'callback' => 'ajax_foss_sub_project_dependent_dropdown_callback',
-          'wrapper' => 'dropdown-third-replace',
-          'progress' => array(
-              'message' => ''
-          )
-      ),
 
-      '#states' => array(
-          'invisible' => array(
-              ':input[name="foss_type"]' => array(
-                  'value' => ""
-              )
-          )
-      )
-  );*/
 
   $form['submit'] = array(
       '#type' => 'submit',
@@ -7797,7 +7766,7 @@ function fossee_map_form($form, $form_state) {
       '#type' => 'item',
       '#prefix' => '<div id="load_map" >',
       '#markup' => '',
-      '#suffix' => '</div>'
+      '#suffix' => '</div><div id="poper"></div>'
    );
    drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
@@ -7823,25 +7792,63 @@ function ajax_submit_for_map($form, &$form_state){
 }
 
 function get_map_data($type, $project){
-  $states = array();
+  $states = array(
+    'Andhra Pradesh' => 0,
+    'Arunachal Pradesh' => 0,
+    'Assam' => 0,
+    'Bihar' => 0,
+    'Chhattisgarh' => 0,
+    'Goa' => 0,
+    'Gujarat' => 0,
+    'Haryana' => 0,
+    'Himachal Pradesh' => 0,
+    'Jammu and Kashmir' => 0,
+    'Jharkhand' => 0,
+    'Karnataka' => 0,
+    'Kerala' => 0,
+    'Madhya Pradesh' => 0,
+    'Maharashtra' => 0,
+    'Manipur' => 0,
+    'Meghalaya' => 0,
+    'Mizoram' => 0,
+    'Nagaland' => 0,
+    'Odisha' => 0,
+    'Punjab' => 0,
+    'Rajasthan' => 0,
+    'Sikkim' => 0,
+    'Tamil Nadu' => 0,
+    'Telangana' => 0,
+    'Tripura' => 0,
+    'Uttarakhand' => 0,
+    'Uttar Pradesh' => 0,
+    'West Bengal' => 0,
+    'Andaman and Nicobar Islands' => 0,
+    'Chandigarh' => 0,
+    'Dadra and Nagar Haveli' => 0,
+    'Daman and Diu' => 0,
+    'National Capital Territory of Delhi' => 0,
+    'Puducherry (Pondicherry)' => 0
+  );
+  $key = array_keys($states);
   if($type == "--------------"){
     $query = db_select('foss_type','u')
       ->fields('u', array(
-        'id',
+        'tbc',
         'foss_name',
         'lab_migration',
         'workshop',
-        'conference'
+        'conference',
+        '$foss_selfworkshop_no'
       ))
       ->execute();
       while($foss = $query->fetchObject()){
         $name = $foss->foss_name;
-
         // Workshop
         if($foss->workshop){
           $query1 = db_select('workshop', 'w')
             ->fields('w', array('state'))
             ->condition('type','workshop')
+            ->condition('foss_name',$name)
             ->execute()
             ->fetchAll();
           foreach ($query1 as $s) {
@@ -7855,6 +7862,7 @@ function get_map_data($type, $project){
           $query1 = db_select('workshop', 'w')
             ->fields('w',array('state'))
             ->condition('type','conference')
+            ->condition('foss_name',$name)
             ->execute()
             ->fetchAll();
           foreach ($query1 as $s) {
@@ -7863,11 +7871,35 @@ function get_map_data($type, $project){
             }
           }
         }
-        /*
-          Self Workshop space
-        */
-
+        // Text Book companion
         db_set_active($name);
+        if($foss->tbc){
+          if ($name != 'Python') {
+            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+                foreach ($key as $k) {
+                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0  AND po.state = :state", array(':state'=>$k));
+                  $states[$k] += $query2->fetchObject()->book_count;
+                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
+                      ':enddate' => $pending_enddate,
+                      ':state' => $k
+                  ));
+                  $states[$k] += $query3->fetchObject()->book_count;
+                }
+          }
+          else {
+              /*$query5 = db_select('tbc_book');
+              $query5->addExpression('count(*)', 'count');
+              $query5->condition('approved', 1);
+              $result5 = $query5->execute();
+              $completedbookcount += $result5->fetchObject()->count;
+              $query6 = db_select('tbc_book');
+              $query6->addExpression('count(*)', 'count');
+              $query6->condition('approved', 1, '<>');
+              $result6 = $query6->execute();
+              $pendingbookcount += $result6->fetchObject()->count;*/
+          }
+        }
+
         // Lab Migration
         if($foss->lab_migration){
           $query1 = db_select('lab_migration_proposal','u')
@@ -7881,25 +7913,42 @@ function get_map_data($type, $project){
             }
           }
         }
+
+        //  Self Workshop space
+        if($foss->foss_selfworkshop_no){
+          db_set_active('selfworkshop');
+          foreach ($key as $k) {
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+              ':foss_id' => $foss->foss_selfworkshop_no,
+              ':state'=>$k
+            ));
+            $states[$k] += $query2->fetchObject()->count;
+          }
+
+        }
         db_set_active('default');
         db_set_active();
       }
-  }/*elseif ($project == "--------------") {
+  }else{
     $query = db_select('foss_type','u')
       ->fields('u', array(
+        'tbc',
+        'foss_name',
         'lab_migration',
         'workshop',
-        'conference'
+        'conference',
+        'foss_selfworkshop_no'
       ))
       ->condition('foss_name',$type)
       ->execute()
       ->fetchObject();
-
+    $name = $query->foss_name;
     // Workshop
-    if($query->workshop){
+  if($query->workshop){
       $query1 = db_select('workshop', 'w')
         ->fields('w', array('state'))
         ->condition('type','workshop')
+        ->condition('foss_name',$name)
         ->execute()
         ->fetchAll();
       foreach ($query1 as $s) {
@@ -7913,6 +7962,7 @@ function get_map_data($type, $project){
       $query1 = db_select('workshop', 'w')
         ->fields('w',array('state'))
         ->condition('type','conference')
+        ->condition('foss_name',$name)
         ->execute()
         ->fetchAll();
       foreach ($query1 as $s) {
@@ -7921,11 +7971,34 @@ function get_map_data($type, $project){
         }
       }
     }
-    /*
-      Self Workshop space
-    */
-/*
-    db_set_active($type);
+    // Text Book companion
+    db_set_active($name);
+    if($query->tbc){
+      if ($name != 'Python') {
+        $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+            foreach ($key as $k) {
+              $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0  AND po.state = :state", array(':state'=>$k));
+              $states[$k] += $query2->fetchObject()->book_count;
+              $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
+                  ':enddate' => $pending_enddate,
+                  ':state' => $k
+              ));
+              $states[$k] += $query3->fetchObject()->book_count;
+            }
+      }
+      else {
+          /*$query5 = db_select('tbc_book');
+          $query5->addExpression('count(*)', 'count');
+          $query5->condition('approved', 1);
+          $result5 = $query5->execute();
+          $completedbookcount += $result5->fetchObject()->count;
+          $query6 = db_select('tbc_book');
+          $query6->addExpression('count(*)', 'count');
+          $query6->condition('approved', 1, '<>');
+          $result6 = $query6->execute();
+          $pendingbookcount += $result6->fetchObject()->count;*/
+      }
+    }
     // Lab Migration
     if($query->lab_migration){
       $query1 = db_select('lab_migration_proposal','u')
@@ -7939,71 +8012,28 @@ function get_map_data($type, $project){
         }
       }
     }
-    db_set_active('default');
-    db_set_active();
-  }*/else{
-    $query = db_select('foss_type','u')
-      ->fields('u', array(
-        'lab_migration',
-        'workshop',
-        'conference'
-      ))
-      ->condition('foss_name',$type)
-      ->execute()
-      ->fetchObject();
-    // Workshop
-  if($query->workshop/* && $project == 2*/){
-      $query1 = db_select('workshop', 'w')
-        ->fields('w', array('state'))
-        ->condition('type','workshop')
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
-        }
-      }
-    }
-    // Conference
-  if($query->conference/* && $project == 3*/){
-      $query1 = db_select('workshop', 'w')
-        ->fields('w',array('state'))
-        ->condition('type','conference')
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
-        }
-      }
-    }
-    /*
-      Self Workshop space
-    */
 
-    db_set_active($type);
-    // Lab Migration
-  if($query->lab_migration/* && $project == 1*/){
-      $query1 = db_select('lab_migration_proposal','u')
-        ->fields('u', array('state'))
-        ->condition('approval_status', 3)
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
-        }
+    //  Self Workshop space
+    if($query->foss_selfworkshop_no){
+      db_set_active('selfworkshop');
+      foreach ($key as $k) {
+        $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+          ':foss_id' => $query->foss_selfworkshop_no,
+          ':state'=>$k
+        ));
+        $states[$k] += $query2->fetchObject()->count;
       }
+
     }
     db_set_active('default');
     db_set_active();
   }
-  $key = array_keys($states);
+  print_r($states);
   $i =0;
   foreach ($states as $s) {
-    if($s > 10){
+    if($s > 100){
       $states[$key[$i]]='#cccccc';
-    }else if ($s<10 && $s>1) {
+    }else if ($s<=100 && $s>=1) {
       $states[$key[$i]]='#90b2ce';
     }else{
       $states[$key[$i]]='#428cc9';
@@ -8062,54 +8092,104 @@ function get_activities_list_for_map($foss_project) {
 }
 */
 function state_details() {
-  $type = $_GET['type'];
-  $state = $_GET['state'];
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  $state = $postBody->state;
   $workshop = 0;
   $conference = 0;
   $lab_migration = 0;
-  if($type == "--------------"){
+  $self_workshop = 0;
+  $pendingbookcount = 0;
+  $completedbookcount = 0;
+  if($type == "" || $type == NULL){
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'foss_name',
+        'tbc',
         'lab_migration',
         'workshop',
-        'conference'
+        'conference',
+        'foss_selfworkshop_no'
       ))
       ->execute();
       while($foss = $query->fetchObject()){
         $name = $foss->foss_name;
-
         // Workshop
         if($foss->workshop){
           $query1 = db_select('workshop')
-            ->addExpression('count(*)','count')
-            ->condition('type','workshop')
             ->condition('state',$state)
-            ->execute();
+            ->condition('type','workshop')
+            ->condition('foss_name',$name)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
           $workshop += $query1;
         }
         // Conference
         if($foss->conference){
           $query1 = db_select('workshop')
-            ->addExpression('count(*)','count')
-            ->condition('type','conference')
             ->condition('state',$state)
-            ->execute();
+            ->condition('type','conference')
+            ->condition('foss_name',$name)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
           $conference += $query1;
         }
-        /*
-          Self Workshop space
-        */
-
+        // Text Book companion
         db_set_active($name);
+        if($foss->tbc){
+          if ($name != 'Python') {
+                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state = :state", array(
+                    ':state' => $state
+                ));
+              $completedbookcount += $query2->fetchObject()->book_count;
+               /* For setting completion date for pending TBC and LM more */
+              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+
+                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
+                    ':enddate' => $pending_enddate,
+                    ':state' => $state
+                ));
+              $pendingbookcount += $query3->fetchObject()->book_count;
+          }
+          else {
+              /*$query5 = db_select('tbc_book');
+              $query5->addExpression('count(*)', 'count');
+              $query5->condition('approved', 1);
+              $result5 = $query5->execute();
+              $completedbookcount += $result5->fetchObject()->count;
+              $query6 = db_select('tbc_book');
+              $query6->addExpression('count(*)', 'count');
+              $query6->condition('approved', 1, '<>');
+              $result6 = $query6->execute();
+              $pendingbookcount += $result6->fetchObject()->count;*/
+          }
+        }
+
         // Lab Migration
         if($foss->lab_migration){
           $query1 = db_select('lab_migration_proposal')
-            ->addExpression('count(*)','count')
             ->condition('approval_status', 3)
             ->condition('state',$state)
-            ->execute();
+            ->countQuery()
+            ->execute()
+            ->fetchField();
           $lab_migration += $query1;
+        }
+
+        //  Self Workshop space
+        if($foss->foss_selfworkshop_no){
+          db_set_active('selfworkshop');
+          $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+            ':foss_id' => $foss->foss_selfworkshop_no,
+            ':state' => $state
+                                ));
+
+          $self_workshop += $query2->fetchObject()->count;
         }
         db_set_active('default');
         db_set_active();
@@ -8117,47 +8197,99 @@ function state_details() {
   }else{
     $query = db_select('foss_type','u')
       ->fields('u', array(
+        'foss_name',
+        'tbc',
         'lab_migration',
         'workshop',
-        'conference'
+        'conference',
+        'foss_selfworkshop_no'
       ))
-      ->condition('foss_name',$type)
+      ->condition('id',$type)
       ->execute()
       ->fetchObject();
+    $name = $query->foss_name;
     // Workshop
-    if($foss->workshop){
+    if($query->workshop){
       $query1 = db_select('workshop')
-        ->addExpression('count(*)','count')
         ->condition('type','workshop')
         ->condition('state',$state)
-        ->execute();
+        ->condition('foss_name',$name)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
       $workshop += $query1;
+
     }
     // Conference
-    if($foss->conference){
+    if($query->conference){
       $query1 = db_select('workshop')
-        ->addExpression('count(*)','count')
         ->condition('type','conference')
         ->condition('state',$state)
-        ->execute();
+        ->condition('foss_name',$name)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
       $conference += $query1;
     }
-    /*
-      Self Workshop space
-    */
-
+    // Text Book companion
     db_set_active($name);
+    if($query->tbc){
+      if ($name != 'Python') {
+          db_set_active($name);
+            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state = :state", array(
+                ':state' => $state
+            ));
+          $completedbookcount += $query2->fetchObject()->book_count;
+
+           /* For setting completion date for pending TBC and LM more */
+          $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+
+            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
+                ':enddate' => $pending_enddate,
+                ':state' => $state
+            ));
+          $pendingbookcount += $query3->fetchObject()->book_count;
+      }
+      else {
+          /*$query5 = db_select('tbc_book');
+          $query5->addExpression('count(*)', 'count');
+          $query5->condition('approved', 1);
+          $result5 = $query5->execute();
+          $completedbookcount += $result5->fetchObject()->count;
+          $query6 = db_select('tbc_book');
+          $query6->addExpression('count(*)', 'count');
+          $query6->condition('approved', 1, '<>');
+          $result6 = $query6->execute();
+          $pendingbookcount += $result6->fetchObject()->count;*/
+      }
+    }
+
     // Lab Migration
-    if($foss->lab_migration){
+    if($query->lab_migration){
       $query1 = db_select('lab_migration_proposal')
-        ->addExpression('count(*)','count')
         ->condition('approval_status', 3)
         ->condition('state',$state)
-        ->execute();
+        ->countQuery()
+        ->execute()
+        ->fetchField();
       $lab_migration += $query1;
+    }
+
+    //  Self Workshop space
+    if($query->foss_selfworkshop_no){
+      db_set_active('selfworkshop');
+      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+        ':foss_id' => $query->foss_selfworkshop_no,
+        ':state' => $state
+                            ));
+
+      $self_workshop += $query2->fetchObject()->count;
     }
     db_set_active('default');
     db_set_active();
   }
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.'}';
+
+
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$pendingbookcount.', "tbc" : '.$completedbookcount.', "self_workshop" : '.$self_workshop.'}';
 }

@@ -32,16 +32,24 @@ jQuery(document).ready(function(){
 
 function hello(state){
   jQuery.ajax({
-    method: 'GET',
+    type: 'POST',
     url: 'state-details',
-    data:{
-      type: jQuery('edit-foss-type').val(),
-      state: state
-    },
-    success:function(data){
-      //alert(state);
+    data: '{  "type" : "'+jQuery('#edit-foss-type').val()+'", "state" : "'+state+'"}',
+    processData:false,
+    contentType: "application/json",
+    success:function(r){
+      var data = JSON.parse(r);
       // If the data inserted successfully, a status will be displayed with the following HTML content
-      jQuery('body').html() + '<div id="poped" class="cover-pop"><h2>'+state+'</h2></div>';
+      jQuery('#load_map svg').hide();
+      jQuery('#load_map').html(jQuery('#load_map').html() + '<div id="poped"><div id="popup"><div class="head"><span id="closer" onclick="close_popup()">close</span></div><h1>'+state+'</h1><h3>Workshop - '+data.Workshop+'</h3><h3>Conference - '+data.Conference+'</h3><h3>Lab Migration - '+data.lab_migration+'</h3><h3>TextBook Companion(Pending) - '+data.pbc+'</h3><h3>TextBook Companion(Completed) - '+data.tbc+'</h3><h3>Self Workshop - '+data.self_workshop+'</h3><a onclick="close_popup()">Back to Map</a></div></div>');
+
+    },error:function(r){
+      alert('not working!');
     }
   });
+}
+
+function close_popup() {
+  jQuery('#load_map svg').show();
+  jQuery('#load_map #poped').remove();
 }

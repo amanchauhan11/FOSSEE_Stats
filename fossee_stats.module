@@ -4152,17 +4152,38 @@ $query = "
         if (empty($form_state['num_names'])) {
             $form_state['num_names'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_names']; $i++) {
-            $form['names_fieldset'][$i]['name'] = array(
+
+        if($form_state['num_names'] == 1)
+        {
+            $form['names_fieldset'][0]['name'] = array(
                 '#title' => t('Add Event Image'),
                 '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
                 '#weight' => '5',
                 '#description' => t('Upload an image'),
                 // We need this to know which file element this is.
                 // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_' . $i . '_name]'
+                '#name' => 'files[names_fieldset_0_name]',
+                '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+        else
+        {
+            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
+                '#title' => t('Add Event Image'),
+                '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
+                '#weight' => '5',
+                '#description' => t('Upload an image'),
+                // We need this to know which file element this is.
+                // By default drupal would name all as files[names_fieldset]
+                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
+                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
+                '#suffix' => '</div>'
+            );   
+        }
+
         $form['names_fieldset']['add_name'] = array(
             '#type' => 'submit',
             '#value' => t('Add Image'),
@@ -4171,24 +4192,23 @@ $query = "
                 'workshop_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'workshop_add_more_callback',
-                'wrapper' => 'names-fieldset-wrapper'
+                'callback' => 'workshop_add_more_add_one_callback',
+                'wrapper' => 'names-wrapper',
+                'method' => 'append'
+            ),
+        );
+
+        $form['names_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Image'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'workshop_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'workshop_remove_callback',
             )
         );
-        if ($form_state['num_names'] > 1) {
-            $form['names_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove Image'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'workshop_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'workshop_add_more_callback',
-                    'wrapper' => 'names-fieldset-wrapper'
-                )
-            );
-        }
         if ($no_js_use) {
             if (!empty($form['names_fieldset']['remove_name']['#ajax'])) {
                 unset($form['names_fieldset']['remove_name']['#ajax']);
@@ -4788,43 +4808,64 @@ $query = "
         if (empty($form_state['num_names'])) {
             $form_state['num_names'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_names']; $i++) {
-            $form['names_fieldset'][$i]['name'] = array(
+
+        if($form_state['num_names'] == 1)
+        {
+            $form['names_fieldset'][0]['name'] = array(
                 '#title' => t('Add Event Image'),
                 '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
                 '#weight' => '5',
                 '#description' => t('Upload an image'),
                 // We need this to know which file element this is.
                 // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_' . $i . '_name]'
+                '#name' => 'files[names_fieldset_0_name]',
+                '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+        else
+        {
+            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
+                '#title' => t('Add Event Image'),
+                '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
+                '#weight' => '5',
+                '#description' => t('Upload an image'),
+                // We need this to know which file element this is.
+                // By default drupal would name all as files[names_fieldset]
+                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
+                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
+                '#suffix' => '</div>'
+            );   
+        }
+
         $form['names_fieldset']['add_name'] = array(
             '#type' => 'submit',
-            '#value' => t('Add one more'),
+            '#value' => t('Add Image'),
             '#limit_validation_errors' => array(),
             '#submit' => array(
                 'workshop_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'workshop_add_more_callback',
-                'wrapper' => 'names-fieldset-wrapper'
+                'callback' => 'workshop_add_more_add_one_callback',
+                'wrapper' => 'names-wrapper',
+                'method' => 'append'
+            ),
+        );
+
+        $form['names_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Image'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'workshop_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'workshop_remove_callback',
             )
         );
-        if ($form_state['num_names'] > 1) {
-            $form['names_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove one'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'workshop_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'workshop_add_more_callback',
-                    'wrapper' => 'names-fieldset-wrapper'
-                )
-            );
-        }
+
         if ($no_js_use) {
             if (!empty($form['names_fieldset']['remove_name']['#ajax'])) {
                 unset($form['names_fieldset']['remove_name']['#ajax']);
@@ -4964,15 +5005,23 @@ function testimonial_add_more_remove_one($form, &$form_state) {
 }
 
 
-function workshop_add_more_callback($form, $form_state) {
+function workshop_add_more_callback($form, &$form_state) {
     return $form['names_fieldset'];
+}
+
+function workshop_remove_callback($form, &$form_state){
+	  $commands[] = ajax_command_remove('#image_'.$form_state['num_names']);
+	  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+function workshop_add_more_add_one_callback($form, &$form_state) {
+    return $form['names_fieldset'][$form_state['num_names']-1];//[$form_state['num_names']+1]['name'];
 }
 
 
 function workshop_add_more_add_one($form, &$form_state) {
     $form_state['num_names']++;
     $form_state['rebuild'] = TRUE;
-    //$form_state['no_redirect'] = TRUE;
 }
 
 
@@ -4980,6 +5029,7 @@ function workshop_add_more_remove_one($form, &$form_state) {
     if ($form_state['num_names'] > 1) {
         $form_state['num_names']--;
     }
+  //  array_push($form_state['invalid'], $form_state['values']['remove_img']);
     $form_state['rebuild'] = TRUE;
 }
 
@@ -5133,6 +5183,8 @@ function workshop_add_form_submit($form, &$form_state) {
     //$start_datetime= explode(" ",$v["start_date"]);
     //$end_datetime= explode(" ",$v["end_date"]);
     if ($v["workshop_id"]) {
+
+    	global $user;
         $query = db_update('workshop');
         $query->fields(array(
             'foss_name' => $v["foss_select"],
@@ -5150,7 +5202,8 @@ function workshop_add_form_submit($form, &$form_state) {
             'pincode' => $v["pincode"],
       'event_link' => $v["event_link"],
             'no_of_participant' => $v["no_of_participant"],
-            'body' => $v["body"]
+            'body' => $v["body"],
+            'last_edited_by' => $user->uid,
         ));
         $query->condition('w_id', $v["workshop_id"]);
         $result = $query->execute();
@@ -5389,10 +5442,11 @@ function workshop_add_form_submit($form, &$form_state) {
         $eventfolder = str_replace(' ', '_', $v["name"]) . time();
         $query = "
   INSERT INTO {workshop}
-  (foss_name, type, w_name, images_folder, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body)
+  (foss_name, type, w_name, images_folder, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body,last_edited_by)
   VALUES  (:foss_name, :type, :w_name, :images_folder, :startdate, :starttime,:enddate, :endtime, :venue, :street, :country, :state, :city, :pincode, :event_link,
-:no_of_participant, :body)
+:no_of_participant, :body, :last_edited_by)
   ";
+  		global $user;
         $args = array(
             ":foss_name" => $v["foss_select"],
       ":type" => $v["type"],
@@ -5410,7 +5464,8 @@ function workshop_add_form_submit($form, &$form_state) {
             ":pincode" => $v["pincode"],
       ":event_link" => $v["event_link"],
             ":no_of_participant" => $v["no_of_participant"],
-            ":body" => $v["body"]
+            ":body" => $v["body"],
+            ":last_edited_by" => $user->uid,
         );
         /* storing the row id in $result */
         $result = db_query($query, $args, array(
@@ -5514,7 +5569,8 @@ function workshop_add_form_submit($form, &$form_state) {
                 }
                 $imageupload = 0;
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path .$sanitized_file_name)) {
                     $imagequery = "
   INSERT INTO {workshop_images}
   (w_id,name,path)
@@ -5524,7 +5580,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     $imageargs = array(
                         ":w_id" => $result,
                         ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":path" => $dest_path . $sanitized_file_name
                     );
                     /* storing the row id in $result */
                     $imageresult = db_query($imagequery, $imageargs, array(
@@ -7814,3 +7870,17 @@ function fossee_stats_init() {
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/confirm.js");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/testimonials_script.js");
 }
+
+/*
+function fossee_stats_mail($key, &$message, $params)
+{
+	switch($key)
+	{
+		case 'edit_mail': 
+		  $message['to'] = '';
+	      $message['subject'] = t('Hello');
+	      $message['body'][] = t('Hello @username,', array('@username' => $params['username']));
+	      $message['body'][] = t('The main part of the message.');
+	      break;
+	}
+}*/

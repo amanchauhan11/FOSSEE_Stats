@@ -1,5 +1,5 @@
 .state:hover{
-  fill:yellow;
+  fill:#000;
   cursor: pointer;
 }
 
@@ -7,34 +7,75 @@
   width: 100%;
   height: 100%;
   text-align: center;
-  margin-top:300px;
+  position: fixed;
+  top:0;
+  left:0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
 }
 
 #popup{
-  width: 500px;
+  width: 350px;
   margin: auto;
-  position: fixed;;
-  z-index: 10000;
-  position: relative;
   background: white;
-  margin-top: 100px;
   border-radius: 5px;
-  margin-bottom: 20px;
-  height: 80%;
   border: red 1px solid;
+  margin-top: 100px;
+  padding: 10px;
+}
+
+#popup h1{
+  font-size: 26px;
+}
+
+#popup h3{
+  font-size: 16px;
 }
 
 #closer{
   float: right;
   padding-right: 5px;
+  font-size: 20px;
 }
 
 #closer:hover{
-  text-decoration: underline;
   color:red;
   cursor: pointer;
 }
 
-#popup .head h3{
-  text-align: left;
+.back{
+  color:red;
+  cursor: pointer;
+  margin-bottom: 5px;
+}
+
+#map{
+  margin-top:-110px;
+}
+
+@media(max-width: 860px) {
+  #popup h3{
+    font-size: 15px;
+  }
+
+  #popup h1{
+    font-size: 20px;
+    font-weight: bold;
+  }
+}
+
+@media(max-width: 600px) {
+  #popup h3{
+    font-size: 14px;
+  }
+
+  #map{
+    margin-top: 0px;
+  }
+}
+
+@media(max-width: 530px) {
+  #popup{
+    width:90%;
+  }
 }

@@ -7764,9 +7764,9 @@ function fossee_map_form($form, $form_state) {
   );
   $form['map'] = array(
       '#type' => 'item',
-      '#prefix' => '<div id="load_map" >',
+      '#prefix' => '<div id="poper"></div><div id="load_map" >',
       '#markup' => '',
-      '#suffix' => '</div><div id="poper"></div>'
+      '#suffix' => '</div>'
    );
    drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
@@ -7926,6 +7926,31 @@ function get_map_data($type, $project){
           }
 
         }
+
+        if($name == 'DWSIM'){
+          db_set_active('DWSIM');
+          foreach ($key as $k) {
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+        }else if($name == 'eSim'){
+          db_set_active('eSim');
+          foreach ($key as $k) {
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+
+        }
         db_set_active('default');
         db_set_active();
       }
@@ -8025,18 +8050,50 @@ function get_map_data($type, $project){
       }
 
     }
+    if($name == 'DWSIM'){
+      db_set_active('DWSIM');
+      foreach ($key as $k) {
+
+        $query1 = db_select('dwsim_flowsheet_proposal')
+          ->condition('approval_status', 3)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $states[$k] += $query1;
+      }
+    }else if($name == 'eSim'){
+      db_set_active('eSim');
+      foreach ($key as $k) {
+        $query1 = db_select('esim_circuit_simulation_proposal')
+          ->condition('approval_status', 3)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $states[$k] += $query1;
+      }
+
+    }
+
     db_set_active('default');
     db_set_active();
   }
-  print_r($states);
+  //print_r($states);
   $i =0;
   foreach ($states as $s) {
-    if($s > 100){
-      $states[$key[$i]]='#cccccc';
-    }else if ($s<=100 && $s>=1) {
-      $states[$key[$i]]='#90b2ce';
+    if($s > 500){
+      $states[$key[$i]]='#ea5507';
+    }else if ($s<=500 && $s>300) {
+      $states[$key[$i]]='#e56b2b';
+    }else if ($s<=300 && $s>150) {
+      $states[$key[$i]]='#e08859';
+    }else if ($s<=150 && $s>50) {
+      $states[$key[$i]]='#e29d78';
+    }else if ($s<=50 && $s>0) {
+      $states[$key[$i]]='#e0ab8f';
     }else{
-      $states[$key[$i]]='#428cc9';
+      $states[$key[$i]]='#ddc6ba';
     }
     $i++;
   }
@@ -8046,51 +8103,7 @@ function get_map_data($type, $project){
   return $out;
 
 }
-/*
-// Activities List for Map
-function get_activities_list_for_map($foss_project) {
-    if ($foss_project != NULL) {
-        $query = db_select('foss_type');
-        $query->fields('foss_type', array(
-            'lab_migration',
-            'workshop',
-            'self_workshop',
-            'conference'
-        ));
-        $query->condition('id', $foss_project);
-        $result = $query->execute();
-        $subproject_detail = $result->fetchObject();
-        $optiondata = array(
-            "lab_migration",
-            "workshop",
-            "self_workshop",
-            "conference"
-        );
-        $optionvalue = array(
-            " ",
-            "Lab Migration",
-            "Workshop",
-            "Self Workshop",
-            "Conference"
-        );
-        $options = array();
-        $options[0] = "--------------";
-        $i = 0;
-        foreach ($optiondata as $value) {
-            $i++;
-            if (($subproject_detail->$value) != 0) {
-                $options[$i] = $optionvalue[$i];
-            }
-        }
-        return $options;
-    }
-    else {
-        $options[0] = "--------------";
-        return $options;
-    }
 
-}
-*/
 function state_details() {
   $postBody = file_get_contents("php://input");
   $postBody = json_decode($postBody);
@@ -8103,6 +8116,8 @@ function state_details() {
   $self_workshop = 0;
   $pendingbookcount = 0;
   $completedbookcount = 0;
+  $dwsim_flowsheet = 0;
+  $circuit_simulation = 0;
   if($type == "" || $type == NULL){
     $query = db_select('foss_type','u')
       ->fields('u', array(
@@ -8180,7 +8195,7 @@ function state_details() {
             ->fetchField();
           $lab_migration += $query1;
         }
-
+        /*
         //  Self Workshop space
         if($foss->foss_selfworkshop_no){
           db_set_active('selfworkshop');
@@ -8190,6 +8205,27 @@ function state_details() {
                                 ));
 
           $self_workshop += $query2->fetchObject()->count;
+        }*/
+
+        // DWSIM Flowsheet
+        if($name == 'DWSIM'){
+          db_set_active('DWSIM');
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet += $query1;
+        }else if($name == 'eSim'){
+          db_set_active('eSim');
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation += $query1;
         }
         db_set_active('default');
         db_set_active();
@@ -8275,7 +8311,7 @@ function state_details() {
         ->fetchField();
       $lab_migration += $query1;
     }
-
+    /*
     //  Self Workshop space
     if($query->foss_selfworkshop_no){
       db_set_active('selfworkshop');
@@ -8285,11 +8321,32 @@ function state_details() {
                             ));
 
       $self_workshop += $query2->fetchObject()->count;
+    }*/
+
+    // DWSIM Flowsheet
+    if($name == 'DWSIM'){
+      db_set_active('DWSIM');
+      $query1 = db_select('dwsim_flowsheet_proposal')
+        ->condition('approval_status', 3)
+        ->condition('state',$state)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $dwsim_flowsheet += $query1;
+    }else if($name == 'eSim'){
+      db_set_active('eSim');
+      $query1 = db_select('esim_circuit_simulation_proposal')
+        ->condition('approval_status', 3)
+        ->condition('state',$state)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $circuit_simulation += $query1;
     }
     db_set_active('default');
     db_set_active();
   }
 
-
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$pendingbookcount.', "tbc" : '.$completedbookcount.', "self_workshop" : '.$self_workshop.'}';
+  $total = $pendingbookcount+$completedbookcount;
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$total.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
 }

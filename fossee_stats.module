@@ -299,6 +299,13 @@ function fossee_stats_menu() {
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
     );
+
+    $items['map-stats'] = array(
+      'page callback'=>'map_stats',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
     return $items;
 }
 
@@ -7728,23 +7735,16 @@ function fossee_map_form($form, $form_state) {
   $form['foss_type'] = array(
       '#type' => 'select',
       '#prefix' => '<div class="content"><div><table ><tr><td>',
-      '#suffix' => '</td>',
+      '#suffix' => '</td><tr>',
       '#title' => t('FOSS Type'),
       '#multiple' => FALSE,
       '#options' => $options_first,
       //'#default_value' => $foss_project,
-      '#validated' => TRUE,
-      '#ajax' => array(
-          'callback' => 'ajax_foss_type_dependent_dropdown_callback',
-          'wrapper' => 'dropdown-second-replace',
-          'progress' => array(
-              'message' => ''
-          )
-      )
+      '#validated' => TRUE
   );
 
 
-  $form['submit'] = array(
+  /*$form['submit'] = array(
       '#type' => 'submit',
       '#ajax' => array(
           'callback' => 'ajax_submit_for_map',
@@ -7755,6 +7755,10 @@ function fossee_map_form($form, $form_state) {
       '#value' => t('Filter'),
       '#prefix' => '<tr><td align="center">',
       '#suffix' => ''
+  );*/
+  $form['submit']= array(
+      '#type' => 'item',
+      '#markup' => '<tr><td><input type="button" onclick="map()" value="Submit" class="form-submit">'
   );
   $form['reset'] = array(
       '#type' => 'submit',
@@ -7764,17 +7768,18 @@ function fossee_map_form($form, $form_state) {
   );
   $form['map'] = array(
       '#type' => 'item',
-      '#prefix' => '<div id="poper"></div><div id="load_map" >',
+      '#prefix' => '<div id="poper"></div><div id="loader"><div id="load_map" >'.get_map_data(NULL),
       '#markup' => '',
-      '#suffix' => '</div>'
+      '#suffix' => '</div></div></div>'
    );
    drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
+   drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/loadingoverlay.min.js");
   return $form;
 }
 
 /* Form submit for map */
-
+/*
 function ajax_submit_for_map($form, &$form_state){
 
   $commands = array();
@@ -7789,9 +7794,9 @@ function ajax_submit_for_map($form, &$form_state){
       '#commands' => $commands
   );
 
-}
+}*/
 
-function get_map_data($type, $project){
+function get_map_data($type){
   $states = array(
     'Andhra Pradesh' => 0,
     'Arunachal Pradesh' => 0,
@@ -7830,7 +7835,7 @@ function get_map_data($type, $project){
     'Puducherry (Pondicherry)' => 0
   );
   $key = array_keys($states);
-  if($type == "--------------"){
+  if($type == "" || $type == NULL){
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'tbc',
@@ -7913,7 +7918,7 @@ function get_map_data($type, $project){
             }
           }
         }
-
+        /*
         //  Self Workshop space
         if($foss->foss_selfworkshop_no){
           db_set_active('selfworkshop');
@@ -7926,13 +7931,13 @@ function get_map_data($type, $project){
           }
 
         }
-
+        */
         if($name == 'DWSIM'){
           db_set_active('DWSIM');
           foreach ($key as $k) {
             $query1 = db_select('dwsim_flowsheet_proposal')
               ->condition('approval_status', 3)
-              ->condition('state',$state)
+              ->condition('state',$k)
               ->countQuery()
               ->execute()
               ->fetchField();
@@ -7943,7 +7948,7 @@ function get_map_data($type, $project){
           foreach ($key as $k) {
             $query1 = db_select('esim_circuit_simulation_proposal')
               ->condition('approval_status', 3)
-              ->condition('state',$state)
+              ->condition('state',$k)
               ->countQuery()
               ->execute()
               ->fetchField();
@@ -7964,7 +7969,7 @@ function get_map_data($type, $project){
         'conference',
         'foss_selfworkshop_no'
       ))
-      ->condition('foss_name',$type)
+      ->condition('id',$type)
       ->execute()
       ->fetchObject();
     $name = $query->foss_name;
@@ -8037,7 +8042,7 @@ function get_map_data($type, $project){
         }
       }
     }
-
+    /*
     //  Self Workshop space
     if($query->foss_selfworkshop_no){
       db_set_active('selfworkshop');
@@ -8050,13 +8055,13 @@ function get_map_data($type, $project){
       }
 
     }
+    */
     if($name == 'DWSIM'){
       db_set_active('DWSIM');
       foreach ($key as $k) {
-
         $query1 = db_select('dwsim_flowsheet_proposal')
           ->condition('approval_status', 3)
-          ->condition('state',$state)
+          ->condition('state',$k)
           ->countQuery()
           ->execute()
           ->fetchField();
@@ -8067,7 +8072,7 @@ function get_map_data($type, $project){
       foreach ($key as $k) {
         $query1 = db_select('esim_circuit_simulation_proposal')
           ->condition('approval_status', 3)
-          ->condition('state',$state)
+          ->condition('state',$k)
           ->countQuery()
           ->execute()
           ->fetchField();
@@ -8102,6 +8107,14 @@ function get_map_data($type, $project){
   $out = stats_map($states);
   return $out;
 
+}
+
+function map_stats() {
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  echo get_map_data($type);
 }
 
 function state_details() {
@@ -8205,8 +8218,8 @@ function state_details() {
                                 ));
 
           $self_workshop += $query2->fetchObject()->count;
-        }*/
-
+        }
+        */
         // DWSIM Flowsheet
         if($name == 'DWSIM'){
           db_set_active('DWSIM');
@@ -8321,8 +8334,8 @@ function state_details() {
                             ));
 
       $self_workshop += $query2->fetchObject()->count;
-    }*/
-
+    }
+    */
     // DWSIM Flowsheet
     if($name == 'DWSIM'){
       db_set_active('DWSIM');
@@ -8348,5 +8361,5 @@ function state_details() {
   }
 
   $total = $pendingbookcount+$completedbookcount;
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$total.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$total.', "selfworkshop": '.$self_workshop.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
 }

@@ -21,7 +21,6 @@
   border-radius: 5px;
   border: red 1px solid;
   margin-top: 100px;
-  padding: 10px;
 }
 
 #popup h1{
@@ -36,6 +35,7 @@
   float: right;
   padding-right: 5px;
   font-size: 20px;
+  margin-top: -10px;
 }
 
 #closer:hover{
@@ -51,6 +51,17 @@
 
 #map{
   margin-top:-110px;
+}
+
+#popup .head{
+  background: #d1cccc;
+  padding-top: 10px;
+  border-bottom: 1px red solid;
+  border-radius: 5px;
+}
+
+#popup .body{
+  padding: 10px;
 }
 
 @media(max-width: 860px) {

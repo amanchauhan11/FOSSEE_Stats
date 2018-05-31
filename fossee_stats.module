@@ -1,5 +1,7 @@
 <?php
 
+require_once('email.inc');
+
 function fossee_stats_permission() {
     return array(
         "access fossee_stats" => array(
@@ -47,6 +49,7 @@ function fossee_stats_permission() {
 }
 
 function fossee_stats_menu() {
+
     $items = array();
     //Load main page
     $items["fossee-stats"] = array(
@@ -3744,7 +3747,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
   Same form is used for editing existing events
 */
 function workshop_add_form($form, &$form_state, $workshop_id = 0, $no_js_use = FALSE) {
- 
+
 $query = "
        SELECT * FROM workshop
        WHERE w_id = :workshop_id
@@ -3783,29 +3786,29 @@ $query = "
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select Start Date Of Event :'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => '',
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
+
         $form['end_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select End Date Of Event:'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => '',
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
+            '#suffix' => t('<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p>')
         );
         $form["venue"] = array(
             "#type" => "textfield",
@@ -3886,19 +3889,26 @@ $query = "
                         'value' => 'India'
                     )
                 )
+            ),
+            '#ajax'=> array(
+                'callback'=>'list_city_for_state',
+                'wrapper'=>'city-wrapper',
             )
         );
+
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
-            '#options' => _list_of_cities(),
+            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: null),
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
                         'value' => 'India'
                     )
                 )
-            )
+            ),
+            '#prefix'=> '<div id="city-wrapper">',
+            '#suffix'=>'</div>',
         );
         $form['pincode'] = array(
             '#type' => 'textfield',
@@ -3908,7 +3918,7 @@ $query = "
             '#required' => True,
             '#attributes' => array(
                 'placeholder' => 'Enter pincode....'
-            )
+            ),
         );
         
         $form["no_of_participant"] = array(
@@ -3921,13 +3931,15 @@ $query = "
         $form["event_link"] = array(
             "#type" => "textfield",
             "#title" => "Link to event's website",
-            "#default_value" => ''
+            "#default_value" => '',
+            '#suffix' => t('<p id="validate_url" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>')
         );
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details",
+            "#title" => "Details (Max characters: 500)",
             "#default_value" => '',
-            "#required" => TRUE
+            "#maxlength" => 500,
+            "#required" => TRUE,
         );
         $form['speakers_fieldset'] = array(
             '#type' => 'fieldset',
@@ -4086,6 +4098,7 @@ $query = "
         if (empty($form_state['num_videolink'])) {
             $form_state['num_videolink'] = 1;
         }
+
         $temp = 0;
         for ($i = 0; $i < $form_state['num_videolink']; $i++) {
             $temp1 = $i;
@@ -4101,10 +4114,14 @@ $query = "
             $form['videolink_fieldset'][$i]["videolink_link"] = array(
                 "#type" => "textfield",
                 "#title" => "Link: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                '#suffix' => t('<p id="validate_url_'.$temp1.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>')
             );
             
         }
+
+        drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
+
         $form["videolink_count"] = array(
             "#type" => "hidden",
             "#value" => $temp1
@@ -4244,30 +4261,31 @@ $query = "
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select Start Date Of Event :'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => $row->startdate,
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
+
         $form['end_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select End Date Of Event:'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => $row->enddate,
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
+            '#suffix' => '<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p>'
         );
+
         $form["venue"] = array(
             "#type" => "textfield",
             "#title" => "Venue",
@@ -4340,6 +4358,7 @@ $query = "
             ),
             "#default_value" => $row->city
         );
+
         $form['all_state'] = array(
             '#type' => 'select',
             '#title' => t('State'),
@@ -4352,12 +4371,17 @@ $query = "
                     )
                 )
             ),
+            '#ajax'=> array(
+                'callback'=>'list_city_for_state',
+                'wrapper'=>'city-wrapper',
+            ),
             "#default_value" => $row->state
         );
+
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
-            '#options' => _list_of_cities(),
+            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: null),
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
@@ -4365,7 +4389,9 @@ $query = "
                     )
                 )
             ),
-            "#default_value" => $row->city
+            '#prefix'=> '<div id="city-wrapper">',
+            '#suffix'=>'</div>',
+            "#default_value" => $row->city,
         );
         $form['pincode'] = array(
             '#type' => 'textfield',
@@ -4388,15 +4414,17 @@ $query = "
   $form["event_link"] = array(
             "#type" => "textfield",
             "#title" => "Link to event's website",
-            "#default_value" => $row->event_link
+            "#default_value" => $row->event_link,
+            '#suffix' => '<p id="validate_url" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
            
         );
 
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details",
+            "#title" => "Details (Max characters: 500)",
             "#default_value" => $row->body,
-            "#required" => TRUE
+            '#maxlength' => 500,
+            "#required" => TRUE,
         );
         /*Edit Speakers*/
 
@@ -4559,12 +4587,14 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
                     "#title" => "Institute",
-                    "#default_value" => $row_v->link
+                    "#default_value" => $row_v->link,
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
                 );
                 
                 $i++;
             }
 
+            drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'], 'flag'=>'many')), array('type' => 'setting'));
 
             $form["videolink_count"] = array(
                 "#type" => "hidden",
@@ -4591,11 +4621,15 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
                     "#title" => "Link: ",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
+
                 );
                 
                
             }
+            drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
+
             $form["videolink_count"] = array(
                 "#type" => "hidden",
                 "#value" => $temp
@@ -5033,6 +5067,9 @@ function workshop_add_more_remove_one($form, &$form_state) {
     $form_state['rebuild'] = TRUE;
 }
 
+function list_city_for_state($form, &$form_state) {
+    return $form['city'];
+}
 
 function workshop_display_all() {
     $page_content = "";
@@ -5179,21 +5216,22 @@ function get_country_dropdown_options() {
 
 
 function workshop_add_form_submit($form, &$form_state) {
-    $v = $form_state["values"];
-    //$start_datetime= explode(" ",$v["start_date"]);
-    //$end_datetime= explode(" ",$v["end_date"]);
-    if ($v["workshop_id"]) {
 
+    $v = $form_state["values"];
+    $start_datetime= explode(" ",$v["start_date"]);
+    $end_datetime= explode(" ",$v["end_date"]);
+
+    if ($v["workshop_id"]) {
     	global $user;
         $query = db_update('workshop');
         $query->fields(array(
             'foss_name' => $v["foss_select"],
             'w_name' => $v["name"],
             'type' => $v["type"],
-            'startdate' => $v["start_date"],
-            'starttime' => "00:00",
-            'enddate' => $v["end_date"],
-            'endtime' => "00:00",
+            'startdate' => $start_datetime[0],
+            'starttime' => $start_datetime[1],
+            'enddate' => $end_datetime[0],
+            'endtime' => $end_datetime[1],
             'venue' => $v["venue"],
             'street' => $v["street"],
             'country' => $v["country"],
@@ -5452,10 +5490,10 @@ function workshop_add_form_submit($form, &$form_state) {
       ":type" => $v["type"],
             ":w_name" => $v["name"],
             ":images_folder" => $eventfolder,
-            ":startdate" => $v["start_date"],
-            ":starttime" => "00:00",
-            ":enddate" => $v["end_date"],
-            ":endtime" => "00:00",
+            ':startdate' => $start_datetime[0],
+            ':starttime' => $start_datetime[1],
+            ':enddate' => $end_datetime[0],
+            ':endtime' => $end_datetime[1],
             ":venue" => $v["venue"],
             ":street" => $v["street"],
             ":country" => $v["country"],
@@ -6409,7 +6447,7 @@ function _list_of_states() {
 }
 
 
-function _list_of_cities() {
+function _list_of_cities($state) {
     $city = array(
         0 => '-Select-'
     );
@@ -6417,8 +6455,32 @@ function _list_of_cities() {
     $query->fields('list_cities_of_india');
     $query->orderBy('city', 'ASC');
     $city_list = $query->execute();
-    while ($city_list_data = $city_list->fetchObject()) {
-        $city[$city_list_data->city] = $city_list_data->city;
+
+    $id = null;
+    if($state != null)
+    {
+        $query = db_select('list_states_of_india');
+        $query->fields('list_states_of_india');
+        $state_list = $query->execute();
+        
+        while($state_list_data = $state_list->fetchObject()){
+            if($state_list_data->state == $state)
+            { $id = $state_list_data->id; break; }
+        }
+    }
+
+    if($id==null)
+    {
+        while ($city_list_data = $city_list->fetchObject()) {
+            $city[$city_list_data->city] = $city_list_data->city;
+        }
+    }
+    else
+    {   
+        while ($city_list_data = $city_list->fetchObject()) {
+            if($city_list_data->state_id == $id)
+                $city[$city_list_data->city] = $city_list_data->city;
+        }
     }
     return $city;
 }
@@ -7869,18 +7931,16 @@ function fossee_stats_init() {
     //drupal_add_css(drupal_get_path("module", "fossee_stats") . "/css/fossee_stats_main.css");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/confirm.js");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/testimonials_script.js");
+    drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/validators.js");
 }
 
-/*
-function fossee_stats_mail($key, &$message, $params)
-{
-	switch($key)
-	{
-		case 'edit_mail': 
-		  $message['to'] = '';
-	      $message['subject'] = t('Hello');
-	      $message['body'][] = t('Hello @username,', array('@username' => $params['username']));
-	      $message['body'][] = t('The main part of the message.');
-	      break;
-	}
-}*/
+function fossee_stats_date_popup_process_alter(&$element, &$form_state, $context) {
+  if ($element['#name'] == 'start_date') {
+    $element['date']['#title'] = t('Start Date:'); 
+    $element['time']['#title'] = t('Start Time:'); 
+  }
+  else if($element['#name'] = 'end_date') {
+  	$element['date']['#title'] = t('End Date:');
+  	$element['time']['#title'] = t('End Time:');
+  }
+}

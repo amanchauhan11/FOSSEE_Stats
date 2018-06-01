@@ -124,14 +124,14 @@ function fossee_stats_menu() {
         "type" => MENU_CALLBACK
     );
   //To delete existing events
-    /*$items["events/delete"] = array(
+    $items["events/delete"] = array(
         "title" => "Delete Events",
         "page callback" => "workshop_delete_all",
         "access arguments" => array(
             "manage workshop"
         ),
         "type" => MENU_CALLBACK
-    );*/
+    );
     //List of all events
     $items["events/view_details"] = array(
         "title" => "Details of Selected Event",
@@ -4810,7 +4810,7 @@ $query = "
         {
             $form['noimagestillnow'] = array(
                 '#markup' => '<p>No Images uploaded till now</p>'
-                );
+            );
         }
         else
         {   
@@ -4818,11 +4818,18 @@ $query = "
             $query1->fields('workshop_images');
             $query1->condition('w_id', $workshop_id);
             $result1 = $query1->execute();
-            while ($row1 = $result1->fetchObject()) {
-                $form['imagecheck@' . $row1->id] = array(
-                    '#type' => 'checkbox',
-                    '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" .$row1->path . ' />'
+            if($result1->rowCount() == 0){   
+                 $form['noimagestillnow'] = array(
+                '#markup' => '<p>No Images uploaded till now</p>'
                 );
+            }
+            else {
+                while ($row1 = $result1->fetchObject()) {
+                    $form['imagecheck@' . $row1->id] = array(
+                        '#type' => 'checkbox',
+                        '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" .$row1->path . ' />'
+                    );
+                }
             }
         }
 
@@ -5101,7 +5108,7 @@ function upload_csv_form($form, &$form_state) {
 function upload_csv_form_validate($form, &$form_state) {
 
     if(!isset($_FILES['files']['name']['csv_file']))
-        drupal_set_message(t("!Error uploading csv file"));
+        drupal_set_message(t("!Error uploading csv file"), 'error');
 
     $file_path = $_FILES['files']['tmp_name']['csv_file'];
     $csv = new ParseCsv\Csv($file_path);
@@ -5115,16 +5122,16 @@ function upload_csv_form_validate($form, &$form_state) {
     foreach($user_header as $i=>$value)
     {
         if(!in_array($value, array_keys($std_header)))
-            { drupal_set_message(t('Field '.$i.' does not match any expected field')); $form_state['csv_error_flag'] = TRUE; }
+            { drupal_set_message(t('Field '.'"'.$value.'"'.' does not match any expected field'), 'error'); $form_state['csv_error_flag'] = TRUE; }
         else
             $std_header[$value]++;
     }
     foreach($std_header as $key=>$value)
     {
         if($value > 1)
-           { drupal_set_message(t("Multiple values for field ".$key)); $form_state['csv_error_flag'] = TRUE; }
+           { drupal_set_message(t("Multiple values for field ".$key), 'error'); $form_state['csv_error_flag'] = TRUE; }
         else if($value == 0 and !in_array($key, array('event_link', 'starttime', 'endtime')))
-           { drupal_set_message(t("Field ".$key." is missing")); $form_state['csv_error_flag'] = TRUE; }
+           { drupal_set_message(t("Field ".$key." is missing"), 'error'); $form_state['csv_error_flag'] = TRUE; }
     }
 
     if(isset($form_state['csv_error_flag']))
@@ -5136,7 +5143,7 @@ function upload_csv_form_validate($form, &$form_state) {
         foreach($row as $key=>$value)
         {
             if( !in_array($key, array('event_link', 'starttime', 'endtime')) and ($value == '' or $value == NULL))
-                { drupal_set_message(t("Missing value for field ".$key." in row ".$rno)); $form_state['csv_error_flag'] = TRUE; }
+                { drupal_set_message(t("Missing value for field '".$key."' in row ".($rno+1)), 'error'); $form_state['csv_error_flag'] = TRUE; }
         }
     }
 }
@@ -5834,7 +5841,7 @@ function workshop_delete_all($workshop_id = 0) {
     $result = $query->execute();
     $row = $result->fetchObject();
     $root_path = events_images_path();
-    $eventfolder = str_replace(' ', '_', $row->w_name);
+    $eventfolder = $row->images_folder;
     $dest_path = $eventfolder;
     $dir_path = $root_path . $dest_path;
     if (is_dir($dir_path)) {
@@ -5843,15 +5850,14 @@ function workshop_delete_all($workshop_id = 0) {
             drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
             return;
         } 
-        else {
-            $query2 = db_delete('workshop_images');
-            $query2->condition('w_id', $workshop_id);
-            $result2 = $query2->execute();
-        }
     } 
     else {
         drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
     }
+
+    $query2 = db_delete('workshop_images');
+    $query2->condition('w_id', $workshop_id);
+    $result2 = $query2->execute();
     $query_t = db_delete('testimonials');
     $query_t->condition('w_id', $workshop_id);
     $result_t = $query_t->execute();

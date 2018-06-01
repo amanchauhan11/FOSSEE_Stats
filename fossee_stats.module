@@ -7876,20 +7876,53 @@ function get_map_data($type){
             }
           }
         }
+
         // Text Book companion
         db_set_active($name);
         if($foss->tbc){
           if ($name != 'Python') {
             $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-                foreach ($key as $k) {
-                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0  AND po.state = :state", array(':state'=>$k));
-                  $states[$k] += $query2->fetchObject()->book_count;
-                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
-                      ':enddate' => $pending_enddate,
-                      ':state' => $k
-                  ));
-                  $states[$k] += $query3->fetchObject()->book_count;
+            if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                if ($name != 'DWSIM') {
+                  foreach ($key as $k) {
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                        ':state' => $k,
+                    ));
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        ':state' => $k,
+                        ':enddate' => $pending_enddate
+                    ));
+                    $states[$k] += $query2->fetchObject()->book_count;
+                    $states[$k] += $query3->fetchObject()->book_count;
+                  }
                 }
+                else {
+                  foreach ($key as $k) {
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                        ':state' => $k,
+                    ));
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        ':state' => $k,
+                        ':enddate' => $pending_enddate
+                    ));
+                    $states[$k] += $query2->fetchObject()->book_count;
+                    $states[$k] += $query3->fetchObject()->book_count;
+                  }
+                }
+            }
+            else {
+              foreach ($key as $k) {
+                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                    ':state' => $k,
+                ));
+                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    ':state' => $k,
+                    ':enddate' => $pending_enddate
+                ));
+                $states[$k] += $query2->fetchObject()->book_count;
+                $states[$k] += $query3->fetchObject()->book_count;
+              }
+            }
           }
           else {
               /*$query5 = db_select('tbc_book');
@@ -8004,17 +8037,52 @@ function get_map_data($type){
     // Text Book companion
     db_set_active($name);
     if($query->tbc){
+
       if ($name != 'Python') {
-        $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-            foreach ($key as $k) {
-              $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0  AND po.state = :state", array(':state'=>$k));
-              $states[$k] += $query2->fetchObject()->book_count;
-              $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
-                  ':enddate' => $pending_enddate,
-                  ':state' => $k
-              ));
-              $states[$k] += $query3->fetchObject()->book_count;
-            }
+            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+              if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                  if ($name != 'DWSIM') {
+                    foreach ($key as $k) {
+                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                          ':state' => $k,
+                      ));
+                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                          ':state' => $k,
+                          ':enddate' => $pending_enddate
+                      ));
+                      $states[$k] += $query2->fetchObject()->book_count;
+                      $states[$k] += $query3->fetchObject()->book_count;
+                    }
+                  }
+                  else {
+                    foreach ($key as $k) {
+                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                          ':state' => $k,
+                      ));
+                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                          ':state' => $k,
+                          ':enddate' => $pending_enddate
+                      ));
+                      $states[$k] += $query2->fetchObject()->book_count;
+                      $states[$k] += $query3->fetchObject()->book_count;
+                    }
+                  }
+              }
+              else {
+                foreach ($key as $k) {
+                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                      ':state' => $k,
+                  ));
+                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                      ':state' => $k,
+                      ':enddate' => $pending_enddate
+                  ));
+                  $states[$k] += $query2->fetchObject()->book_count;
+                  $states[$k] += $query3->fetchObject()->book_count;
+                }
+              }
+
       }
       else {
           /*$query5 = db_select('tbc_book');
@@ -8087,13 +8155,13 @@ function get_map_data($type){
   //print_r($states);
   $i =0;
   foreach ($states as $s) {
-    if($s > 500){
+    if($s > 300){
       $states[$key[$i]]='#ea5507';
-    }else if ($s<=500 && $s>300) {
+    }else if ($s<=300 && $s>200) {
       $states[$key[$i]]='#e56b2b';
-    }else if ($s<=300 && $s>150) {
+    }else if ($s<=200 && $s>100) {
       $states[$key[$i]]='#e08859';
-    }else if ($s<=150 && $s>50) {
+    }else if ($s<=100 && $s>50) {
       $states[$key[$i]]='#e29d78';
     }else if ($s<=50 && $s>0) {
       $states[$key[$i]]='#e0ab8f';
@@ -8170,19 +8238,38 @@ function state_details() {
         db_set_active($name);
         if($foss->tbc){
           if ($name != 'Python') {
-                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state = :state", array(
-                    ':state' => $state
+            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+            if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                if ($name != 'DWSIM') {
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                        ':state' => $state,
+                    ));
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        ':state' => $state,
+                        ':enddate' => $pending_enddate
+                    ));
+                }
+                else {
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                        ':state' => $state,
+                    ));
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        ':state' => $state,
+                        ':enddate' => $pending_enddate
+                    ));
+                }
+            }
+            else {
+                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                    ':state' => $state,
                 ));
-              $completedbookcount += $query2->fetchObject()->book_count;
-               /* For setting completion date for pending TBC and LM more */
-              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-
-                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
-                    ':enddate' => $pending_enddate,
-                    ':state' => $state
+                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    ':state' => $state,
+                    ':enddate' => $pending_enddate
                 ));
-              $pendingbookcount += $query3->fetchObject()->book_count;
+            }// End
+            $completedbookcount += $query2->fetchObject()->book_count;
+            $pendingbookcount += $query3->fetchObject()->book_count;
           }
           else {
               /*$query5 = db_select('tbc_book');
@@ -8284,21 +8371,39 @@ function state_details() {
     db_set_active($name);
     if($query->tbc){
       if ($name != 'Python') {
-          db_set_active($name);
-            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state = :state", array(
-                ':state' => $state
+        $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+        if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+            if ($name != 'DWSIM') {
+                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    ':state' => $state,
+                    ':enddate' => $pending_enddate
+                ));
+            }
+            else {
+                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                    ':state' => $state,
+                    ':enddate' => $pending_enddate
+                ));
+
+            }
+        }
+        else {
+            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                ':state' => $state,
             ));
-          $completedbookcount += $query2->fetchObject()->book_count;
-
-           /* For setting completion date for pending TBC and LM more */
-          $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-
-            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <>3 AND pe.approval_status =1 AND FROM_UNIXTIME(po.completion_date) <= :enddate AND po.state = :state", array(
-                ':enddate' => $pending_enddate,
-                ':state' => $state
+            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                ':state' => $state,
+                ':enddate' => $pending_enddate
             ));
-          $pendingbookcount += $query3->fetchObject()->book_count;
+        }// End
+        $completedbookcount += $query2->fetchObject()->book_count;
+        $pendingbookcount += $query3->fetchObject()->book_count;
       }
       else {
           /*$query5 = db_select('tbc_book');

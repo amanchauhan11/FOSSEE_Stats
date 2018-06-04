@@ -2,6 +2,10 @@
 
 require_once('email.inc');
 
+function get_file_size_MB($filepath) {
+    return round((filesize($filepath)/1024)/1024, 2);
+}
+
 function fossee_stats_permission() {
     return array(
         "access fossee_stats" => array(
@@ -3782,7 +3786,8 @@ $query = "
             "#type" => "textfield",
             "#title" => "Name",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
@@ -3808,19 +3813,21 @@ $query = "
                 'readonly' => 'readonly'
             ),
             "#required" => TRUE,
-            '#suffix' => t('<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p>')
+            '#suffix' => t('<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p> <p id="validate_time" style="visibility:hidden; color:red">Invalid time! End\'t time cannot be earlier than start time</p>')
         );
         $form["venue"] = array(
             "#type" => "textfield",
             "#title" => "Venue",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50,
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -3960,17 +3967,20 @@ $query = "
             $form['speakers_fieldset'][$i]["speakername"] = array(
                 "#type" => "textfield",
                 "#title" => "Name: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 50,
             );
             $form['speakers_fieldset'][$i]["institute"] = array(
                 "#type" => "textfield",
                 "#title" => "Institute: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 50,
             );
             $form['speakers_fieldset'][$i]["place"] = array(
                 "#type" => "textfield",
                 "#title" => "Place: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 50,
             );
         }
         $form["speakers_count"] = array(
@@ -4027,26 +4037,30 @@ $query = "
             $temp = $i;
             $form['testimonial_fieldset'][$i]["t_text"] = array(
                 "#type" => "item",
-                "#markup" => "<h4><label>Testimonial : " . ($temp + 1) . "</label></h4>"
+                "#markup" => "<h4><label>Testimonial : " . ($temp + 1) . "</label></h4>",
             );
             $form['testimonial_fieldset'][$i]["t_name"] = array(
                 "#type" => "textfield",
                 "#title" => "Name: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                '#maxlength' => 50,
             );
             $form['testimonial_fieldset'][$i]["t_department"] = array(
                 "#type" => "textfield",
                 "#title" => "Department: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 50,
             );
             $form['testimonial_fieldset'][$i]["t_university"] = array(
                 "#type" => "textfield",
                 "#title" => "University: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 80,
             );
             $form['testimonial_fieldset'][$i]["t_body"] = array(
                 "#type" => "textarea",
-                "#title" => "Testimonial: "
+                "#title" => "Testimonial: ",
+                "#maxlength" => 500,
             );
         }
         $form["testimonial_count"] = array(
@@ -4109,7 +4123,8 @@ $query = "
             $form['videolink_fieldset'][$i]["videolink_title"] = array(
                 "#type" => "textfield",
                 "#title" => "Title: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 50,
             );
             $form['videolink_fieldset'][$i]["videolink_link"] = array(
                 "#type" => "textfield",
@@ -4257,7 +4272,8 @@ $query = "
             "#type" => "textfield",
             "#title" => "Name",
             "#default_value" => $row->w_name,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
@@ -4283,20 +4299,22 @@ $query = "
                 'readonly' => 'readonly'
             ),
             "#required" => TRUE,
-            '#suffix' => '<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p>'
+            '#suffix' => '<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p> <p id="validate_time" style="visibility:hidden; color:red">Invalid time! End\'t time cannot be earlier than start time</p>'
         );
 
         $form["venue"] = array(
             "#type" => "textfield",
             "#title" => "Venue",
             "#default_value" => $row->venue,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => $row->street,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 50
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -4459,17 +4477,20 @@ $query = "
                 $form['speakers_fieldset'][$i]["speakername"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => $row_s->name
+                    "#default_value" => $row_s->name,
+                    "#maxlength" => 50
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Institute",
-                    "#default_value" => $row_s->institute
+                    "#default_value" => $row_s->institute,
+                    "#maxlength" => 80,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "Place",
-                    "#default_value" => $row_s->place
+                    "#default_value" => $row_s->place,
+                    "#maxlength" => 50,
                 );
                 
                 $i++;
@@ -4496,17 +4517,20 @@ $query = "
                 $form['speakers_fieldset'][$i]["speakername"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 50
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 80,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 50,
                 );
                
             }
@@ -4582,7 +4606,8 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_title"] = array(
                     "#type" => "textfield",
                     "#title" => "Title: ",
-                    "#default_value" => $row_v->title
+                    "#default_value" => $row_v->title,
+                    "#maxlength" => 50,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
@@ -4616,7 +4641,8 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_title"] = array(
                     "#type" => "textfield",
                     "#title" => "Title: ",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 50,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
@@ -4703,22 +4729,26 @@ $query = "
                 $form['testimonial_fieldset'][$i]["t_name"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => $row_t->name
+                    "#default_value" => $row_t->name,
+                    "#maxlength" => 50,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => $row_t->department
+                    "#default_value" => $row_t->department,
+                    "#maxlength" => 50,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => $row_t->university
+                    "#default_value" => $row_t->university,
+                    "#maxlength" => 80,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
                     "#title" => "Testimonial",
-                    "#default_value" => $row_t->body
+                    "#default_value" => $row_t->body,
+                    "#maxlength" => 500,
                 );
                 $i++;
             }
@@ -4741,21 +4771,25 @@ $query = "
                 $form['testimonial_fieldset'][$i]["t_name"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 50,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 50,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 80,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
-                    "#title" => "Testimonial"
+                    "#title" => "Testimonial",
+                    "#maxlength" => 500,
                 );
             }
             $form["testimonial_count"] = array(
@@ -5094,12 +5128,17 @@ function upload_csv_form($form, &$form_state) {
     '#name' => 'files[csv_file]',
     '#type' => 'file', //you can find a list of available types in the form api
     '#title' => 'Upload csv file form events',
-   // '#size' => 1000000000,
     );
     
     $form['submit_button'] = array(
     '#type' => 'submit',
     '#value' => t('Done'),
+    );
+
+    $form['edit'] = array(
+        '#type' => 'item',
+        '#markup' => l("Click here to edit event and add images",'events/edit'),
+        '#weight' => 100,
     );
     
     return $form;    
@@ -5111,6 +5150,9 @@ function upload_csv_form_validate($form, &$form_state) {
         drupal_set_message(t("!Error uploading csv file"), 'error');
 
     $file_path = $_FILES['files']['tmp_name']['csv_file'];
+    if(get_file_size_MB($file_path) > variable_get('max_upload_size', 1))
+        { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); $form_state['csv_error_flag'] = TRUE; return; }
+
     $csv = new ParseCsv\Csv($file_path);
 
     //validating csv header
@@ -5232,22 +5274,22 @@ function workshop_add_form_submit($form, &$form_state) {
     	global $user;
         $query = db_update('workshop');
         $query->fields(array(
-            'foss_name' => $v["foss_select"],
-            'w_name' => $v["name"],
+            'foss_name' => trim($v["foss_select"]),
+            'w_name' => trim($v["name"]),
             'type' => $v["type"],
             'startdate' => $start_datetime[0],
             'starttime' => $start_datetime[1],
             'enddate' => $end_datetime[0],
             'endtime' => $end_datetime[1],
-            'venue' => $v["venue"],
-            'street' => $v["street"],
-            'country' => $v["country"],
-            'state' => $v["all_state"],
-            'city' => $v["city"],
-            'pincode' => $v["pincode"],
-      'event_link' => $v["event_link"],
+            'venue' => trim($v["venue"]),
+            'street' => trim($v["street"]),
+            'country' => trim($v["country"]),
+            'state' => trim($v["all_state"]),
+            'city' => trim($v["city"]),
+            'pincode' => trim($v["pincode"]),
+      'event_link' => trim($v["event_link"]),
             'no_of_participant' => $v["no_of_participant"],
-            'body' => $v["body"],
+            'body' => trim($v["body"]),
             'last_edited_by' => $user->uid,
         ));
         $query->condition('w_id', $v["workshop_id"]);
@@ -5262,9 +5304,9 @@ function workshop_add_form_submit($form, &$form_state) {
                 if ($v['speakers_fieldset'][$i]["speakername"] != "") {
                     $query = db_update('speakers');
                     $query->fields(array(
-                        'name' => $v['speakers_fieldset'][$i]["speakername"],
-                        'institute' => $v['speakers_fieldset'][$i]["institute"],
-                        'place' => $v['speakers_fieldset'][$i]["place"]
+                        'name' => trim($v['speakers_fieldset'][$i]["speakername"]),
+                        'institute' => trim($v['speakers_fieldset'][$i]["institute"]),
+                        'place' => trim($v['speakers_fieldset'][$i]["place"])
                     ));
                     $query->condition('s_id', $v['speakers_fieldset'][$i]["s_id"]);
                     $result = $query->execute();
@@ -5283,9 +5325,9 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $speakersargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":name" => $v['speakers_fieldset'][$i]["speakername"],
-                        ":institute" => $v['speakers_fieldset'][$i]["institute"],
-                        ":place" => $v['speakers_fieldset'][$i]["place"]
+                        ":name" => trim($v['speakers_fieldset'][$i]["speakername"]),
+                        ":institute" => trim($v['speakers_fieldset'][$i]["institute"]),
+                        ":place" => trim($v['speakers_fieldset'][$i]["place"])
                     );
                     /* storing the row id in $result */
                     $speakersresult = db_query($speakersquery, $speakersargs, array(
@@ -5309,8 +5351,8 @@ function workshop_add_form_submit($form, &$form_state) {
                 if ($v['videolink_fieldset'][$i]["videolink_title"] != "") {
                     $query = db_update('workshop_videolinks');
                     $query->fields(array(
-                        'title' => $v['videolink_fieldset'][$i]["videolink_title"],
-                        'link' => $v['videolink_fieldset'][$i]["videolink_link"]
+                        'title' => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                        'link' => trim($v['videolink_fieldset'][$i]["videolink_link"])
                        
                     ));
                     $query->condition('v_id', $v['videolink_fieldset'][$i]["v_id"]);
@@ -5330,8 +5372,8 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $videolinkargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":title" => $v['videolink_fieldset'][$i]["videolink_title"],
-                        ":link" => $v['videolink_fieldset'][$i]["videolink_link"]
+                        ":title" => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                        ":link" => trim($v['videolink_fieldset'][$i]["videolink_link"])
                        
                     );
                     /* storing the row id in $result */
@@ -5356,10 +5398,10 @@ function workshop_add_form_submit($form, &$form_state) {
                 if ($v['testimonial_fieldset'][$i]["t_name"] != "") {
                     $query = db_update('testimonials');
                     $query->fields(array(
-                        'body' => $v['testimonial_fieldset'][$i]["t_body"],
-                        'name' => $v['testimonial_fieldset'][$i]["t_name"],
-                        'department' => $v['testimonial_fieldset'][$i]["t_department"],
-                        'university' => $v['testimonial_fieldset'][$i]["t_university"]
+                        'body' => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                        'name' => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                        'department' => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                        'university' => trim($v['testimonial_fieldset'][$i]["t_university"])
                     ));
                     $query->condition('t_id', $v['testimonial_fieldset'][$i]["t_id"]);
                     $result = $query->execute();
@@ -5378,10 +5420,10 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $testimonialargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":body" => $v['testimonial_fieldset'][$i]["t_body"],
-                        ":name" => $v['testimonial_fieldset'][$i]["t_name"],
-                        ":department" => $v['testimonial_fieldset'][$i]["t_department"],
-                        ":university" => $v['testimonial_fieldset'][$i]["t_university"]
+                        ":body" => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                        ":name" => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                        ":department" => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                        ":university" => trim($v['testimonial_fieldset'][$i]["t_university"])
                     );
                     /* storing the row id in $result */
                     $testimonialresult = db_query($testimonialquery, $testimonialargs, array(
@@ -5442,6 +5484,9 @@ function workshop_add_form_submit($form, &$form_state) {
                 }
                 
                 /* uploading file */
+                if(get_file_size_MB($_FILES['files']['tmp_name'][$file_form_name]) > variable_get('max_upload_size', 1))
+                { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); return; }
+
                 $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
                 if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $sanitized_file_name)) {
                     $imagequery = "
@@ -5495,21 +5540,21 @@ function workshop_add_form_submit($form, &$form_state) {
         $args = array(
             ":foss_name" => $v["foss_select"],
       ":type" => $v["type"],
-            ":w_name" => $v["name"],
-            ":images_folder" => $eventfolder,
+            ":w_name" => trim($v["name"]),
+            ":images_folder" => trim($eventfolder),
             ':startdate' => $start_datetime[0],
             ':starttime' => $start_datetime[1],
             ':enddate' => $end_datetime[0],
             ':endtime' => $end_datetime[1],
-            ":venue" => $v["venue"],
-            ":street" => $v["street"],
-            ":country" => $v["country"],
-            ":state" => $v["all_state"],
-            ":city" => $v["city"],
+            ":venue" => trim($v["venue"]),
+            ":street" => trim($v["street"]),
+            ":country" => trim($v["country"]),
+            ":state" => trim($v["all_state"]),
+            ":city" => trim($v["city"]),
             ":pincode" => $v["pincode"],
-      ":event_link" => $v["event_link"],
+      ":event_link" => trim($v["event_link"]),
             ":no_of_participant" => $v["no_of_participant"],
-            ":body" => $v["body"],
+            ":body" => trim($v["body"]),
             ":last_edited_by" => $user->uid,
         );
         /* storing the row id in $result */
@@ -5528,9 +5573,9 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $speakerargs = array(
                     ":w_id" => $result,
-                    ":name" => $v['speakers_fieldset'][$i]["speakername"],
-                    ":institute" => $v['speakers_fieldset'][$i]["institute"],
-                    ":place" => $v['speakers_fieldset'][$i]["place"]
+                    ":name" => trim($v['speakers_fieldset'][$i]["speakername"]),
+                    ":institute" => trim($v['speakers_fieldset'][$i]["institute"]),
+                    ":place" => trim($v['speakers_fieldset'][$i]["place"])
                 );
                 /* storing the row id in $result */
                 $speakerresult = db_query($speakerquery, $speakerargs, array(
@@ -5553,10 +5598,10 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $testimonialargs = array(
                     ":w_id" => $result,
-                    ":body" => $v['testimonial_fieldset'][$i]["t_body"],
-                    ":name" => $v['testimonial_fieldset'][$i]["t_name"],
-                    ":department" => $v['testimonial_fieldset'][$i]["t_department"],
-                    ":university" => $v['testimonial_fieldset'][$i]["t_university"]
+                    ":body" => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                    ":name" => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                    ":department" => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                    ":university" => trim($v['testimonial_fieldset'][$i]["t_university"])
                 );
                 /* storing the row id in $result */
                 $testimonialresult = db_query($testimonialquery, $testimonialargs, array(
@@ -5581,8 +5626,8 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $videolinkargs = array(
                     ":w_id" => $result,
-                    ":title" => $v['videolink_fieldset'][$i]["videolink_title"],
-                    ":link" => $v['videolink_fieldset'][$i]["videolink_link"]
+                    ":title" => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                    ":link" => trim($v['videolink_fieldset'][$i]["videolink_link"])
                 );
                 /* storing the row id in $result */
                 $videolinkresult = db_query($videolinkquery, $videolinkargs, array(
@@ -5615,6 +5660,9 @@ function workshop_add_form_submit($form, &$form_state) {
                 $imageupload = 0;
                 /* uploading file */
                 $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                if(get_file_size_MB($_FILES['files']['tmp_name'][$file_form_name]) > variable_get('max_upload_size', 1))
+                { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); return; }
+
                 if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path .$sanitized_file_name)) {
                     $imagequery = "
   INSERT INTO {workshop_images}
@@ -5887,38 +5935,132 @@ function workshop_edit_all($workshop_id = 0) {
         $page_content = drupal_render($workshop_add_form);
     } 
     else {
-        $query = db_select('workshop');
-        $query->fields('workshop');
-        $query->orderBy('startdate', 'DESC');
-        $result = $query->execute();
-        $headers = array(
-            "Name",
-            "Start Date",
-            "Venue",
-            "No of Participant",
-            ""
-        );
-        $rows = array();
-        $options = array(
-            'attributes' => array(
-                'class' => 'delete'
-            )
-        );
-        while ($row = $result->fetchObject()) {
-            $item = array(
-                $row->w_name,
-                $row->startdate,
-                $row->venue,
-                $row->no_of_participant,
-                l("Edit", "events/edit/{$row->w_id}") . " | " . l("Delete", "events/delete/{$row->w_id}", $options)
-            );
-            array_push($rows, $item);
-        }
-        $page_content = bootstrap_table_format($headers, $rows);
+
+        $workshop_display_form = drupal_get_form("workshop_display_form");
+        $page_content = drupal_render($workshop_display_form);
     }
     return $page_content;
 }
 
+function workshop_display_form($form, &$form_state) {
+
+    $form = array();
+    $form['sort_fieldset'] = array(
+                '#type' => 'fieldset',
+                '#tree' => TRUE,
+                '#prefix' => '<div id="sort-fieldset-wrapper">',
+                '#suffix' => '</div>',
+    );
+
+    $form['sort_fieldset']['sort_by_date'] = array(
+        '#type' => 'submit',
+        '#value' => t('Sort by date'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit',
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper',
+        ),
+        '#name' => 'startdate',
+    );
+
+    $form['sort_fieldset']['sort_by_name'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by name'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit',
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper',
+        ),
+        '#name'=>'w_name',
+    );
+
+    $form['sort_fieldset']['sort_by_venue'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by venue'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit'
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper'
+        ),
+        '#name'=>'venue',
+    );
+
+    $form['sort_fieldset']['sort_by_participant'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by participants'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit'
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper'
+        ),
+        '#name'=>'no_of_participant',
+    );
+
+    $events_table_content = '';
+    if(!isset($form_state['triggering_element']['#name']))
+        $events_table_content = get_workshop_table_content('w_id');
+    else
+        $events_table_content = get_workshop_table_content($form_state['triggering_element']['#name']);
+
+    $form['sort_fieldset']['events_table'] = array(
+        '#type' => 'item',
+        '#markup' => $events_table_content,
+    );
+    return $form;
+}
+
+function workshop_display_form_callback($form, &$form_state) {
+    return $form['sort_fieldset'];
+}
+
+function sort_by_submit($form, &$form_state) {
+    $form_state['rebuild'] = TRUE;
+}
+
+function get_workshop_table_content($criteria) {
+
+    $criteria_order = array('w_id'=>'DESC', 'startdate'=>'DESC', 'w_name'=>'INC', 'venue'=>'INC', 'no_of_participant'=>'DESC');
+    $query = db_select('workshop');
+    $query->fields('workshop');
+    $query->orderBy($criteria, $criteria_order[$criteria]);
+    $result = $query->execute();
+    $headers = array(
+        "Name",
+        "Start Date",
+        "Venue",
+        "No of Participant",
+        ""
+    );
+    $rows = array();
+    $options = array(
+        'attributes' => array(
+            'class' => 'delete'
+        )
+    );
+    while ($row = $result->fetchObject()) {
+        $item = array(
+            $row->w_name,
+            $row->startdate,
+            $row->venue,
+            $row->no_of_participant,
+            l("Edit", "events/edit/{$row->w_id}") . " | " . l("Delete", "events/delete/{$row->w_id}", $options)
+        );
+        array_push($rows, $item);
+    }
+    return $page_content.bootstrap_table_format($headers, $rows);
+}
 
 function events_view_filter($foss_name, $event_type, $startdate, $enddate, 
     $countryname, $statename, $cityname) {

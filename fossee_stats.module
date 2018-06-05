@@ -348,7 +348,7 @@ function fossee_stats_form($form, &$form_state) {
         '#type' => 'select',
         '#title' => t('Activities'),
         '#options' => get_activities_list($foss_project),
-        '#prefix' => '<td><div id="dropdown-second-replace" style="width:250px;padding-left:25px" >',
+        '#prefix' => '<td><div id="dropdown-second-replace" style="width:2100px;padding-left:25px" >',
         '#suffix' => '</div>',
         '#default_value' => "--------------",
         '#validated' => TRUE,
@@ -380,7 +380,7 @@ function fossee_stats_form($form, &$form_state) {
         '#type' => 'select',
         '#title' => t('Status'),
         '#options' => _ajax_example_get_third_dropdown_options($foss_sub_project),
-        '#prefix' => '<td><div id="dropdown-third-replace" style="width:250px">',
+        '#prefix' => '<td><div id="dropdown-third-replace" style="width:2100px">',
         '#suffix' => '</div></td></tr>',
         '#default_value' => $foss_sub_project_status,
         '#validated' => TRUE,
@@ -505,7 +505,7 @@ function fossee_stats_form($form, &$form_state) {
         "#title" => t("State Name"),
         '#validated' => TRUE,
         '#options' => get_state_list($foss_project, $foss_sub_project, $countryname),
-        '#prefix' => '<tr><td><div style="width:150px;" id= "load_state">',
+        '#prefix' => '<tr><td><div style="width:1100px;" id= "load_state">',
         '#suffix' => '</div></td>',
         '#states' => array(
             'invisible' => array(
@@ -622,7 +622,7 @@ function fossee_stats_form($form, &$form_state) {
         </div>
      
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", "1960/01/01", "") . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render($LM_getchart) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render($LM_getchart) . '</div>
         </div>   
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, 1960-01-01, date("Y-m-d")) . '</div>
@@ -690,7 +690,7 @@ function getchartforselectedProject($foss_type, $sub_type, $startdate, $enddate,
         '#legend_position' => 'bottom',
         '#data_labels' => TRUE,
         '#tooltips' => TRUE,
-          '#width' => 800,
+          '#width' => 2000,
         '#height' => 300
     );
     $chart['pie_data'] = array(
@@ -1655,7 +1655,7 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
         </div>
      
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
         </div>   
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
@@ -2004,7 +2004,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
         </div>
      
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
         </div>   
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
@@ -2081,14 +2081,14 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //            <input type='radio' id='tab-1' name='tab-group-1' checked>
      //            <label for='tab-1'>Textbook Companion</label>
      //            <div class='tabcontent'><div id='tbctabledata'  
-     //      style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div><div id='tbcchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . "</div></div></div>";
+     //      style='float:left;width:2200px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div><div id='tbcchartdata' style='float:left;width:2100px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . "</div></div></div>";
      //            } else if ($value == "lab_migration") {
      //                $pagecontent .= "<div class='tab-preview'>
      //        <input type='radio' id='tab-2' name='tab-group-1'>
      //              <label for='tab-2'>Lab Migration</label>
      //              <div class='tabcontent'>
-     //        <div id='lmtabledata' style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div>
-     //        <div id='lmchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . "<div></div></div></div></div>";
+     //        <div id='lmtabledata' style='float:left;width:2200px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div>
+     //        <div id='lmchartdata' style='float:left;width:2100px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . "<div></div></div></div></div>";
      //            } else if ($value == "workshop") {
                     
      //                $event_type = "Workshop";
@@ -2236,7 +2236,7 @@ foreach ($optiondata as $value) {
             <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . $tbcchartcheck . '</div>
             </div>
             <div id="lmtabledata" class="tab-pane fade ">' . $lmdatacheck . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . $lmchartcheck . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . $lmchartcheck . '</div>
         </div>   
          <div id="workshopdata" class="tab-pane fade ">
          '. $workshopdatacheck . '</div>
@@ -2275,7 +2275,7 @@ foreach ($optiondata as $value) {
                         <div class="tab-content">
 
        <div id="lmtabledata" class="tab-pane fade in active ">' . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . '</div>
         </div>   </div>';
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
@@ -3787,7 +3787,7 @@ $query = "
             "#title" => "Name",
             "#default_value" => '',
             "#required" => TRUE,
-            "#maxlength" => 50,
+            "#maxlength" => 100,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
@@ -3820,14 +3820,14 @@ $query = "
             "#title" => "Venue",
             "#default_value" => '',
             "#required" => TRUE,
-            "#maxlength" => 50,
+            "#maxlength" => 100,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => '',
             "#required" => TRUE,
-            "#maxlength" => 50,
+            "#maxlength" => 100,
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -3885,6 +3885,25 @@ $query = "
                 )
             )
         );
+
+        $form['other_pincode'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Pincode'),
+            '#size' => 30,
+            '#maxlength' => 6,
+            '#required' => True,
+            '#attributes' => array(
+                'placeholder' => 'Enter pincode....'
+            ),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'Others'
+                    )
+                )
+            ),
+        );
+
         $form['all_state'] = array(
             '#type' => 'select',
             '#title' => t('State'),
@@ -3914,18 +3933,28 @@ $query = "
                     )
                 )
             ),
+            '#ajax'=> array(
+                'callback'=>'list_pincode_for_city',
+                'wrapper'=>'pincode-wrapper',
+            ),
             '#prefix'=> '<div id="city-wrapper">',
             '#suffix'=>'</div>',
         );
+
         $form['pincode'] = array(
-            '#type' => 'textfield',
+            '#type' => 'select',
             '#title' => t('Pincode'),
-            '#size' => 30,
-            '#maxlength' => 6,
-            '#required' => True,
-            '#attributes' => array(
-                'placeholder' => 'Enter pincode....'
+            '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: null),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'India'
+                    )
+                )
             ),
+            '#required' => True,
+            '#prefix'=> '<div id="pincode-wrapper">',
+            '#suffix'=> '</div>',
         );
         
         $form["no_of_participant"] = array(
@@ -3943,9 +3972,9 @@ $query = "
         );
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details (Max characters: 500)",
+            "#title" => "Details (Max characters: 2000)",
             "#default_value" => '',
-            "#maxlength" => 500,
+            "#maxlength" => 2000,
             "#required" => TRUE,
         );
         $form['speakers_fieldset'] = array(
@@ -3968,19 +3997,19 @@ $query = "
                 "#type" => "textfield",
                 "#title" => "Name: ",
                 "#default_value" => "",
-                "#maxlength" => 50,
+                "#maxlength" => 100,
             );
             $form['speakers_fieldset'][$i]["institute"] = array(
                 "#type" => "textfield",
                 "#title" => "Institute: ",
                 "#default_value" => "",
-                "#maxlength" => 50,
+                "#maxlength" => 100,
             );
             $form['speakers_fieldset'][$i]["place"] = array(
                 "#type" => "textfield",
                 "#title" => "Place: ",
                 "#default_value" => "",
-                "#maxlength" => 50,
+                "#maxlength" => 100,
             );
         }
         $form["speakers_count"] = array(
@@ -4043,24 +4072,24 @@ $query = "
                 "#type" => "textfield",
                 "#title" => "Name: ",
                 "#default_value" => "",
-                '#maxlength' => 50,
+                '#maxlength' => 100,
             );
             $form['testimonial_fieldset'][$i]["t_department"] = array(
                 "#type" => "textfield",
                 "#title" => "Department: ",
                 "#default_value" => "",
-                "#maxlength" => 50,
+                "#maxlength" => 100,
             );
             $form['testimonial_fieldset'][$i]["t_university"] = array(
                 "#type" => "textfield",
                 "#title" => "University: ",
                 "#default_value" => "",
-                "#maxlength" => 80,
+                "#maxlength" => 200,
             );
             $form['testimonial_fieldset'][$i]["t_body"] = array(
                 "#type" => "textarea",
                 "#title" => "Testimonial: ",
-                "#maxlength" => 500,
+                "#maxlength" => 2000,
             );
         }
         $form["testimonial_count"] = array(
@@ -4124,7 +4153,7 @@ $query = "
                 "#type" => "textfield",
                 "#title" => "Title: ",
                 "#default_value" => "",
-                "#maxlength" => 50,
+                "#maxlength" => 100,
             );
             $form['videolink_fieldset'][$i]["videolink_link"] = array(
                 "#type" => "textfield",
@@ -4273,7 +4302,7 @@ $query = "
             "#title" => "Name",
             "#default_value" => $row->w_name,
             "#required" => TRUE,
-            "#maxlength" => 50,
+            "#maxlength" => 100,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
@@ -4307,14 +4336,14 @@ $query = "
             "#title" => "Venue",
             "#default_value" => $row->venue,
             "#required" => TRUE,
-            "#maxlength" => 50,
+            "#maxlength" => 100,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => $row->street,
             "#required" => TRUE,
-            "#maxlength" => 50
+            "#maxlength" => 100
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -4376,6 +4405,24 @@ $query = "
             ),
             "#default_value" => $row->city
         );
+        $form['other_pincode'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Pincode'),
+            '#size' => 30,
+            '#maxlength' => 6,
+            '#required' => True,
+            '#attributes' => array(
+                'placeholder' => 'Enter pincode....'
+            ),
+            "#default_value" => $row->pincode,
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'Others'
+                    )
+                )
+            ),
+        );
 
         $form['all_state'] = array(
             '#type' => 'select',
@@ -4399,7 +4446,7 @@ $query = "
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
-            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: null),
+            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: $row->state),
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
@@ -4410,18 +4457,28 @@ $query = "
             '#prefix'=> '<div id="city-wrapper">',
             '#suffix'=>'</div>',
             "#default_value" => $row->city,
+            '#ajax'=> array(
+                'callback'=>'list_pincode_for_city',
+                'wrapper'=>'pincode-wrapper',
+            ),
         );
         $form['pincode'] = array(
-            '#type' => 'textfield',
+            '#type' => 'select',
             '#title' => t('Pincode'),
-            '#size' => 30,
-            '#maxlength' => 6,
-            '#required' => True,
-            '#attributes' => array(
-                'placeholder' => 'Enter pincode....'
+            '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: $row->city),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'India'
+                    )
+                )
             ),
-            "#default_value" => $row->pincode
+            '#required' => True,
+            '#prefix'=> '<div id="pincode-wrapper">',
+            '#suffix'=> '</div>',
+            "#default_value" => $row->pincode,
         );
+
         $form["no_of_participant"] = array(
             "#type" => "textfield",
             "#title" => "Number Of Participants",
@@ -4439,9 +4496,9 @@ $query = "
 
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details (Max characters: 500)",
+            "#title" => "Details (Max characters: 2000)",
             "#default_value" => $row->body,
-            '#maxlength' => 500,
+            '#maxlength' => 2000,
             "#required" => TRUE,
         );
         /*Edit Speakers*/
@@ -4478,19 +4535,19 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Name",
                     "#default_value" => $row_s->name,
-                    "#maxlength" => 50
+                    "#maxlength" => 100
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Institute",
                     "#default_value" => $row_s->institute,
-                    "#maxlength" => 80,
+                    "#maxlength" => 200,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "Place",
                     "#default_value" => $row_s->place,
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 
                 $i++;
@@ -4518,19 +4575,19 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Name",
                     "#default_value" => "",
-                    "#maxlength" => 50
+                    "#maxlength" => 100
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
                     "#default_value" => "",
-                    "#maxlength" => 80,
+                    "#maxlength" => 200,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
                     "#default_value" => "",
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                
             }
@@ -4607,7 +4664,7 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Title: ",
                     "#default_value" => $row_v->title,
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
@@ -4642,7 +4699,7 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Title: ",
                     "#default_value" => "",
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
@@ -4730,25 +4787,25 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Name",
                     "#default_value" => $row_t->name,
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
                     "#default_value" => $row_t->department,
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
                     "#default_value" => $row_t->university,
-                    "#maxlength" => 80,
+                    "#maxlength" => 200,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
                     "#title" => "Testimonial",
                     "#default_value" => $row_t->body,
-                    "#maxlength" => 500,
+                    "#maxlength" => 2000,
                 );
                 $i++;
             }
@@ -4772,24 +4829,24 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Name",
                     "#default_value" => "",
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
                     "#default_value" => "",
-                    "#maxlength" => 50,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
                     "#default_value" => "",
-                    "#maxlength" => 80,
+                    "#maxlength" => 200,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
                     "#title" => "Testimonial",
-                    "#maxlength" => 500,
+                    "#maxlength" => 2000,
                 );
             }
             $form["testimonial_count"] = array(
@@ -4983,6 +5040,13 @@ function workshop_add_form_validate($form, &$form_state) {
         else {
             $form_state['values']['city'] = $form_state['values']['other_city'];
         }
+        if ($form_state['values']['other_pincode'] == '') {
+            form_set_error('other_city', t('Enter pincode'));
+            // $form_state['values']['country'] = $form_state['values']['other_country'];
+        } 
+        else {
+            $form_state['values']['pincode'] = $form_state['values']['other_pincode'];
+        }
     } 
     else {
         if ($form_state['values']['country'] == '') {
@@ -5110,6 +5174,10 @@ function workshop_add_more_remove_one($form, &$form_state) {
 
 function list_city_for_state($form, &$form_state) {
     return $form['city'];
+}
+
+function list_pincode_for_city($form, &$form_state) {
+    return $form['pincode'];
 }
 
 function workshop_display_all() {
@@ -5495,7 +5563,6 @@ function workshop_add_form_submit($form, &$form_state) {
                                   VALUES
                                   (:w_id, :name, :path)
                                   ";
-   // $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
                     $imageargs = array(
                         ":w_id" => $v["workshop_id"],
                         ":name" => $file_name,//$_FILES['files']['name'][$file_form_name],
@@ -5782,7 +5849,7 @@ function workshop_view_image_all($id = 0) {
     $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $previous = ($row1->id) - 1;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:550px; height:350px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:5100px; height:3100px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     $page_content .= "<a href=" . $GLOBALS['base_url'] . "/events/images/change/" . $previous . " name=" . $row1->id . " id=" . $row1->id . "  class='autodialog' data-dialog-width='600px'>PREVIOUS</a>";
     return $page_content;
@@ -5856,7 +5923,7 @@ function workshop_view_image_change($id = 0) {
     $row = $result->fetchObject();
     $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:600px; height:500px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:600px; height:2000px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     return $page_content;
 }
@@ -6585,52 +6652,62 @@ function _list_of_states() {
     $states = array(
         0 => '-Select-'
     );
-    $query = db_select('list_states_of_india');
-    $query->fields('list_states_of_india');
+    $query = db_select('ai_pincode');
+    $query->fields('ai_pincode', array('statename'));
     $states_list = $query->execute();
     while ($states_list_data = $states_list->fetchObject()) {
-        $states[$states_list_data->state] = $states_list_data->state;
+        $states[$states_list_data->statename] = $states_list_data->statename;
     }
     return $states;
 }
 
 
 function _list_of_cities($state) {
+
     $city = array(
         0 => '-Select-'
     );
-    $query = db_select('list_cities_of_india');
-    $query->fields('list_cities_of_india');
-    $query->orderBy('city', 'ASC');
-    $city_list = $query->execute();
-
-    $id = null;
-    if($state != null)
+    if($state == null or $state == '')
     {
-        $query = db_select('list_states_of_india');
-        $query->fields('list_states_of_india');
-        $state_list = $query->execute();
-        
-        while($state_list_data = $state_list->fetchObject()){
-            if($state_list_data->state == $state)
-            { $id = $state_list_data->id; break; }
-        }
-    }
-
-    if($id==null)
-    {
-        while ($city_list_data = $city_list->fetchObject()) {
-            $city[$city_list_data->city] = $city_list_data->city;
+        $query = db_select('ai_pincode');
+        $query->fields('ai_pincode', array('districtname'));
+        $query->orderBy('districtname', 'ASC');
+        $district_list = $query->execute();        
+        while($district_list_data = $district_list->fetchObject()){
+            $city[$district_list_data->districtname] = $district_list_data->districtname;
         }
     }
     else
-    {   
-        while ($city_list_data = $city_list->fetchObject()) {
-            if($city_list_data->state_id == $id)
-                $city[$city_list_data->city] = $city_list_data->city;
+    {  
+        $query = db_select('ai_pincode');
+        $query->fields('ai_pincode', array('districtname'));
+        $query->orderBy('districtname', 'ASC');
+        $query->condition('statename', $state,'=');
+        $district_list = $query->execute();  
+        while ($district_list_data = $district_list->fetchObject()) {
+            $city[$district_list_data->districtname] = $district_list_data->districtname; $i++;
         }
     }
     return $city;
+}
+
+function _list_of_pincodes($city) {
+
+    $pincode = array(
+        0 => '-Select-'
+    );
+    if($city != null and $city != '')
+    {
+        $query = db_select('ai_pincode');
+        $query->fields('ai_pincode', array('pincode', 'officename'));
+        $query->orderBy('pincode', 'ASC');
+        $query->condition('districtname', $city, '=');
+        $pincode_list = $query->execute();   
+        while($pincode_list_data = $pincode_list->fetchObject()){
+            $pincode[$pincode_list_data->pincode] = $pincode_list_data->pincode.' - '.$pincode_list_data->officename;
+        } 
+    }
+    return $pincode;
 }
 
 
@@ -6871,7 +6948,7 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
     $query->condition('s.name', $state, 'LIKE');
     $query->condition('t.tdate', $startdate, '>=');
         $query->condition('t.tdate', $enddate, '<=');
-    $result = $query->extend('PagerDefault')->limit(50)->extend('TableSort')->orderByHeader($header)->execute();
+    $result = $query->extend('PagerDefault')->limit(100)->extend('TableSort')->orderByHeader($header)->execute();
     $number_of_rows = $result->rowCount();
     
     
@@ -7942,24 +8019,24 @@ $pdf->AddPage();
    
  $page_content .= '<table cellpadding="3" width="100%" cellspacing="1" bordercolor="RED" border="1" style="text-align:left;border-collapse: collapse;"><tbody>';
     $page_content .= '
-   <tr><td width="20%"><b>Name</b></td><td width="80%" >' . $row->w_name . '</td></tr>
+   <tr><td width="20%"><b>Name</b></td><td width="200%" >' . $row->w_name . '</td></tr>
 
-<tr><td width="20%"><b>Start Date</b></td><td width="80%">' . $startdate . '</td></tr>
+<tr><td width="20%"><b>Start Date</b></td><td width="200%">' . $startdate . '</td></tr>
 
-  <tr><td width="20%"><b>End Date</b></td><td width="80%">' . $enddate . '</td></tr>
+  <tr><td width="20%"><b>End Date</b></td><td width="200%">' . $enddate . '</td></tr>
 
-<tr><td width="20%"><b>No. of Participants</b></td><td width="80%">' . $row->no_of_participant . '</td></tr>
+<tr><td width="20%"><b>No. of Participants</b></td><td width="200%">' . $row->no_of_participant . '</td></tr>
 
- <tr><td width="20%"><b>Venue</b></td><td width="80%">' . $row->venue . '</td></tr>';
+ <tr><td width="20%"><b>Venue</b></td><td width="200%">' . $row->venue . '</td></tr>';
 
 if ($num_of_speakercount!=0) {
     $page_content .= '<tr><td><b>Speakers</b></td><td>' . $textdisplay . '</td></tr>';
     }
 
-$page_content .= '<tr><td width="20%"><b>Details</b></td><td align="justify"  width="80%">' . $row->body . '</td></tr>';
+$page_content .= '<tr><td width="20%"><b>Details</b></td><td align="justify"  width="200%">' . $row->body . '</td></tr>';
 
 if (trim(strlen($row->event_link))!=0) {
- $page_content .= '<tr><td width="20%"><b>Event website</b></td><td width="80%" style="color:blue"><a href="' . $row->event_link . '" target="_blank">' . $row->event_link . '</a></td></tr>';
+ $page_content .= '<tr><td width="20%"><b>Event website</b></td><td width="200%" style="color:blue"><a href="' . $row->event_link . '" target="_blank">' . $row->event_link . '</a></td></tr>';
 }
 $page_content .= '</tbody></table>';
   

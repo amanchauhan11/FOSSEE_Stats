@@ -280,7 +280,7 @@ function fossee_stats_menu() {
     );
 
     /* STATS MAP */
-    //For show the stats in the India map
+    //For the stats in the India map
     $items["fossee-stats-map"] = array(
         "title" => "FOSSEE Stats Map",
         "page callback" => "drupal_get_form",
@@ -292,16 +292,23 @@ function fossee_stats_menu() {
         ),
         "type" => MENU_NORMAL_ITEM
     );
-
+    /* Ajax request for state data */
     $items['state-details'] = array(
       'page callback'=>'state_details',
       'access callback'=>'user_access',
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
     );
-
+    /* Ajax request for map data */
     $items['map-stats'] = array(
       'page callback'=>'map_stats',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
+      /* Ajax request for dropdowns */
+    $items['dropdowns'] = array(
+      'page callback'=>'dropdowns_mode',
       'access callback'=>'user_access',
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
@@ -7720,7 +7727,7 @@ function fossee_stats_init() {
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/confirm.js");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/testimonials_script.js");
 }
-
+/* Form for Map Stats */
 function fossee_map_form($form, $form_state) {
 
   /* First Dropdown for Foss type */
@@ -7734,69 +7741,86 @@ function fossee_map_form($form, $form_state) {
   }
   $form['foss_type'] = array(
       '#type' => 'select',
-      '#prefix' => '<div class="content"><div><table ><tr><td>',
-      '#suffix' => '</td><tr>',
+      '#prefix' => '<div class="content"><div><table ><tr><td onchange="check_activities()">',
+      '#suffix' => '</td><td id="activities"></td><td id="status"></td>',
       '#title' => t('FOSS Type'),
       '#multiple' => FALSE,
       '#options' => $options_first,
-      //'#default_value' => $foss_project,
       '#validated' => TRUE
   );
 
-
-  /*$form['submit'] = array(
-      '#type' => 'submit',
-      '#ajax' => array(
-          'callback' => 'ajax_submit_for_map',
-          'progress' => array(
-              'message' => ''
-          )
-      ),
-      '#value' => t('Filter'),
-      '#prefix' => '<tr><td align="center">',
-      '#suffix' => ''
-  );*/
+  /* Submit button with onclick function for javascript*/
   $form['submit']= array(
       '#type' => 'item',
       '#markup' => '<tr><td><input type="button" onclick="map()" value="Submit" class="form-submit">'
   );
+  /* Reset button to clear all form*/
   $form['reset'] = array(
       '#type' => 'submit',
       '#value' => t('Reset'),
       '#prefix' => '',
       '#suffix' => '</td></tr></table></div>'
   );
+  /* Space to display the map by default and by Ajax request */
   $form['map'] = array(
       '#type' => 'item',
-      '#prefix' => '<div id="poper"></div><div id="loader"><div id="load_map" >'.get_map_data(NULL),
+      '#prefix' => '<div id="poper"></div><div id="loader"><div id="load_map" >'.get_map_data(NULL,0,0),
       '#markup' => '',
       '#suffix' => '</div></div></div>'
    );
+   /* Calling additional files like css and js to run the map smoothly */
    drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/loadingoverlay.min.js");
   return $form;
 }
 
-/* Form submit for map */
-/*
-function ajax_submit_for_map($form, &$form_state){
+/* Dropdown Mode for Map Stats */
+function dropdowns_mode(){
+  /* Taking JSON formatted data from ajax request */
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+  $type = $postBody->Type;
+  $id = $postBody->ID;
+  $result ='';
+  /* Checking type of drop down needed */
+  if ($type == 'activities') {
+    /* Fetching data for activities dropdown */
+    $options = get_activities_list($id);
+    $front = '<div class="form-item form-type-select form-item-foss-activities" onchange="check_status()"><label for="edit-foss-activities">Activities </label><select id="edit-foss-activities" name="foss_activities" class="form-select">';
+    $flag = false;
+    for ($i=0; $i < count($options) ; $i++) {
+      if ($options[$i] != '' && $options[$i] != 'Self Workshop' && $options[$i] != 'Spoken Tutorial') {
+        $result .= '<option value = "'.$i.'">'.$options[$i].'</option>';
+        $flag = true;
+      }
+    }
+    if ($flag) {
+      $result = $front.$result;
+      $result .= '</select></div>';
+    }
+  }else if($type == 'status') {
+    /* Fetching data for status dropdown */
+    $options = _ajax_example_get_third_dropdown_options($id);
+    $front = '<div class="form-item form-type-select form-item-foss-status"><label for="edit-foss-status">Status </label><select id="edit-foss-status" name="foss_status" class="form-select">';
+    $flag = false;
+    for ($i=0; $i < count($options) ; $i++) {
+      if ($options[$i] != '') {
+        $flag = true;
+        $result .= '<option value = "'.$i.'">'.$options[$i].'</option>';
+      }
+    }
+    if ($flag) {
+      $result = $front.$result;
+      $result .= '</select></div>';
+    }
+  }
+  echo $result;
+}
 
-  $commands = array();
-  $foss_type = $form['foss_type']['#options'][$form_state['values']['foss_type']];
-  $foss_sub_project = $form['foss_sub_project']['#options'][$form_state['values']['foss_sub_project']];
-  $data = get_map_data($foss_type, "--------------");
-
-  $form['load_map']['#markup'] = $data;
-  $commands[] = ajax_command_html("#load_map", drupal_render($form['load_map']));
-  return array(
-      '#type' => 'ajax',
-      '#commands' => $commands
-  );
-
-}*/
-
-function get_map_data($type){
+/* Generating data for representation of map */
+function get_map_data($type,$activities,$status){
+  /* Initializing all states in an array with their corresponding values */
   $states = array(
     'Andhra Pradesh' => 0,
     'Arunachal Pradesh' => 0,
@@ -7834,7 +7858,9 @@ function get_map_data($type){
     'National Capital Territory of Delhi' => 0,
     'Puducherry (Pondicherry)' => 0
   );
+  /* For separation of state name from key of $states array */
   $key = array_keys($states);
+  /* Checking the foss type */
   if($type == "" || $type == NULL){
     $query = db_select('foss_type','u')
       ->fields('u', array(
@@ -7846,6 +7872,7 @@ function get_map_data($type){
         '$foss_selfworkshop_no'
       ))
       ->execute();
+      /* For fetching data from all foss type */
       while($foss = $query->fetchObject()){
         $name = $foss->foss_name;
         // Workshop
@@ -7856,6 +7883,7 @@ function get_map_data($type){
             ->condition('foss_name',$name)
             ->execute()
             ->fetchAll();
+          // Assigning to each states
           foreach ($query1 as $s) {
             if($s->state){
               $states[$s->state]++;
@@ -7885,9 +7913,11 @@ function get_map_data($type){
             if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
                 if ($name != 'DWSIM') {
                   foreach ($key as $k) {
+                    /* Completed Textbook Companion */
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                         ':state' => $k,
                     ));
+                    /* Pending Textbook Companion */
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':state' => $k,
                         ':enddate' => $pending_enddate
@@ -7898,9 +7928,11 @@ function get_map_data($type){
                 }
                 else {
                   foreach ($key as $k) {
+                    /* Completed Textbook Companion */
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                         ':state' => $k,
                     ));
+                    /* Pending Textbook Companion */
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':state' => $k,
                         ':enddate' => $pending_enddate
@@ -7912,9 +7944,11 @@ function get_map_data($type){
             }
             else {
               foreach ($key as $k) {
+                /* Completed Textbook Companion */
                 $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
                     ':state' => $k,
                 ));
+                /* Pending Textbook Companion */
                 $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                     ':state' => $k,
                     ':enddate' => $pending_enddate
@@ -7940,9 +7974,21 @@ function get_map_data($type){
 
         // Lab Migration
         if($foss->lab_migration){
+          /* Completed Lab Migration */
           $query1 = db_select('lab_migration_proposal','u')
             ->fields('u', array('state'))
             ->condition('approval_status', 3)
+            ->execute()
+            ->fetchAll();
+          foreach ($query1 as $s) {
+            if($s->state){
+              $states[$s->state]++;
+            }
+          }
+          /* Lab in Progress of Lab Migration */
+          $query1 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('state'))
+            ->condition('approval_status', 1)
             ->execute()
             ->fetchAll();
           foreach ($query1 as $s) {
@@ -7965,6 +8011,7 @@ function get_map_data($type){
 
         }
         */
+        /* DWSIM Flowsheet */
         if($name == 'DWSIM'){
           db_set_active('DWSIM');
           foreach ($key as $k) {
@@ -7976,6 +8023,7 @@ function get_map_data($type){
               ->fetchField();
             $states[$k] += $query1;
           }
+        /* eSim Circuit Simulation */
         }else if($name == 'eSim'){
           db_set_active('eSim');
           foreach ($key as $k) {
@@ -8006,200 +8054,564 @@ function get_map_data($type){
       ->execute()
       ->fetchObject();
     $name = $query->foss_name;
-    // Workshop
-  if($query->workshop){
-      $query1 = db_select('workshop', 'w')
-        ->fields('w', array('state'))
-        ->condition('type','workshop')
-        ->condition('foss_name',$name)
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
-        }
+    /* Converting ID to name of Activities */
+    $options = get_activities_list($type);
+    for ($i=0; $i < count($options) ; $i++) {
+      if ($i == $activities) {
+        $act = $options[$i];
       }
     }
-    // Conference
-    if($query->conference){
-      $query1 = db_select('workshop', 'w')
-        ->fields('w',array('state'))
-        ->condition('type','conference')
-        ->condition('foss_name',$name)
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
+    /* When Activities are set */
+    if ($activities != 0) {
+      /* Converting ID to name of Activities */
+      $options = _ajax_example_get_third_dropdown_options($activities);
+      for ($i=0; $i < count($options) ; $i++) {
+        if ($i == $status) {
+          $stat = $options[$i];
         }
       }
-    }
-    // Text Book companion
-    db_set_active($name);
-    if($query->tbc){
+      /* When Status are set */
+      if ($status != 0) {
+        /* Book in Progress for Textbook Companion */
+        if ($act == 'Textbook Companion' && $stat == 'Books in Progress') {
+          db_set_active($name);
+          if($query->tbc){
+            if ($name != 'Python') {
+                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
 
-      if ($name != 'Python') {
-            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                        if ($name != 'DWSIM') {
+                          foreach ($key as $k) {
+                            /* Pending Textbook Companion */
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query3->fetchObject()->book_count;
+                          }
+                        }
+                        else {
+                          foreach ($key as $k) {
+                            /* Pending Textbook Companion */
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query3->fetchObject()->book_count;
+                          }
+                        }
+                    }
+                    else {
+                      foreach ($key as $k) {
+                        /* Pending Textbook Companion */
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $k,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $states[$k] += $query3->fetchObject()->book_count;
+                      }
+                    }
 
-              if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                  if ($name != 'DWSIM') {
-                    foreach ($key as $k) {
-                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                          ':state' => $k,
-                      ));
-                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                          ':state' => $k,
-                          ':enddate' => $pending_enddate
-                      ));
-                      $states[$k] += $query2->fetchObject()->book_count;
-                      $states[$k] += $query3->fetchObject()->book_count;
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        /* Completed Books for Textbook Companion */
+        }elseif ($act == 'Textbook Companion' && $stat == 'Completed Books') {
+          db_set_active($name);
+          if($query->tbc){
+            if ($name != 'Python') {
+                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                        if ($name != 'DWSIM') {
+                          foreach ($key as $k) {
+                            /* Completed Textbook Companion */
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query2->fetchObject()->book_count;
+                          }
+                        }
+                        else {
+                          foreach ($key as $k) {
+                            /* Completed Textbook Companion */
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query2->fetchObject()->book_count;
+                          }
+                        }
                     }
-                  }
-                  else {
-                    foreach ($key as $k) {
-                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                          ':state' => $k,
-                      ));
-                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                          ':state' => $k,
-                          ':enddate' => $pending_enddate
-                      ));
-                      $states[$k] += $query2->fetchObject()->book_count;
-                      $states[$k] += $query3->fetchObject()->book_count;
+                    else {
+                      foreach ($key as $k) {
+                        /* Completed Textbook Companion */
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $k,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $states[$k] += $query2->fetchObject()->book_count;
+                      }
                     }
-                  }
+
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        /* Labs in Progress for Lab Migration */
+        }elseif ($act == 'Lab Migration' && $stat == 'Labs in Progress') {
+          db_set_active($name);
+          if($query->lab_migration){
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('state'))
+              ->condition('approval_status', 1)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
               }
-              else {
-                foreach ($key as $k) {
-                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
-                      ':state' => $k,
-                  ));
-                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                      ':state' => $k,
-                      ':enddate' => $pending_enddate
-                  ));
-                  $states[$k] += $query2->fetchObject()->book_count;
-                  $states[$k] += $query3->fetchObject()->book_count;
+            }
+          }
+        /* Completed Labs for Lab Migration */
+        }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
+          db_set_active($name);
+          if($query->lab_migration){
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('state'))
+              ->condition('approval_status', 3)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
+              }
+            }
+          }
+        }
+      /* When status not set */
+      }else {
+        // Workshop
+        if ($act == 'Workshop') {
+          if($query->workshop){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w', array('state'))
+              ->condition('type','workshop')
+              ->condition('foss_name',$name)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
+              }
+            }
+          }
+        // Conference
+        }elseif ($act == 'Conference') {
+          if($query->conference){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w',array('state'))
+              ->condition('type','conference')
+              ->condition('foss_name',$name)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
+              }
+            }
+          }
+        // Textbook  Companion
+        }elseif ($act == 'Textbook Companion') {
+          db_set_active($name);
+          if($query->tbc){
+
+            if ($name != 'Python') {
+                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                        if ($name != 'DWSIM') {
+                          foreach ($key as $k) {
+                            /* Completed Textbook */
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                                ':state' => $k,
+                            ));
+                              /* Pending Textbook */
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query2->fetchObject()->book_count;
+                            $states[$k] += $query3->fetchObject()->book_count;
+                          }
+                        }
+                        else {
+                          foreach ($key as $k) {
+                            /* Completed Textbook */
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                                ':state' => $k,
+                            ));
+                              /* Pending Textbook */
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $k,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $states[$k] += $query2->fetchObject()->book_count;
+                            $states[$k] += $query3->fetchObject()->book_count;
+                          }
+                        }
+                    }
+                    else {
+                      foreach ($key as $k) {
+                        /* Completed Textbook */
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                            ':state' => $k,
+                        ));
+                          /* Pending Textbook */
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $k,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $states[$k] += $query2->fetchObject()->book_count;
+                        $states[$k] += $query3->fetchObject()->book_count;
+                      }
+                    }
+
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        // Lab Migration
+        }elseif ($act == 'Lab Migration') {
+          db_set_active($name);
+          if($query->lab_migration){
+            /* Completed Lab Migration */
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('state'))
+              ->condition('approval_status', 3)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
+              }
+            }
+            /* Lab in Progress of Lab Migration */
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('state'))
+              ->condition('approval_status', 1)
+              ->execute()
+              ->fetchAll();
+            foreach ($query1 as $s) {
+              if($s->state){
+                $states[$s->state]++;
+              }
+            }
+          }
+        }
+      }
+    }else {
+      // Workshop
+      if($query->workshop){
+        $query1 = db_select('workshop', 'w')
+          ->fields('w', array('state'))
+          ->condition('type','workshop')
+          ->condition('foss_name',$name)
+          ->execute()
+          ->fetchAll();
+        foreach ($query1 as $s) {
+          if($s->state){
+            $states[$s->state]++;
+          }
+        }
+      }
+      // Conference
+      if($query->conference){
+        $query1 = db_select('workshop', 'w')
+          ->fields('w',array('state'))
+          ->condition('type','conference')
+          ->condition('foss_name',$name)
+          ->execute()
+          ->fetchAll();
+        foreach ($query1 as $s) {
+          if($s->state){
+            $states[$s->state]++;
+          }
+        }
+      }
+      // Text Book companion
+      db_set_active($name);
+      if($query->tbc){
+
+        if ($name != 'Python') {
+              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+                if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                    if ($name != 'DWSIM') {
+                      foreach ($key as $k) {
+                        /* Completed Textbook */
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                            ':state' => $k,
+                        ));
+                          /* Pending Textbook */
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $k,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $states[$k] += $query2->fetchObject()->book_count;
+                        $states[$k] += $query3->fetchObject()->book_count;
+                      }
+                    }
+                    else {
+                      foreach ($key as $k) {
+                        /* Completed Textbook */
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                            ':state' => $k,
+                        ));
+                          /* Pending Textbook */
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $k,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $states[$k] += $query2->fetchObject()->book_count;
+                        $states[$k] += $query3->fetchObject()->book_count;
+                      }
+                    }
                 }
-              }
+                else {
+                  foreach ($key as $k) {
+                    /* Completed Textbook */
+                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                        ':state' => $k,
+                    ));
+                      /* Pending Textbook */
+                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                        ':state' => $k,
+                        ':enddate' => $pending_enddate
+                    ));
+                    $states[$k] += $query2->fetchObject()->book_count;
+                    $states[$k] += $query3->fetchObject()->book_count;
+                  }
+                }
 
-      }
-      else {
-          /*$query5 = db_select('tbc_book');
-          $query5->addExpression('count(*)', 'count');
-          $query5->condition('approved', 1);
-          $result5 = $query5->execute();
-          $completedbookcount += $result5->fetchObject()->count;
-          $query6 = db_select('tbc_book');
-          $query6->addExpression('count(*)', 'count');
-          $query6->condition('approved', 1, '<>');
-          $result6 = $query6->execute();
-          $pendingbookcount += $result6->fetchObject()->count;*/
-      }
-    }
-    // Lab Migration
-    if($query->lab_migration){
-      $query1 = db_select('lab_migration_proposal','u')
-        ->fields('u', array('state'))
-        ->condition('approval_status', 3)
-        ->execute()
-        ->fetchAll();
-      foreach ($query1 as $s) {
-        if($s->state){
-          $states[$s->state]++;
+        }
+        else {
+            /*$query5 = db_select('tbc_book');
+            $query5->addExpression('count(*)', 'count');
+            $query5->condition('approved', 1);
+            $result5 = $query5->execute();
+            $completedbookcount += $result5->fetchObject()->count;
+            $query6 = db_select('tbc_book');
+            $query6->addExpression('count(*)', 'count');
+            $query6->condition('approved', 1, '<>');
+            $result6 = $query6->execute();
+            $pendingbookcount += $result6->fetchObject()->count;*/
         }
       }
-    }
-    /*
-    //  Self Workshop space
-    if($query->foss_selfworkshop_no){
-      db_set_active('selfworkshop');
-      foreach ($key as $k) {
-        $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
-          ':foss_id' => $query->foss_selfworkshop_no,
-          ':state'=>$k
-        ));
-        $states[$k] += $query2->fetchObject()->count;
-      }
-
-    }
-    */
-    if($name == 'DWSIM'){
-      db_set_active('DWSIM');
-      foreach ($key as $k) {
-        $query1 = db_select('dwsim_flowsheet_proposal')
+      // Lab Migration
+      if($query->lab_migration){
+        /* completed Lab Migration */
+        $query1 = db_select('lab_migration_proposal','u')
+          ->fields('u', array('state'))
           ->condition('approval_status', 3)
-          ->condition('state',$k)
-          ->countQuery()
           ->execute()
-          ->fetchField();
-        $states[$k] += $query1;
+          ->fetchAll();
+        foreach ($query1 as $s) {
+          if($s->state){
+            $states[$s->state]++;
+          }
+        }
+        /* Lab in Progress of Lab Migration */
+        $query1 = db_select('lab_migration_proposal','u')
+          ->fields('u', array('state'))
+          ->condition('approval_status', 1)
+          ->execute()
+          ->fetchAll();
+        foreach ($query1 as $s) {
+          if($s->state){
+            $states[$s->state]++;
+          }
+        }
       }
-    }else if($name == 'eSim'){
-      db_set_active('eSim');
-      foreach ($key as $k) {
-        $query1 = db_select('esim_circuit_simulation_proposal')
-          ->condition('approval_status', 3)
-          ->condition('state',$k)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $states[$k] += $query1;
+      /*
+      //  Self Workshop space
+      if($query->foss_selfworkshop_no){
+        db_set_active('selfworkshop');
+        foreach ($key as $k) {
+          $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+            ':foss_id' => $query->foss_selfworkshop_no,
+            ':state'=>$k
+          ));
+          $states[$k] += $query2->fetchObject()->count;
+        }
+
+      }
+      */
+      /* DWSIM Flowsheet */
+      if($name == 'DWSIM'){
+        db_set_active('DWSIM');
+        foreach ($key as $k) {
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$k)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $states[$k] += $query1;
+        }
+      /*  eSim Circuit Simulation */
+      }else if($name == 'eSim'){
+        db_set_active('eSim');
+        foreach ($key as $k) {
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$k)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $states[$k] += $query1;
+        }
+
       }
 
+      db_set_active('default');
+      db_set_active();
     }
 
-    db_set_active('default');
-    db_set_active();
   }
-  //print_r($states);
   $i =0;
-  foreach ($states as $s) {
-    if($s > 300){
-      $states[$key[$i]]='#ea5507';
-    }else if ($s<=300 && $s>200) {
-      $states[$key[$i]]='#e56b2b';
-    }else if ($s<=200 && $s>100) {
-      $states[$key[$i]]='#e08859';
-    }else if ($s<=100 && $s>50) {
-      $states[$key[$i]]='#e29d78';
-    }else if ($s<=50 && $s>0) {
-      $states[$key[$i]]='#e0ab8f';
-    }else{
-      $states[$key[$i]]='#ddc6ba';
+  // Findiing Maximum Value for states
+  $max = max($states);
+  /* Dynamic representation of data and Assigning color to each state according to it's value */
+  if ($max > 100) {
+    $max = $max-($max%100);
+    foreach ($states as $s) {
+      if($s > $max){
+        $states[$key[$i]]='#ea5507';
+      }else if ($s<=$max && $s>$max*(3/4)) {
+        $states[$key[$i]]='#e56b2b';
+      }else if ($s<=$max*(3/4) && $s>$max*(2/4)) {
+        $states[$key[$i]]='#e08859';
+      }else if ($s<=$max*(2/4) && $s>$max*(1/4)) {
+        $states[$key[$i]]='#e29d78';
+      }else if ($s<=$max*(1/4) && $s>0) {
+        $states[$key[$i]]='#e0ab8f';
+      }else{
+        $states[$key[$i]]='#ddc6ba';
+      }
+      $i++;
     }
-    $i++;
+  }elseif ($max > 10) {
+    $max = $max-($max%10);
+    foreach ($states as $s) {
+      if($s > $max){
+        $states[$key[$i]]='#ea5507';
+      }else if ($s<=$max && $s>$max/2) {
+        $states[$key[$i]]='#e08859';
+      }else if ($s<=$max/2 && $s>0) {
+        $states[$key[$i]]='#e0ab8f';
+      }else{
+        $states[$key[$i]]='#ddc6ba';
+      }
+      $i++;
+    }
+  }else{
+    foreach ($states as $s) {
+      if($s > $max/2){
+        $states[$key[$i]]='#ea5507';
+      }else if ($s<=$max/2 && $s>0) {
+        $states[$key[$i]]='#e08859';
+      }else{
+        $states[$key[$i]]='#ddc6ba';
+      }
+      $i++;
+    }
   }
-  //print_r($states);
+  // Setting the data set to generate the map with corresponding colors
   require_once('fossee_stats_map.inc');
-  $out = stats_map($states);
+  $out = stats_map($states,$max);
   return $out;
 
 }
-
+/* To generate map with activities and status (dropdown data) */
 function map_stats() {
   $postBody = file_get_contents("php://input");
   $postBody = json_decode($postBody);
 
   $type = $postBody->type;
-  echo get_map_data($type);
+  /* Configuration of map */
+  if ($postBody->activities && $postBody->status) {
+    echo get_map_data($type,$postBody->activities,$postBody->status);
+  }elseif ($postBody->activities) {
+    echo get_map_data($type,$postBody->activities,0);
+  }else {
+    echo get_map_data($type,0,0);
+  }
 }
 
+/* Generating State data for popup */
 function state_details() {
   $postBody = file_get_contents("php://input");
   $postBody = json_decode($postBody);
 
   $type = $postBody->type;
   $state = $postBody->state;
+  /* Configuration of activities and status for generation of data */
+  if ($postBody->activities && $postBody->status) {
+    $activities = $postBody->activities;
+    $status = $postBody->status;
+  }elseif ($postBody->activities) {
+    $activities = $postBody->activities;
+    $status = 0;
+  }else {
+    $activities = 0;
+    $staus = 0;
+  }
+  /* Setting all type of data default to zero */
   $workshop = 0;
   $conference = 0;
-  $lab_migration = 0;
+  $lab_migration_completed = 0;
+  $lab_migration_pending = 0;
   $self_workshop = 0;
   $pendingbookcount = 0;
   $completedbookcount = 0;
   $dwsim_flowsheet = 0;
   $circuit_simulation = 0;
+  /* Checking foss type */
   if($type == "" || $type == NULL){
+    /* When foss type is not set */
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'foss_name',
@@ -8210,6 +8622,7 @@ function state_details() {
         'foss_selfworkshop_no'
       ))
       ->execute();
+      /* Taking all foss type's data */
       while($foss = $query->fetchObject()){
         $name = $foss->foss_name;
         // Workshop
@@ -8241,18 +8654,22 @@ function state_details() {
             $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
             if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
                 if ($name != 'DWSIM') {
+                  /* Completed Textbook */
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                         ':state' => $state,
                     ));
+                  /* Pending Textbook */
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':state' => $state,
                         ':enddate' => $pending_enddate
                     ));
                 }
                 else {
+                  /* Completed Textbook */
                     $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                         ':state' => $state,
                     ));
+                  /* Pending Textbook */
                     $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                         ':state' => $state,
                         ':enddate' => $pending_enddate
@@ -8260,9 +8677,11 @@ function state_details() {
                 }
             }
             else {
+              /* Completed Textbook */
                 $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
                     ':state' => $state,
                 ));
+              /* Pending Textbook */
                 $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
                     ':state' => $state,
                     ':enddate' => $pending_enddate
@@ -8287,13 +8706,22 @@ function state_details() {
 
         // Lab Migration
         if($foss->lab_migration){
+          /* Completed Lab Migration */
           $query1 = db_select('lab_migration_proposal')
             ->condition('approval_status', 3)
             ->condition('state',$state)
             ->countQuery()
             ->execute()
             ->fetchField();
-          $lab_migration += $query1;
+          $lab_migration_completed += $query1;
+          /* Pending Lab Migration */
+          $query1 = db_select('lab_migration_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $lab_migration_pending += $query1;
         }
         /*
         //  Self Workshop space
@@ -8317,6 +8745,7 @@ function state_details() {
             ->execute()
             ->fetchField();
           $dwsim_flowsheet += $query1;
+        // eSim Circuit Simulation
         }else if($name == 'eSim'){
           db_set_active('eSim');
           $query1 = db_select('esim_circuit_simulation_proposal')
@@ -8331,6 +8760,7 @@ function state_details() {
         db_set_active();
       }
   }else{
+    /* When foss type is set */
     $query = db_select('foss_type','u')
       ->fields('u', array(
         'foss_name',
@@ -8344,127 +8774,383 @@ function state_details() {
       ->execute()
       ->fetchObject();
     $name = $query->foss_name;
-    // Workshop
-    if($query->workshop){
-      $query1 = db_select('workshop')
-        ->condition('type','workshop')
-        ->condition('state',$state)
-        ->condition('foss_name',$name)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $workshop += $query1;
+    /* Converting ID to name of Activities */
+    $options = get_activities_list($type);
+    for ($i=0; $i < count($options) ; $i++) {
+      if ($i == $activities) {
+        $act = $options[$i];
+      }
+    }
+    /* When Activities are set */
+    if ($activities != 0) {
+      /* Converting ID to name of Activities */
+      $options = _ajax_example_get_third_dropdown_options($activities);
+      for ($i=0; $i < count($options) ; $i++) {
+        if ($i == $status) {
+          $stat = $options[$i];
+        }
+      }
+      if ($status != 0) {
+        /* Book in Progress for TextBook Companion */
+        if ($act == 'Textbook Companion' && $stat == 'Books in Progress') {
+          db_set_active($name);
+          if($query->tbc){
+            if ($name != 'Python') {
+                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
 
-    }
-    // Conference
-    if($query->conference){
-      $query1 = db_select('workshop')
-        ->condition('type','conference')
-        ->condition('state',$state)
-        ->condition('foss_name',$name)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $conference += $query1;
-    }
-    // Text Book companion
-    db_set_active($name);
-    if($query->tbc){
-      if ($name != 'Python') {
-        $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-        if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-            if ($name != 'DWSIM') {
-                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                    ':state' => $state,
-                ));
-                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                    ':state' => $state,
-                    ':enddate' => $pending_enddate
-                ));
+                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                        if ($name != 'DWSIM') {
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $state,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $pendingbookcount += $query3->fetchObject()->book_count;
+                        }
+                        else {
+                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $state,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $pendingbookcount += $query3->fetchObject()->book_count;
+                        }
+                    }
+                    else {
+                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $state,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $pendingbookcount += $query3->fetchObject()->book_count;
+                    }
+
             }
             else {
-                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                    ':state' => $state,
-                ));
-                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                    ':state' => $state,
-                    ':enddate' => $pending_enddate
-                ));
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        /* Completed Books for TextBook Companion */
+        }elseif ($act == 'Textbook Companion' && $stat == 'Completed Books') {
+          db_set_active($name);
+          if($query->tbc){
+            if ($name != 'Python') {
+                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+
+                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                        if ($name != 'DWSIM') {
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $state,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $completedbookcount += $query2->fetchObject()->book_count;
+                        }
+                        else {
+                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                                ':state' => $state,
+                                ':enddate' => $pending_enddate
+                            ));
+                            $completedbookcount += $query2->fetchObject()->book_count;
+                        }
+                    }
+                    else {
+                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                            ':state' => $state,
+                            ':enddate' => $pending_enddate
+                        ));
+                        $completedbookcount += $query2->fetchObject()->book_count;
+                    }
 
             }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        /* Lab in Progress for Lab Migration */
+        }elseif ($act == 'Lab Migration' && $stat == 'Labs in Progress') {
+          db_set_active($name);
+          if($query->lab_migration){
+            $query1 = db_select('lab_migration_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $lab_migration_pending += $query1;
+          }
+        /* Completed Labs for Lab Migration */
+        }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
+          db_set_active($name);
+          if($query->lab_migration){
+            $query1 = db_select('lab_migration_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $lab_migration_completed += $query1;
+          }
+        }
+      }else {
+        // Workshop
+        if ($act == 'Workshop') {
+          if($query->workshop){
+            $query1 = db_select('workshop')
+              ->condition('type','workshop')
+              ->condition('state',$state)
+              ->condition('foss_name',$name)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $workshop += $query1;
+
+          }
+        // Conference
+        }elseif ($act == 'Conference') {
+          if($query->conference){
+            $query1 = db_select('workshop')
+              ->condition('type','conference')
+              ->condition('state',$state)
+              ->condition('foss_name',$name)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $conference += $query1;
+          }
+        // Textbook Companion
+        }elseif ($act == 'Textbook Companion') {
+          db_set_active($name);
+          if($query->tbc){
+            if ($name != 'Python') {
+              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+              if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+                  if ($name != 'DWSIM') {
+                      /* Completed Textbook */
+                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                          ':state' => $state,
+                      ));
+                      /* Pending Textbook */
+                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                          ':state' => $state,
+                          ':enddate' => $pending_enddate
+                      ));
+                  }
+                  else {
+                      /* Completed Textbook */
+                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                          ':state' => $state,
+                      ));
+                      /* Pending Textbook */
+                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                          ':state' => $state,
+                          ':enddate' => $pending_enddate
+                      ));
+
+                  }
+              }
+              else {
+                  /* Completed Textbook */
+                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                      ':state' => $state,
+                  ));
+                  /* Pending Textbook */
+                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                      ':state' => $state,
+                      ':enddate' => $pending_enddate
+                  ));
+              }// End
+              $completedbookcount += $query2->fetchObject()->book_count;
+              $pendingbookcount += $query3->fetchObject()->book_count;
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+        // Lab Migration
+        }elseif ($act == 'Lab Migration') {
+          db_set_active($name);
+          if($query->lab_migration){
+            /* Completed Lab Migration */
+            $query1 = db_select('lab_migration_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $lab_migration_completed += $query1;
+            /* Pending Lab Migration */
+            $query1 = db_select('lab_migration_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $lab_migration_pending += $query1;
+          }
+        }
+      }
+    }else {
+      // Workshop
+      if($query->workshop){
+        $query1 = db_select('workshop')
+          ->condition('type','workshop')
+          ->condition('state',$state)
+          ->condition('foss_name',$name)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $workshop += $query1;
+
+      }
+      // Conference
+      if($query->conference){
+        $query1 = db_select('workshop')
+          ->condition('type','conference')
+          ->condition('state',$state)
+          ->condition('foss_name',$name)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $conference += $query1;
+      }
+      // Text Book companion
+      db_set_active($name);
+      if($query->tbc){
+        if ($name != 'Python') {
+          $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
+          if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
+              if ($name != 'DWSIM') {
+                  /* Completed Textbook */
+                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                      ':state' => $state,
+                  ));
+                  /* Pending Textbook */
+                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                      ':state' => $state,
+                      ':enddate' => $pending_enddate
+                  ));
+              }
+              else {
+                  /* Completed Textbook */
+                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                      ':state' => $state,
+                  ));
+                  /* Pending Textbook */
+                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                      ':state' => $state,
+                      ':enddate' => $pending_enddate
+                  ));
+
+              }
+          }
+          else {
+              /* Completed Textbook */
+              $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              /* Pending Textbook */
+              $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
+                  ':state' => $state,
+                  ':enddate' => $pending_enddate
+              ));
+          }// End
+          $completedbookcount += $query2->fetchObject()->book_count;
+          $pendingbookcount += $query3->fetchObject()->book_count;
         }
         else {
-            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
-                ':state' => $state,
-            ));
-            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                ':state' => $state,
-                ':enddate' => $pending_enddate
-            ));
-        }// End
-        $completedbookcount += $query2->fetchObject()->book_count;
-        $pendingbookcount += $query3->fetchObject()->book_count;
+            /*$query5 = db_select('tbc_book');
+            $query5->addExpression('count(*)', 'count');
+            $query5->condition('approved', 1);
+            $result5 = $query5->execute();
+            $completedbookcount += $result5->fetchObject()->count;
+            $query6 = db_select('tbc_book');
+            $query6->addExpression('count(*)', 'count');
+            $query6->condition('approved', 1, '<>');
+            $result6 = $query6->execute();
+            $pendingbookcount += $result6->fetchObject()->count;*/
+        }
       }
-      else {
-          /*$query5 = db_select('tbc_book');
-          $query5->addExpression('count(*)', 'count');
-          $query5->condition('approved', 1);
-          $result5 = $query5->execute();
-          $completedbookcount += $result5->fetchObject()->count;
-          $query6 = db_select('tbc_book');
-          $query6->addExpression('count(*)', 'count');
-          $query6->condition('approved', 1, '<>');
-          $result6 = $query6->execute();
-          $pendingbookcount += $result6->fetchObject()->count;*/
+
+      // Lab Migration
+      if($query->lab_migration){
+        // Completed Lab Migration
+        $query1 = db_select('lab_migration_proposal')
+          ->condition('approval_status', 3)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $lab_migration_completed += $query1;
+        // Lab Migration in Progress
+        $query1 = db_select('lab_migration_proposal')
+          ->condition('approval_status', 1)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $lab_migration_pending += $query1;
       }
-    }
+      /*
+      //  Self Workshop space
+      if($query->foss_selfworkshop_no){
+        db_set_active('selfworkshop');
+        $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+          ':foss_id' => $query->foss_selfworkshop_no,
+          ':state' => $state
+                              ));
 
-    // Lab Migration
-    if($query->lab_migration){
-      $query1 = db_select('lab_migration_proposal')
-        ->condition('approval_status', 3)
-        ->condition('state',$state)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $lab_migration += $query1;
+        $self_workshop += $query2->fetchObject()->count;
+      }
+      */
+      // DWSIM Flowsheet
+      if($name == 'DWSIM'){
+        db_set_active('DWSIM');
+        $query1 = db_select('dwsim_flowsheet_proposal')
+          ->condition('approval_status', 3)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $dwsim_flowsheet += $query1;
+      // eSim Circuit Simulation
+      }else if($name == 'eSim'){
+        db_set_active('eSim');
+        $query1 = db_select('esim_circuit_simulation_proposal')
+          ->condition('approval_status', 3)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $circuit_simulation += $query1;
+      }
+      db_set_active('default');
+      db_set_active();
     }
-    /*
-    //  Self Workshop space
-    if($query->foss_selfworkshop_no){
-      db_set_active('selfworkshop');
-      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
-        ':foss_id' => $query->foss_selfworkshop_no,
-        ':state' => $state
-                            ));
-
-      $self_workshop += $query2->fetchObject()->count;
-    }
-    */
-    // DWSIM Flowsheet
-    if($name == 'DWSIM'){
-      db_set_active('DWSIM');
-      $query1 = db_select('dwsim_flowsheet_proposal')
-        ->condition('approval_status', 3)
-        ->condition('state',$state)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $dwsim_flowsheet += $query1;
-    }else if($name == 'eSim'){
-      db_set_active('eSim');
-      $query1 = db_select('esim_circuit_simulation_proposal')
-        ->condition('approval_status', 3)
-        ->condition('state',$state)
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-      $circuit_simulation += $query1;
-    }
-    db_set_active('default');
-    db_set_active();
   }
-
-  $total = $pendingbookcount+$completedbookcount;
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration" : '.$lab_migration.', "pbc" : '.$total.', "selfworkshop": '.$self_workshop.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
+  // Converting generated data to JSON format
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
 }

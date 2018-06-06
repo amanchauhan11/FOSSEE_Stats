@@ -3891,7 +3891,6 @@ $query = "
             '#title' => t('Pincode'),
             '#size' => 30,
             '#maxlength' => 6,
-            '#required' => True,
             '#attributes' => array(
                 'placeholder' => 'Enter pincode....'
             ),
@@ -3926,6 +3925,7 @@ $query = "
             '#type' => 'select',
             '#title' => t('City'),
             '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: null),
+            '#validated' => TRUE,
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
@@ -3938,12 +3938,13 @@ $query = "
                 'wrapper'=>'pincode-wrapper',
             ),
             '#prefix'=> '<div id="city-wrapper">',
-            '#suffix'=>'</div>',
+            '#suffix'=> '</div>',
         );
 
         $form['pincode'] = array(
             '#type' => 'select',
             '#title' => t('Pincode'),
+            '#validated' => TRUE,
             '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: null),
             '#states' => array(
                 'visible' => array(
@@ -3952,7 +3953,6 @@ $query = "
                     )
                 )
             ),
-            '#required' => True,
             '#prefix'=> '<div id="pincode-wrapper">',
             '#suffix'=> '</div>',
         );
@@ -4410,7 +4410,6 @@ $query = "
             '#title' => t('Pincode'),
             '#size' => 30,
             '#maxlength' => 6,
-            '#required' => True,
             '#attributes' => array(
                 'placeholder' => 'Enter pincode....'
             ),
@@ -4446,6 +4445,7 @@ $query = "
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
+            '#validated' => TRUE,
             '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: $row->state),
             '#states' => array(
                 'visible' => array(
@@ -4465,6 +4465,7 @@ $query = "
         $form['pincode'] = array(
             '#type' => 'select',
             '#title' => t('Pincode'),
+            '#validated' => TRUE,
             '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: $row->city),
             '#states' => array(
                 'visible' => array(
@@ -4473,7 +4474,6 @@ $query = "
                     )
                 )
             ),
-            '#required' => True,
             '#prefix'=> '<div id="pincode-wrapper">',
             '#suffix'=> '</div>',
             "#default_value" => $row->pincode,
@@ -6129,7 +6129,7 @@ function get_workshop_table_content($criteria) {
         array_push($rows, $item);
         $num++;
     }
-    return $page_content.bootstrap_table_format($headers, $rows);
+    return bootstrap_table_format($headers, $rows);
 }
 
 function events_view_filter($foss_name, $event_type, $startdate, $enddate, 
@@ -6678,7 +6678,7 @@ function _list_of_cities($state) {
         $query->condition('statename', $state,'=');
         $district_list = $query->execute();  
         while ($district_list_data = $district_list->fetchObject()) {
-            $city[$district_list_data->districtname] = $district_list_data->districtname; $i++;
+            $city[$district_list_data->districtname] = $district_list_data->districtname; 
         }
     }
     return $city;
@@ -8154,11 +8154,11 @@ function fossee_stats_init() {
 
 function fossee_stats_date_popup_process_alter(&$element, &$form_state, $context) {
   if ($element['#name'] == 'start_date') {
-    $element['date']['#title'] = t('Start Date:'); 
-    $element['time']['#title'] = t('Start Time:'); 
+    $element['date']['#title'] = t('Start Date<span style="color:red;">*</span>:'); 
+    $element['time']['#title'] = t('Start Time<span style="color:red;">*</span>:'); 
   }
   else if($element['#name'] = 'end_date') {
-  	$element['date']['#title'] = t('End Date:');
-  	$element['time']['#title'] = t('End Time:');
+  	$element['date']['#title'] = t('End Date<span style="color:red;">*</span>:');
+  	$element['time']['#title'] = t('End Time<span style="color:red;">*</span>:');
   }
 }

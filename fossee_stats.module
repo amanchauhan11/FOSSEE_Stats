@@ -5990,6 +5990,7 @@ function workshop_delete_all($workshop_id = 0) {
             drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
         }
     }
+    drupal_goto('events/edit');
     return $page_content;
 }
 
@@ -6097,7 +6098,7 @@ function sort_by_submit($form, &$form_state) {
 
 function get_workshop_table_content($criteria) {
 
-    $criteria_order = array('w_id'=>'DESC', 'startdate'=>'DESC', 'w_name'=>'INC', 'venue'=>'INC', 'no_of_participant'=>'DESC');
+    $criteria_order = array('w_id'=>'DESC', 'startdate'=>'DESC', 'w_name'=>'INC', 'venue'=>'INC', 'no_of_participant'=>'INC');
     $query = db_select('workshop');
     $query->fields('workshop');
     $query->orderBy($criteria, $criteria_order[$criteria]);

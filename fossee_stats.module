@@ -5187,9 +5187,6 @@ function workshop_display_all() {
     return $page_content;
 }
 
-require 'parsecsv-for-php/parsecsv.lib.php';
-
-
 function upload_csv_form($form, &$form_state) {
 
     $form['csv_file'] = array(
@@ -5200,7 +5197,7 @@ function upload_csv_form($form, &$form_state) {
     
     $form['submit_button'] = array(
     '#type' => 'submit',
-    '#value' => t('Done'),
+    '#value' => t('Submit'),
     );
 
     $form['edit'] = array(
@@ -5214,6 +5211,8 @@ function upload_csv_form($form, &$form_state) {
 
 function upload_csv_form_validate($form, &$form_state) {
 
+    require_once(DRUPAL_ROOT.'/'.drupal_get_path('module', 'fossee_stats').'/parsecsv-for-php/parsecsv.lib.php');
+
     if(!isset($_FILES['files']['name']['csv_file']))
         drupal_set_message(t("!Error uploading csv file"), 'error');
 
@@ -5224,7 +5223,6 @@ function upload_csv_form_validate($form, &$form_state) {
     $csv = new ParseCsv\Csv($file_path);
 
     //validating csv header
-
     $std_header = array('foss_name'=>0, 'type'=>0, 'w_name'=>0, 'body'=>0, 'no_of_participant'=>0, 'event_link'=>0, 'startdate'=>0, 'starttime'=>0, 'enddate'=>0, 'endtime'=>0, 'venue'=>0, 'street'=>0, 'country'=>0, 'state'=>0, 'city'=>0, 'pincode'=>0);
 
     $user_header = array_keys($csv->data[0]);
@@ -5775,6 +5773,7 @@ function workshop_add_form_submit($form, &$form_state) {
             }
         }
     }
+    drupal_goto('events/edit');
 }
 
 
@@ -6104,6 +6103,7 @@ function get_workshop_table_content($criteria) {
     $query->orderBy($criteria, $criteria_order[$criteria]);
     $result = $query->execute();
     $headers = array(
+        "S No.",
         "Name",
         "Start Date",
         "Venue",
@@ -6116,8 +6116,10 @@ function get_workshop_table_content($criteria) {
             'class' => 'delete'
         )
     );
+    $num = 1;
     while ($row = $result->fetchObject()) {
         $item = array(
+            $num,
             $row->w_name,
             $row->startdate,
             $row->venue,
@@ -6125,6 +6127,7 @@ function get_workshop_table_content($criteria) {
             l("Edit", "events/edit/{$row->w_id}") . " | " . l("Delete", "events/delete/{$row->w_id}", $options)
         );
         array_push($rows, $item);
+        $num++;
     }
     return $page_content.bootstrap_table_format($headers, $rows);
 }
@@ -6667,17 +6670,7 @@ function _list_of_cities($state) {
     $city = array(
         0 => '-Select-'
     );
-    if($state == null or $state == '')
-    {
-        $query = db_select('ai_pincode');
-        $query->fields('ai_pincode', array('districtname'));
-        $query->orderBy('districtname', 'ASC');
-        $district_list = $query->execute();        
-        while($district_list_data = $district_list->fetchObject()){
-            $city[$district_list_data->districtname] = $district_list_data->districtname;
-        }
-    }
-    else
+    if($state != null and $state != '')
     {  
         $query = db_select('ai_pincode');
         $query->fields('ai_pincode', array('districtname'));

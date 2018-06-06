@@ -64,7 +64,6 @@
 
        $('#edit-start-date-timepicker-popup-1').change(
        		function() {
-       			alert('abc');
        			if($("#edit-end-date-datepicker-popup-0").val()==$("#edit-start-date-datepicker-popup-0").val())
        				if($(this).val()>$("#edit-end-date-timepicker-popup-1"))
        					$("#validate_time").css("visibility","visible");

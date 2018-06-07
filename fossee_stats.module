@@ -6092,9 +6092,15 @@ function workshop_display_form($form, &$form_state) {
 
     $events_table_content = '';
     if(!isset($form_state['triggering_element']['#name']))
+    {
         $events_table_content = get_workshop_table_content('w_id');
+        drupal_add_js(array('fossee_stats' => array('sortby' => 'w_id')), array('type' => 'setting'));
+    }
     else
+    {
         $events_table_content = get_workshop_table_content($form_state['triggering_element']['#name']);
+        drupal_add_js(array('fossee_stats' => array('sortby' => $form_state['triggering_element']['#name'])), array('type' => 'setting'));
+    }
     $form['sort_fieldset']['events_table'] = array(
         '#type' => 'item',
         '#markup' => $events_table_content,

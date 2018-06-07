@@ -53,12 +53,20 @@ function hello(state){
         out += '<h3>TextBook Companion (Completed) - '+data.CompletedBookCount+'</h3>';
         status = 1;
       }
-      if (data.Flowsheet != 0) {
-        out += '<h3>DWSIM Flowsheet - '+data.Flowsheet+'</h3>';
+      if (data.Flowsheet_completed != 0) {
+        out += '<h3>DWSIM Flowsheet (Completed)- '+data.Flowsheet_completed+'</h3>';
         status = 1;
       }
-      if (data.circuit_simulation != 0) {
-        out += '<h3>eSim Ciruit Simulation - '+data.circuit_simulation+'</h3>';
+      if (data.Flowsheet_pending != 0) {
+        out += '<h3>DWSIM Flowsheet (Pending)- '+data.Flowsheet_pending+'</h3>';
+        status = 1;
+      }
+      if (data.circuit_simulation_completed != 0) {
+        out += '<h3>eSim Ciruit Simulation (Completed)- '+data.circuit_simulation_completed+'</h3>';
+        status = 1;
+      }
+      if (data.circuit_simulation_pending != 0) {
+        out += '<h3>eSim Ciruit Simulation (Pending)- '+data.circuit_simulation_pending+'</h3>';
         status = 1;
       }
       /*if (data.selfworkshop != 0) {

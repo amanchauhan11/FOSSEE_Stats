@@ -625,13 +625,14 @@ function fossee_stats_form($form, &$form_state) {
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companions</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migrations</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshops</a></li>
-                           <li><a data-toggle="tab" href="#selfworkshopdata">Self Workshops</a></li>
                             <li><a data-toggle="tab" href="#conferencedata">Conferences </a></li>
                             <li><a data-toggle="tab" href="#spokentutorialdata">Spoken Tutorials</a></li>
+                            <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li>
                       </ul>'
      );
     $TBC_getchart = getchart("TBC");
     $LM_getchart = getchart("LM");
+    $Other_getchart = getchart("Other");
      $form['tab_content'] = array(
         '#type' => 'item',
         '#markup' => '<div class="tab-content">
@@ -641,16 +642,17 @@ function fossee_stats_form($form, &$form_state) {
         </div>
 
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", "1960/01/01", "") . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render($LM_getchart) . '</div>
+        <div id="lmchartdata" style="float:left;width:300px;height:300px;">' . drupal_render($LM_getchart) . '</div>
         </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, 1960-01-01, date("Y-m-d")) . '</div>
 
-        <div id="selfworkshopdata" class="tab-pane fade">' . getselfworkshoplcount(0, 1960-01-01, date("Y-m-d"), "", "") . '</div>
-
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, "", "") . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . spokentutorial_view_all("") . '</div>
+
+        <div id="otheractivities" class="tab-pane fade ">' . other_activities("","","","") . '
+        <div id="otherchartdata" style="float:left;width:300px;height:300px;">' . drupal_render($Other_getchart) . '</div></div>
  </div>'
     );
     $form['lastdiv'] = array(
@@ -667,8 +669,10 @@ function getchart($sub_type) {
     if ($sub_type == "TBC") {
         $title = "Textbook Companion Statistics";
     }
-    else {
+    elseif ($sub_type == "LM") {
         $title = "Lab Migration Statistics";
+    }elseif ($sub_type == "Other") {
+        $title = "Other Activities";
     }
     $chart = array(
         '#type' => 'chart',
@@ -807,7 +811,7 @@ function get_data_for_chart_allproject($sub_type) {
             }
         }
     }
-    else {
+    elseif ($sub_type == "LM") {
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -838,6 +842,40 @@ function get_data_for_chart_allproject($sub_type) {
                 array_push($rows, $option1);
             }
         }
+    }elseif ($sub_type == "Other") {
+      db_set_active('DWSIM');
+      $completed = db_select('dwsim_flowsheet_proposal')
+        ->condition('approval_status',3)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $progress = db_select('dwsim_flowsheet_proposal')
+        ->condition('approval_status',1)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $option = array(
+        'Flowsheet (DWSIM)',
+        $completed + $progress
+      );
+      array_push($rows, $option);
+      db_set_active('eSim');
+      $completed = db_select('esim_circuit_simulation_proposal')
+        ->condition('approval_status',3)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $progress = db_select('esim_circuit_simulation_proposal')
+        ->condition('approval_status',1)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $option = array(
+        'Circuit Simulation (eSim)',
+        $completed + $progress
+      );
+      array_push($rows, $option);
+      db_set_active('default');
     }
     return $rows;
 }
@@ -1569,12 +1607,14 @@ function get_activities_list($foss_project) {
             'tbc',
             'lab_migration',
             'workshop',
-            'self_workshop',
             'conference'
         ));
         $query->fields('foss_type', array(
             'spoken_tutorial',
-            'postal_campaigns'
+            'postal_campaigns',
+            'flow_sheet',
+            'circuit_simulation',
+            'case_study'
         ));
         $query->condition('id', $foss_project);
         $result = $query->execute();
@@ -1583,20 +1623,24 @@ function get_activities_list($foss_project) {
             "tbc",
             "lab_migration",
             "workshop",
-            "self_workshop",
             "conference",
             "spoken_tutorial",
-            "postal_campaigns"
+            "postal_campaigns",
+            "flow_sheet",
+            "circuit_simulation",
+            "case_study"
         );
         $optionvalue = array(
             " ",
             "Textbook Companion",
             "Lab Migration",
             "Workshop",
-            "Self Workshop",
             "Conference",
             "Spoken Tutorial",
-            "Postal Campaigns"
+            "Postal Campaigns",
+            "Flowsheet",
+            "Circuit Simulation",
+            "Case Study"
         );
         $options = array();
         $options[0] = "--------------";
@@ -1630,6 +1674,16 @@ function _ajax_example_get_third_dropdown_options($foss_sub_project) {
             $options[0] = "--------------";
             $options[1] = "Labs in Progress";
             $options[2] = "Completed Labs";
+        }
+        elseif ($foss_sub_project == 7) {
+            $options[0] = "--------------";
+            $options[1] = "Flowsheets in Progress";
+            $options[2] = "Completed Flowsheets";
+        }
+        elseif ($foss_sub_project == 8) {
+            $options[0] = "--------------";
+            $options[1] = "Simulations in Progress";
+            $options[2] = "Completed Simulations";
         }
     }
     return $options;
@@ -1760,7 +1814,7 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state) {
     $commands[] = ajax_command_replace("#dropdown-second-replace", drupal_render($form['foss_sub_project']));
 
 
-    if ($foss_sub_project != "" && ($foss_sub_project_activities == 1 || $foss_sub_project_activities == 2)) {
+    if ($foss_sub_project != "" && ($foss_sub_project_activities == 1 || $foss_sub_project_activities == 2 || $foss_sub_project_activities == 7 || $foss_sub_project_activities == 8)) {
 
     if ($foss_sub_project == 3) {
       $foss_sub_project_activities="";
@@ -1814,6 +1868,15 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $commands[] = ajax_command_html("#enddate", "");
   $form['start_date']['#markup'] = "";
         $commands[] = ajax_command_html("#startdate", "");
+
+  }
+  elseif ($foss_project == 8) {
+  $form['load_city']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_city", "");
+  $form['load_country']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_country", "");
+  $form['load_state']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_state", "");
 
   }
   else{
@@ -1943,7 +2006,7 @@ function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state) 
         $commands[] = ajax_command_html("#startdate", "");
   }
     }
-    if ($foss_project == 1 || $foss_project == 2) {
+    if ($foss_project == 1 || $foss_project == 2 || $foss_project == 7 || $foss_project == 8) {
         $form['foss_sub_project_status']['#type'] = "select";
         $form['foss_sub_project_status']['#title'] = t("Status");
         $form['foss_sub_project_status']['#options'] = _ajax_example_get_third_dropdown_options($foss_project);
@@ -2012,9 +2075,9 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
-                           <li><a data-toggle="tab" href="#selfworkshopdata">Self Workshop</a></li>
                             <li><a data-toggle="tab" href="#conferencedata">Conference </a></li>
                             <li><a data-toggle="tab" href="#spokentutorialdata">Spoken Tutorial</a></li>
+                            <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li>
                       </ul>
                       <div class="tab-content">
 
@@ -2023,16 +2086,16 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
         </div>
 
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
+        <div id="lmchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
         </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
 
-        <div id="selfworkshopdata" class="tab-pane fade">' . getselfworkshoplcount(0, $startdate, $enddate, "", "") . '</div>
-
         <div id="conferencedata" class="tab-pane fade ">' . conference_seminar_view_all(0, "", "") . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . spokentutorial_view_all("") . '</div>
+        <div id="otheractivities" class="tab-pane fade ">' . other_activities("","",$startdate,$enddate) . '
+        <div id="otherchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchart("Other")) . '</div></div>
  </div>
           ';
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
@@ -2065,7 +2128,10 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
         ));
         $query->fields('foss_type', array(
             'spoken_tutorial',
-            'postal_campaigns'
+            'postal_campaigns',
+            'flow_sheet',
+            'circuit_simulation',
+            'case_study'
         ));
         $query->condition('foss_name', $foss_type);
         $result = $query->execute();
@@ -2074,20 +2140,24 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
             "tbc",
             "lab_migration",
             "workshop",
-            "self_workshop",
             "conference",
             "spoken_tutorial",
-            "postal_campaigns"
+            "postal_campaigns",
+            'flow_sheet',
+            'circuit_simulation',
+            'case_study'
         );
         $optionvalue = array(
             " ",
             "Textbook Companion",
             "Lab Migration",
             "Workshop",
-            "Self Workshop",
             "Conference",
             "Spoken Tutorial",
-            "Postal Campaigns"
+            "Postal Campaigns",
+            "Flowsheet",
+            "Circuit Simulation",
+            "Case Study"
         );
         $i = 0;
         $pagecontent = "";
@@ -2206,6 +2276,10 @@ foreach ($optiondata as $value) {
                  }
                  elseif ($value == "spoken_tutorial") {
                    $spoken_tutorialdatacheck= spokentutorial_view_all($foss_type);
+                 }elseif ($value == "flow_sheet") {
+                   $other_activities = other_activities($foss_type,"",$startdate,$enddate);
+                 }elseif ($value == "circuit_simulation") {
+                   $other_activities = other_activities($foss_type,"",$startdate,$enddate);
                  }
 
 
@@ -2230,8 +2304,12 @@ foreach ($optiondata as $value) {
                  }
                  elseif ($value == "spoken_tutorial") {
 
-        $spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
-                 }
+                  $spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
+                }elseif ($value == "flow_sheet") {
+                    $other_activities = "<h5>No Flowsheet is available</h5>";
+                }elseif ($value == "circuit_simulation") {
+                    $other_activities = "<h5>No Circuit Simulation is available</h5>";
+                }
              }
          }
 
@@ -2245,9 +2323,9 @@ foreach ($optiondata as $value) {
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
                           <li><a data-toggle="tab" href="#workshopdata">Workshop</a></li>
-                           <li><a data-toggle="tab" href="#selfworkshopdata">Self Workshop</a></li>
                             <li><a data-toggle="tab" href="#conferencedata">Conference </a></li>
                             <li><a data-toggle="tab" href="#spokentutorialdata">Spoken Tutorial</a></li>
+                            <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li>
                       </ul>
         <div class="tab-content">
 
@@ -2259,10 +2337,11 @@ foreach ($optiondata as $value) {
         </div>
          <div id="workshopdata" class="tab-pane fade ">
          '. $workshopdatacheck . '</div>
-        <div id="selfworkshopdata" class="tab-pane fade">' . $self_workshopdatacheck . '</div>
          <div id="conferencedata" class="tab-pane fade ">' . $conferencedatacheck . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . $spoken_tutorialdatacheck . '</div>
+
+        <div id="otheractivities" class="tab-pane fade ">' . $other_activities . '</div>
         </div>
                     ';
 
@@ -2317,22 +2396,6 @@ foreach ($optiondata as $value) {
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
 
     }
-    elseif ($foss_type != '--------------' && $foss_sub_project == "Self Workshop") {
-
-        $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
-        $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-
-        $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">
-                        <li><a data-toggle="tab" href="#selfworkshopdata">Self Workshop</a></li></ul>
-                        <div class="tab-content">
-
-       <div id="selfworkshopdata" class="tab-pane fade  in active">' . getselfworkshoplcount($foss_type, $startdate, $enddate, $statename, $cityname) . '</div></div>';
-
-        $form['default_load']['#markup'] = $pagecontent;
-        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-
-    }
     elseif ($foss_type != '--------------' && $foss_sub_project == "Conference") {
 
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
@@ -2365,7 +2428,37 @@ foreach ($optiondata as $value) {
 
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-}
+    }elseif ($foss_type != '--------------' && $foss_sub_project == "Flowsheet" && $foss_sub_project_status == "--------------") {
+
+        $form['displaytext']['#markup'] = "Statistic of project : DWSIM";
+        $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
+
+
+        $pagecontent = "";
+        $pagecontent .= '<ul class="nav nav-tabs">
+                         <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
+                        <div class="tab-content">
+
+       <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('DWSIM',"",$startdate,$enddate) . '</div></div>';
+
+        $form['default_load']['#markup'] = $pagecontent;
+        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
+    }elseif ($foss_type != '--------------' && $foss_sub_project == "Circuit Simulation" && $foss_sub_project_status == "--------------") {
+
+        $form['displaytext']['#markup'] = "Statistic of project : eSim";
+        $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
+
+
+        $pagecontent = "";
+        $pagecontent .= '<ul class="nav nav-tabs">
+                         <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
+                        <div class="tab-content">
+
+       <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('eSim',"",$startdate,$enddate) . '</div></div>';
+
+        $form['default_load']['#markup'] = $pagecontent;
+        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
+    }
 
 /* else if ($foss_type != '--------------' && $foss_sub_project == "Postal Campaigns") {
 
@@ -2384,7 +2477,7 @@ foreach ($optiondata as $value) {
 
     }*/
 
-  elseif ($foss_type != '--------------' && ($foss_sub_project == "Textbook Companion" || $foss_sub_project == "Lab Migration") && $foss_sub_project_status != "--------------") {
+  elseif ($foss_type != '--------------' && ($foss_sub_project == "Textbook Companion" || $foss_sub_project == "Lab Migration" || $foss_sub_project == "Flowsheet" || $foss_sub_project == "Circuit Simulation" || $foss_sub_project == "Flowsheet" || $foss_sub_project == "Circuit Simulation")  && $foss_sub_project_status != "--------------") {
         if ($foss_sub_project == "Textbook Companion" && $foss_sub_project_status == "Completed Books") {
             $title = "Textbook Companion";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', "completed", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
@@ -2400,6 +2493,18 @@ foreach ($optiondata as $value) {
         elseif ($foss_sub_project == "Lab Migration" && $foss_sub_project_status == "Labs in Progress") {
             $title = "Lab Migration";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "pending", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
+        }elseif ($foss_sub_project == "Flowsheet" && $foss_sub_project_status == "Flowsheets in Progress") {
+            $title = "Flowsheet (DWSIM)";
+            $datatable = other_activities("DWSIM","progress",$startdate,$enddate);
+        }elseif ($foss_sub_project == "Flowsheet" && $foss_sub_project_status == "Completed Flowsheets") {
+            $title = "Flowsheet (DWSIM)";
+            $datatable = other_activities("DWSIM","completed",$startdate,$enddate);
+        }elseif ($foss_sub_project == "Circuit Simulation" && $foss_sub_project_status == "Simulations in Progress") {
+            $title = "Circuit Simulation (eSim)";
+            $datatable = other_activities("eSim","progress",$startdate,$enddate);
+        }elseif ($foss_sub_project == "Circuit Simulation" && $foss_sub_project_status == "Completed Simulations") {
+            $title = "Circuit Simulation (eSim)";
+            $datatable = other_activities("eSim","completed",$startdate,$enddate);
         }
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
@@ -3502,7 +3607,7 @@ function get_country_list($foss_type, $foss_sub_project) {
                 }
 
             }
-            elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
+            elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
                 $sub_project = "workshop";
                 $foss_type_db = 'default';
 
@@ -3522,12 +3627,7 @@ function get_country_list($foss_type, $foss_sub_project) {
                 }
 
             }
-            elseif ($foss_sub_project == 4) {
 
-                $options[0] = '--------------';
-                $options[1] = 'India';
-
-            }
 
 
             db_set_active('default'); // We need to call the main (drupal) db back
@@ -3554,14 +3654,10 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
         $query->fields('foss_type', array(
             'foss_name'
         ));
-  $query->fields('foss_type', array(
-            'foss_selfworkshop_no'
-        ));
         $query->condition('id', $foss_type);
         $result = $query->execute();
         $foss_detail = $result->fetchObject();
         $foss_type_name = $foss_detail->foss_name;
-  $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
         $options = array();
 
         if ($foss_sub_project == 1 && $foss_type!=3) {
@@ -3603,7 +3699,45 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             }
 
         }
-        elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
+        elseif ($foss_sub_project == 7 && $foss_type!=3) {
+            $sub_project = "dwsim_flowsheet_proposal";
+            $options = array();
+            db_set_active($foss_type_name); //Active other database
+
+            $options[0] = '--------------';
+            $query = "
+       SELECT * FROM " . $sub_project . "
+       WHERE country = :country
+       ";
+            $args = array(
+                ":country" => $country
+            );
+            $result = db_query($query, $args);
+            while ($state_detail = $result->fetchObject()) {
+                $options[$state_detail->state] = $state_detail->state;
+            }
+
+        }
+        elseif ($foss_sub_project == 8 && $foss_type!=3) {
+            $sub_project = "esim_circuit_simulation_proposal";
+            $options = array();
+            db_set_active($foss_type_name); //Active other database
+
+            $options[0] = '--------------';
+            $query = "
+       SELECT * FROM " . $sub_project . "
+       WHERE country = :country
+       ";
+            $args = array(
+                ":country" => $country
+            );
+            $result = db_query($query, $args);
+            while ($state_detail = $result->fetchObject()) {
+                $options[$state_detail->state] = $state_detail->state;
+            }
+
+        }
+        elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
             $options = array();
             $sub_project = "workshop";
             $foss_type_db = 'default';
@@ -3621,23 +3755,6 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             $result = db_query($query, $args);
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
-            }
-
-        }
-        elseif ($foss_sub_project == 4) {
-
-            db_set_active('selfworkshop'); //Active other database
-            $options[0] = '--------------';
-            $query = "SELECT distinct (s.name) as state FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id )
-       ";
-            $args = array(
-                ":foss_id" => $foss_selfworkshop_no,
-            );
-            $result = db_query($query, $args);
-
-            while ($state_detail = $result->fetchObject()) {
-                $options[$state_detail->state] = $state_detail->state;
-
             }
 
         }
@@ -3663,14 +3780,10 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
         $query->fields('foss_type', array(
             'foss_name'
         ));
-  $query->fields('foss_type', array(
-            'foss_selfworkshop_no'
-        ));
         $query->condition('id', $foss_type);
         $result = $query->execute();
         $foss_detail = $result->fetchObject();
         $foss_type = $foss_detail->foss_name;
-        $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
         if ($foss_sub_project == 1  && $foss_type!="Python") {
             $sub_project = "textbook_companion_proposal";
             db_set_active($foss_type); //Active other database
@@ -3710,7 +3823,47 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
 
 
         }
-        elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
+        elseif ($foss_sub_project == 7  && $foss_type!="Python") {
+            $sub_project = "dwsim_flowsheet_proposal";
+            db_set_active($foss_type); //Active other database
+            $options = array();
+            $options[0] = '--------------';
+            $query = "
+       SELECT * FROM " . $sub_project . "
+       WHERE country = :country and state = :state
+       ";
+            $args = array(
+                ":country" => $country,
+                ":state" => $state
+            );
+            $result = db_query($query, $args);
+            while ($city_detail = $result->fetchObject()) {
+                $options[$city_detail->city] = $city_detail->city;
+            }
+
+
+        }
+        elseif ($foss_sub_project == 8  && $foss_type!="Python") {
+            $sub_project = "esim_circuit_simulation_proposal";
+            db_set_active($foss_type); //Active other database
+            $options = array();
+            $options[0] = '--------------';
+            $query = "
+       SELECT * FROM " . $sub_project . "
+       WHERE country = :country and state = :state
+       ";
+            $args = array(
+                ":country" => $country,
+                ":state" => $state
+            );
+            $result = db_query($query, $args);
+            while ($city_detail = $result->fetchObject()) {
+                $options[$city_detail->city] = $city_detail->city;
+            }
+
+
+        }
+        elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
             $sub_project = "workshop";
             $foss_type_db = 'default';
 
@@ -3731,27 +3884,6 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
                 $options[$city_detail->city] = $city_detail->city;
             }
         }
-        elseif ($foss_sub_project == 4) {
-
-
-  db_set_active('selfworkshop'); //Active other database
-        $options[0] = '--------------';
-
-  $query="SELECT distinct (c.name) as city FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :statename";
-
-  $args = array(
-                ":foss_id" => $foss_selfworkshop_no,
-    ":statename" => $state,
-            );
-            $result = db_query($query, $args);
-
-            while ($city_detail = $result->fetchObject()) {
-                $options[$city_detail->city] = $city_detail->city;
-
-            }
-
-  }
-
 
 
         db_set_active('default'); // We need to call the main (drupal) db back
@@ -7470,6 +7602,199 @@ function spokentutorial_view_all($foss_name) {
     return $page_content;
 }
 
+function other_activities($foss_name,$status,$startdate = false,$enddate = false) {
+    $page_content = "";
+    if ($startdate == "" || $startdate == false) {
+      $startdate = "1960-01-01";
+    }
+    if ($enddate == "" || $enddate == false) {
+      $enddate = date("Y-m-d");
+    }
+    $rows = array();
+    if ($foss_name == "" || $foss_name == NULL) {
+      $headers = array(
+          "Activities",
+          "Progress",
+          "Completed"
+      );
+      db_set_active('DWSIM');
+      $completed = db_select('dwsim_flowsheet_proposal')
+        ->condition('approval_status',3)
+        ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+        ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $progress = db_select('dwsim_flowsheet_proposal')
+        ->condition('approval_status',1)
+        ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+        ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $item = array(
+        'Flowsheet (DWSIM)',
+        '<a href="https://dwsim.fossee.in/flowsheeting-project/flowsheet-progress" target="_blank">'.$progress.'</a>',
+        '<a href="https://dwsim.fossee.in/flowsheeting-project/completed-flowsheet" target="_blank">'.$completed.'</a>'
+      );
+      array_push($rows, $item);
+      db_set_active('eSim');
+      $completed = db_select('esim_circuit_simulation_proposal')
+        ->condition('approval_status',3)
+        ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+        ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $progress = db_select('esim_circuit_simulation_proposal')
+        ->condition('approval_status',1)
+        ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+        ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+      $item = array(
+        'Circuit Simulation (eSim)',
+        '<a href="https://esim.fossee.in/circuit-simulation-project/circuit-simulation-progress" target="_blank">'.$progress.'</a>',
+        '<a href="https://esim.fossee.in/circuit-simulation-project/completed-circuit-simulations" target="_blank">'.$completed.'</a>'
+      );
+      array_push($rows, $item);
+    }elseif ($foss_name == "DWSIM") {
+        if ($status == 'progress') {
+          $headers = array(
+              "Activities",
+              "Progress"
+          );
+          db_set_active('DWSIM');
+          $progress = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status',1)
+            ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Flowsheet (DWSIM)',
+            '<a href="https://dwsim.fossee.in/flowsheeting-project/flowsheet-progress" target="_blank">'.$progress.'</a>'
+          );
+          array_push($rows, $item);
+        }elseif ($status == 'completed') {
+          $headers = array(
+              "Activities",
+              "Completed"
+          );
+          db_set_active('DWSIM');
+          $completed = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status',3)
+            ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Flowsheet (DWSIM)',
+            '<a href="https://dwsim.fossee.in/flowsheeting-project/completed-flowsheet" target="_blank">'.$completed.'</a>'
+          );
+          array_push($rows, $item);
+        }else {
+          $headers = array(
+              "Activities",
+              "Progress",
+              "Completed"
+          );
+          db_set_active('DWSIM');
+          $completed = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status',3)
+            ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $progress = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status',1)
+            ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Flowsheet (DWSIM)',
+            '<a href="https://dwsim.fossee.in/flowsheeting-project/flowsheet-progress" target="_blank">'.$progress.'</a>',
+            '<a href="https://dwsim.fossee.in/flowsheeting-project/completed-flowsheet" target="_blank">'.$completed.'</a>'
+          );
+          array_push($rows, $item);
+        }
+    }elseif ($foss_name == "eSim") {
+        if ($status == "progress") {
+          $headers = array(
+              "Activities",
+              "Progress"
+          );
+          db_set_active('eSim');
+          $progress = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status',1)
+            ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Circuit Simulation (eSim)',
+            '<a href="https://esim.fossee.in/circuit-simulation-project/circuit-simulation-progress" target="_blank">'.$progress.'</a>'
+          );
+          array_push($rows, $item);
+        }elseif ($status == "completed") {
+          $headers = array(
+              "Activities",
+              "Completed"
+          );
+          db_set_active('eSim');
+          $completed = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status',3)
+            ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Circuit Simulation (eSim)',
+            '<a href="https://esim.fossee.in/circuit-simulation-project/completed-circuit-simulations" target="_blank">'.$completed.'</a>'
+          );
+          array_push($rows, $item);
+        }else {
+          $headers = array(
+              "Activities",
+              "Progress",
+              "Completed"
+          );
+          db_set_active('eSim');
+          $completed = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status',3)
+            ->where("FROM_UNIXTIME(actual_completion_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(actual_completion_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $progress = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status',1)
+            ->where("FROM_UNIXTIME(approval_date) >= :startdate", array(':startdate'=>$startdate))
+            ->where("FROM_UNIXTIME(approval_date) <= :enddate", array(':enddate'=>$enddate))
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $item = array(
+            'Circuit Simulation (eSim)',
+            '<a href="https://esim.fossee.in/circuit-simulation-project/circuit-simulation-progress" target="_blank">'.$progress.'</a>',
+            '<a href="https://esim.fossee.in/circuit-simulation-project/completed-circuit-simulations" target="_blank">'.$completed.'</a>'
+          );
+          array_push($rows, $item);
+        }
+    }
+    db_set_active('default');
+    $page_content .= bootstrap_table_format($headers, $rows);
+    return $page_content;
+}
+
 function generate_pdf($workshop_id = 0) {
 
 // Include the main TCPDF library (search for installation path).
@@ -7789,8 +8114,8 @@ function dropdowns_mode(){
     $options = get_activities_list($id);
     $front = '<div class="form-item form-type-select form-item-foss-activities" onchange="check_status()"><label for="edit-foss-activities">Activities </label><select id="edit-foss-activities" name="foss_activities" class="form-select">';
     $flag = false;
-    for ($i=0; $i < count($options) ; $i++) {
-      if ($options[$i] != '' && $options[$i] != 'Self Workshop' && $options[$i] != 'Spoken Tutorial') {
+    for ($i=0; $i <= max(array_keys($options)) ; $i++) {
+      if ($options[$i] != '' && $options[$i] != 'Spoken Tutorial') {
         $result .= '<option value = "'.$i.'">'.$options[$i].'</option>';
         $flag = true;
       }
@@ -7804,7 +8129,7 @@ function dropdowns_mode(){
     $options = _ajax_example_get_third_dropdown_options($id);
     $front = '<div class="form-item form-type-select form-item-foss-status"><label for="edit-foss-status">Status </label><select id="edit-foss-status" name="foss_status" class="form-select">';
     $flag = false;
-    for ($i=0; $i < count($options) ; $i++) {
+    for ($i=0; $i <= max(array_keys($options)) ; $i++) {
       if ($options[$i] != '') {
         $flag = true;
         $result .= '<option value = "'.$i.'">'.$options[$i].'</option>';
@@ -8022,6 +8347,13 @@ function get_map_data($type,$activities,$status){
               ->execute()
               ->fetchField();
             $states[$k] += $query1;
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
           }
         /* eSim Circuit Simulation */
         }else if($name == 'eSim'){
@@ -8029,6 +8361,13 @@ function get_map_data($type,$activities,$status){
           foreach ($key as $k) {
             $query1 = db_select('esim_circuit_simulation_proposal')
               ->condition('approval_status', 3)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 1)
               ->condition('state',$k)
               ->countQuery()
               ->execute()
@@ -8048,7 +8387,10 @@ function get_map_data($type,$activities,$status){
         'lab_migration',
         'workshop',
         'conference',
-        'foss_selfworkshop_no'
+        'foss_selfworkshop_no',
+        'flow_sheet',
+        'circuit_simulation',
+        'case_study'
       ))
       ->condition('id',$type)
       ->execute()
@@ -8056,7 +8398,7 @@ function get_map_data($type,$activities,$status){
     $name = $query->foss_name;
     /* Converting ID to name of Activities */
     $options = get_activities_list($type);
-    for ($i=0; $i < count($options) ; $i++) {
+    for ($i=0; $i <= max(array_keys($options)) ; $i++) {
       if ($i == $activities) {
         $act = $options[$i];
       }
@@ -8065,7 +8407,7 @@ function get_map_data($type,$activities,$status){
     if ($activities != 0) {
       /* Converting ID to name of Activities */
       $options = _ajax_example_get_third_dropdown_options($activities);
-      for ($i=0; $i < count($options) ; $i++) {
+      for ($i=0; $i <= max(array_keys($options)) ; $i++) {
         if ($i == $status) {
           $stat = $options[$i];
         }
@@ -8210,6 +8552,50 @@ function get_map_data($type,$activities,$status){
               }
             }
           }
+        }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
+          db_set_active('DWSIM');
+          foreach ($key as $k) {
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+        }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
+          db_set_active('DWSIM');
+          foreach ($key as $k) {
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+        }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
+          db_set_active('eSim');
+          foreach ($key as $k) {
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+        }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
+          db_set_active('eSim');
+          foreach ($key as $k) {
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
         }
       /* When status not set */
       }else {
@@ -8339,6 +8725,42 @@ function get_map_data($type,$activities,$status){
                 $states[$s->state]++;
               }
             }
+          }
+        }elseif ($act == "Flowsheet") {
+          db_set_active('DWSIM');
+          foreach ($key as $k) {
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+            $query1 = db_select('dwsim_flowsheet_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+          }
+        }elseif ($act == "Circuit Simulation") {
+          db_set_active('eSim');
+          foreach ($key as $k) {
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 3)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
+            $query1 = db_select('esim_circuit_simulation_proposal')
+              ->condition('approval_status', 1)
+              ->condition('state',$k)
+              ->countQuery()
+              ->execute()
+              ->fetchField();
+            $states[$k] += $query1;
           }
         }
       }
@@ -8490,6 +8912,13 @@ function get_map_data($type,$activities,$status){
             ->execute()
             ->fetchField();
           $states[$k] += $query1;
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$k)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $states[$k] += $query1;
         }
       /*  eSim Circuit Simulation */
       }else if($name == 'eSim'){
@@ -8497,6 +8926,13 @@ function get_map_data($type,$activities,$status){
         foreach ($key as $k) {
           $query1 = db_select('esim_circuit_simulation_proposal')
             ->condition('approval_status', 3)
+            ->condition('state',$k)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $states[$k] += $query1;
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 1)
             ->condition('state',$k)
             ->countQuery()
             ->execute()
@@ -8512,8 +8948,9 @@ function get_map_data($type,$activities,$status){
 
   }
   $i =0;
-  // Findiing Maximum Value for states
+  // Findiing Maximum and Total Value from states
   $max = max($states);
+  $total = array_sum($states);
   /* Dynamic representation of data and Assigning color to each state according to it's value */
   if ($max > 100) {
     $max = $max-($max%100);
@@ -8561,7 +8998,7 @@ function get_map_data($type,$activities,$status){
   }
   // Setting the data set to generate the map with corresponding colors
   require_once('fossee_stats_map.inc');
-  $out = stats_map($states,$max);
+  $out = stats_map($states,$max,$total);
   return $out;
 
 }
@@ -8607,8 +9044,10 @@ function state_details() {
   $self_workshop = 0;
   $pendingbookcount = 0;
   $completedbookcount = 0;
-  $dwsim_flowsheet = 0;
-  $circuit_simulation = 0;
+  $dwsim_flowsheet_completed = 0;
+  $dwsim_flowsheet_pending = 0;
+  $circuit_simulation_completed = 0;
+  $circuit_simulation_pending = 0;
   /* Checking foss type */
   if($type == "" || $type == NULL){
     /* When foss type is not set */
@@ -8744,7 +9183,14 @@ function state_details() {
             ->countQuery()
             ->execute()
             ->fetchField();
-          $dwsim_flowsheet += $query1;
+          $dwsim_flowsheet_completed += $query1;
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet_pending += $query1;
         // eSim Circuit Simulation
         }else if($name == 'eSim'){
           db_set_active('eSim');
@@ -8754,7 +9200,14 @@ function state_details() {
             ->countQuery()
             ->execute()
             ->fetchField();
-          $circuit_simulation += $query1;
+          $circuit_simulation_completed += $query1;
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation_pending += $query1;
         }
         db_set_active('default');
         db_set_active();
@@ -8768,7 +9221,10 @@ function state_details() {
         'lab_migration',
         'workshop',
         'conference',
-        'foss_selfworkshop_no'
+        'foss_selfworkshop_no',
+        'flow_sheet',
+        'circuit_simulation',
+        'case_study'
       ))
       ->condition('id',$type)
       ->execute()
@@ -8776,7 +9232,7 @@ function state_details() {
     $name = $query->foss_name;
     /* Converting ID to name of Activities */
     $options = get_activities_list($type);
-    for ($i=0; $i < count($options) ; $i++) {
+    for ($i=0; $i <= max(array_keys($options)) ; $i++) {
       if ($i == $activities) {
         $act = $options[$i];
       }
@@ -8785,7 +9241,7 @@ function state_details() {
     if ($activities != 0) {
       /* Converting ID to name of Activities */
       $options = _ajax_example_get_third_dropdown_options($activities);
-      for ($i=0; $i < count($options) ; $i++) {
+      for ($i=0; $i <= max(array_keys($options)) ; $i++) {
         if ($i == $status) {
           $stat = $options[$i];
         }
@@ -8905,6 +9361,42 @@ function state_details() {
               ->fetchField();
             $lab_migration_completed += $query1;
           }
+        }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
+          db_set_active($name);
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet_pending += $query1;
+        }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
+          db_set_active($name);
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet_completed += $query1;
+        }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
+          db_set_active($name);
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation_pending += $query1;
+        }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
+          db_set_active($name);
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation_completed += $query1;
         }
       }else {
         // Workshop
@@ -9011,6 +9503,38 @@ function state_details() {
               ->fetchField();
             $lab_migration_pending += $query1;
           }
+        }elseif ($act == "Flowsheet") {
+          db_set_active('DWSIM');
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet_completed += $query1;
+          $query1 = db_select('dwsim_flowsheet_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $dwsim_flowsheet_pending += $query1;
+        }elseif ($act == "Circuit Simulation") {
+          db_set_active('eSim');
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation_completed += $query1;
+          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->countQuery()
+            ->execute()
+            ->fetchField();
+          $circuit_simulation_pending += $query1;
         }
       }
     }else {
@@ -9135,7 +9659,14 @@ function state_details() {
           ->countQuery()
           ->execute()
           ->fetchField();
-        $dwsim_flowsheet += $query1;
+        $dwsim_flowsheet_completed += $query1;
+        $query1 = db_select('dwsim_flowsheet_proposal')
+          ->condition('approval_status', 1)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $dwsim_flowsheet_pending += $query1;
       // eSim Circuit Simulation
       }else if($name == 'eSim'){
         db_set_active('eSim');
@@ -9145,12 +9676,19 @@ function state_details() {
           ->countQuery()
           ->execute()
           ->fetchField();
-        $circuit_simulation += $query1;
+        $circuit_simulation_completed += $query1;
+        $query1 = db_select('esim_circuit_simulation_proposal')
+          ->condition('approval_status', 1)
+          ->condition('state',$state)
+          ->countQuery()
+          ->execute()
+          ->fetchField();
+        $circuit_simulation_pending += $query1;
       }
       db_set_active('default');
       db_set_active();
     }
   }
   // Converting generated data to JSON format
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet" : '.$dwsim_flowsheet.', "circuit_simulation" : '.$circuit_simulation.'}';
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet_completed" : '.$dwsim_flowsheet_completed.', "Flowsheet_pending" : '.$dwsim_flowsheet_pending.', "circuit_simulation_completed" : '.$circuit_simulation_completed.', "circuit_simulation_pending" : '.$circuit_simulation_pending.'}';
 }

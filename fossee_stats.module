@@ -8166,7 +8166,7 @@ function get_map_data($type,$activities,$status){
     'Meghalaya' => 0,
     'Mizoram' => 0,
     'Nagaland' => 0,
-    'Odisha' => 0,
+    'Odisha(Orissa)' => 0,
     'Punjab' => 0,
     'Rajasthan' => 0,
     'Sikkim' => 0,

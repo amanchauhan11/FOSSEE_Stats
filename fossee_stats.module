@@ -130,7 +130,7 @@ function fossee_stats_menu() {
   //To delete existing events
     $items["events/delete"] = array(
         "title" => "Delete Events",
-        "page callback" => "workshop_delete_all",
+        "page callback" => "workshop_delete_prompt",//workshop_delete_all",
         "access arguments" => array(
             "manage workshop"
         ),
@@ -5016,7 +5016,7 @@ $query = "
 }
 
 
-function workshop_add_form_validate($form, &$form_state) {
+function workshop_add_form_validate(&$form, &$form_state) {
     if ($form_state['values']['country'] == 'Others') {
         if ($form_state['values']['other_country'] == '') {
             form_set_error('other_country', t('Enter country name'));
@@ -5946,48 +5946,92 @@ function delete_directory($dirname) {
     return TRUE;
 }
 
+function workshop_delete_prompt($workshop_id = 0) {
+    $page_content = '';
+    $form = drupal_get_form('workshop_delete_form', $workshop_id);
+    $page_content = drupal_render($form);
+    return $page_content;
+}
 
-function workshop_delete_all($workshop_id = 0) {
-    $page_content = "";
+function workshop_delete_form($form, &$form_state, $workshop_id=0){
+
     $query = db_select('workshop');
     $query->fields('workshop');
     $query->condition('w_id', $workshop_id);
     $result = $query->execute();
-    $row = $result->fetchObject();
-    $root_path = events_images_path();
-    $eventfolder = $row->images_folder;
-    $dest_path = $eventfolder;
-    $dir_path = $root_path . $dest_path;
-    if (is_dir($dir_path)) {
-        $res = delete_directory($dir_path);
-        if (!$res) {
-            drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
-            return;
-        } 
-    } 
-    else {
-        drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
-    }
+    $row = $result->fetchObject();  
 
-    $query2 = db_delete('workshop_images');
-    $query2->condition('w_id', $workshop_id);
-    $result2 = $query2->execute();
-    $query_t = db_delete('testimonials');
-    $query_t->condition('w_id', $workshop_id);
-    $result_t = $query_t->execute();
-    $query3 = db_delete('workshop');
-    $query3->condition('w_id', $workshop_id);
-    $result3 = $query3->execute();
-   
-    if (!$result3) {
-        drupal_set_message(t("Something went wrong, please try again."), "error");
-    } 
-    else {
-        if (!$result2 && (!$result_t)) {
-            drupal_set_message(t("Workshop Deleted successfully"), "status");
+    if(empty($row))
+        drupal_goto('events/edit');
+
+    $form = array();
+    $form['text'] = array(
+        '#type'=>'item',
+        '#markup'=>'Are you sure you want to delete "'.$row->w_name.'"?',
+    ); 
+    $form['yes'] = array(
+        '#type'=>'submit',
+        '#value'=>'Yes',
+        '#name'=>'yes',
+    );
+    $form['no'] = array(
+        '#type'=>'submit',
+        '#value'=>'No',
+        '#name'=>'no',
+    );
+    $form['w_id'] = array(
+        '#type'=>'hidden',
+        '#value'=>$workshop_id,
+    );
+    return $form;
+}
+
+function workshop_delete_form_submit($form, &$form_state) {
+    $page_content = "";
+    $workshop_id = $form_state['values']['w_id'];
+
+    if($form_state['triggering_element']['#name'] == 'yes')
+    {
+        $query = db_select('workshop');
+        $query->fields('workshop');
+        $query->condition('w_id', $workshop_id);
+        $result = $query->execute();
+        $row = $result->fetchObject();
+        $root_path = events_images_path();
+        $eventfolder = $row->images_folder;
+        $dest_path = $eventfolder;
+        $dir_path = $root_path . $dest_path;
+        if (is_dir($dir_path)) {
+            $res = delete_directory($dir_path);
+            if (!$res) {
+                drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
+                return;
+            } 
         } 
         else {
-            drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
+            drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
+        }
+
+        $query2 = db_delete('workshop_images');
+        $query2->condition('w_id', $workshop_id);
+        $result2 = $query2->execute();
+        $query_t = db_delete('testimonials');
+        $query_t->condition('w_id', $workshop_id);
+        $result_t = $query_t->execute();
+        $query3 = db_delete('workshop');
+        $query3->condition('w_id', $workshop_id);
+        $result3 = $query3->execute();
+       
+        if (!$result3) {
+            drupal_set_message(t("Something went wrong, please try again."), "error");
+        } 
+        else {
+            if (!$result2 && (!$result_t)) {
+                drupal_set_message(t("Workshop Deleted successfully"), "status");
+            } 
+            else {
+                drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
+            }
         }
     }
     drupal_goto('events/edit');

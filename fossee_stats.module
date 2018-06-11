@@ -1,5 +1,11 @@
 <?php
 
+require_once('email.inc');
+
+function get_file_size_MB($filepath) {
+    return round((filesize($filepath)/1024)/1024, 2);
+}
+
 function fossee_stats_permission() {
     return array(
         "access fossee_stats" => array(
@@ -47,6 +53,7 @@ function fossee_stats_permission() {
 }
 
 function fossee_stats_menu() {
+
     $items = array();
     //Load main page
     $items["fossee-stats"] = array(
@@ -102,6 +109,15 @@ function fossee_stats_menu() {
         ),
         "type" => MENU_CALLBACK
     );
+    $items["events/add/csv"] = array(
+        "title" => "Add Events through CSV file",
+        "page callback" => "drupal_get_form",
+        "page arguments" => array("upload_csv_form"),
+        "access arguments" => array(
+            "manage workshop"
+        ),
+        "type" => MENU_CALLBACK,
+    );
   //To edit existing events detail
     $items["events/edit"] = array(
         "title" => "Edit Events",
@@ -112,14 +128,14 @@ function fossee_stats_menu() {
         "type" => MENU_CALLBACK
     );
   //To delete existing events
-    /*$items["events/delete"] = array(
+    $items["events/delete"] = array(
         "title" => "Delete Events",
-        "page callback" => "workshop_delete_all",
+        "page callback" => "workshop_delete_prompt",//workshop_delete_all",
         "access arguments" => array(
             "manage workshop"
         ),
         "type" => MENU_CALLBACK
-    );*/
+    );
     //List of all events
     $items["events/view_details"] = array(
         "title" => "Details of Selected Event",
@@ -340,8 +356,8 @@ function fossee_stats_form($form, &$form_state) {
     }
     $form['foss_type'] = array(
         '#type' => 'select',
-        '#prefix' => '<div class="content"><div><table ><tr><td>',
-        '#suffix' => '</td>',
+        '#prefix' => '<div class="content"><div class="row">',
+        '#suffix' => '',
         '#title' => t('FOSS Type'),
         '#multiple' => FALSE,
         '#options' => $options_first,
@@ -367,7 +383,7 @@ function fossee_stats_form($form, &$form_state) {
         '#type' => 'select',
         '#title' => t('Activities'),
         '#options' => get_activities_list($foss_project),
-        '#prefix' => '<td><div id="dropdown-second-replace" style="width:250px;padding-left:25px" >',
+        '#prefix' => '<div id="dropdown-second-replace" style="padding-left:25px" >',
         '#suffix' => '</div>',
         '#default_value' => "--------------",
         '#validated' => TRUE,
@@ -399,8 +415,8 @@ function fossee_stats_form($form, &$form_state) {
         '#type' => 'select',
         '#title' => t('Status'),
         '#options' => _ajax_example_get_third_dropdown_options($foss_sub_project),
-        '#prefix' => '<td><div id="dropdown-third-replace" style="width:250px">',
-        '#suffix' => '</div></td></tr>',
+        '#prefix' => '<div id="dropdown-third-replace" style="padding-left:25px">',
+        '#suffix' => '</div></div>',
         '#default_value' => $foss_sub_project_status,
         '#validated' => TRUE,
         '#states' => array(
@@ -432,8 +448,8 @@ function fossee_stats_form($form, &$form_state) {
         '#date_format' => 'Y-m-d',
         '#date_increment' => 0,
         '#date_year_range' => '2011:+0',
-        '#prefix' => '<tr><td><div id="startdate">',
-        '#suffix' => '</div></td>',
+        '#prefix' => '<div class="row"><div id="startdate">',
+        '#suffix' => '</div>',
         '#datepicker_options' => array(
             'maxDate' => 0
         ),
@@ -455,8 +471,8 @@ function fossee_stats_form($form, &$form_state) {
         '#date_format' => 'Y-m-d',
         '#date_increment' => 0,
         '#date_year_range' => '2011:+0',
-        '#prefix' => '<td><div id="enddate" style="padding-left:15px;">',
-        '#suffix' => '</div></td>',
+        '#prefix' => '<div id="enddate" style="padding-left:15px;">',
+        '#suffix' => '</div></div>',
         '#datepicker_options' => array(
             'maxDate' => 0
         ),
@@ -478,8 +494,8 @@ function fossee_stats_form($form, &$form_state) {
     $form['countryname'] = array(
         "#type" => "select",
         "#title" => t("Select Country"),
-        '#prefix' => '<td><div style="width:200px;" id= "load_country">',
-        '#suffix' => '</div></td></tr>',
+        '#prefix' => '<div class="row"><div id= "load_country">',
+        '#suffix' => '</div>',
         '#options' => get_country_list($foss_project, $foss_sub_project),
         '#states' => array(
             'invisible' => array(
@@ -524,8 +540,8 @@ function fossee_stats_form($form, &$form_state) {
         "#title" => t("State Name"),
         '#validated' => TRUE,
         '#options' => get_state_list($foss_project, $foss_sub_project, $countryname),
-        '#prefix' => '<tr><td><div style="width:150px;" id= "load_state">',
-        '#suffix' => '</div></td>',
+        '#prefix' => '<div id= "load_state">',
+        '#suffix' => '</div>',
         '#states' => array(
             'invisible' => array(
                 array(
@@ -568,8 +584,8 @@ function fossee_stats_form($form, &$form_state) {
         "#title" => t("City Name"),
         '#validated' => TRUE,
         '#options' => get_city_list($foss_project, $foss_sub_project, $countryname, $statename),
-        '#prefix' => '<td><div style="width:200px ;padding-left:30px;" id= "load_city">',
-        '#suffix' => '</div></td></tr>',
+        '#prefix' => '<div id= "load_city">',
+        '#suffix' => '</div></div>',
         '#states' => array(
             'invisible' => array(
                 array(
@@ -601,14 +617,14 @@ function fossee_stats_form($form, &$form_state) {
             )
         ),
         '#value' => t('Filter'),
-        '#prefix' => '<tr><td align="center">',
+        '#prefix' => '',
         '#suffix' => ''
     );
     $form['reset'] = array(
         '#type' => 'submit',
         '#value' => t('Reset'),
         '#prefix' => '',
-        '#suffix' => '</td></tr></table></div>'
+        '#suffix' => '</div>'
     );
     //This is used for displaying text (tab sta)
     $form['displaytext'] = array(
@@ -642,7 +658,7 @@ function fossee_stats_form($form, &$form_state) {
         </div>
 
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", "1960/01/01", "") . '
-        <div id="lmchartdata" style="float:left;width:300px;height:300px;">' . drupal_render($LM_getchart) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render($LM_getchart) . '</div>
         </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, 1960-01-01, date("Y-m-d")) . '</div>
@@ -658,8 +674,9 @@ function fossee_stats_form($form, &$form_state) {
     $form['lastdiv'] = array(
         '#type' => 'item',
         '#markup' => '',
-        '#suffix' => '</div></div>'
+        '#suffix' => '</div>'
     );
+    drupal_add_css(drupal_get_path("module", "fossee_stats") . "/css/stats.css");
     return $form;
 }
 
@@ -713,7 +730,7 @@ function getchartforselectedProject($foss_type, $sub_type, $startdate, $enddate,
         '#legend_position' => 'bottom',
         '#data_labels' => TRUE,
         '#tooltips' => TRUE,
-          '#width' => 800,
+          '#width' => 2000,
         '#height' => 300
     );
     $chart['pie_data'] = array(
@@ -1674,8 +1691,7 @@ function _ajax_example_get_third_dropdown_options($foss_sub_project) {
             $options[0] = "--------------";
             $options[1] = "Labs in Progress";
             $options[2] = "Completed Labs";
-        }
-        elseif ($foss_sub_project == 7) {
+        }elseif ($foss_sub_project == 7) {
             $options[0] = "--------------";
             $options[1] = "Flowsheets in Progress";
             $options[2] = "Completed Flowsheets";
@@ -1686,6 +1702,7 @@ function _ajax_example_get_third_dropdown_options($foss_sub_project) {
             $options[2] = "Completed Simulations";
         }
     }
+
     return $options;
 }
 
@@ -2086,7 +2103,7 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
         </div>
 
         <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_TBC_or_LM("LM", $startdate, $enddate) . '
-        <div id="lmchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render(getchart("LM")) . '</div>
         </div>
 
         <div id="workshopdata" class="tab-pane fade ">' . workshop_view_all(0, $startdate, $enddate) . '</div>
@@ -2170,14 +2187,14 @@ function ajax_example_submit_driven_callback($form, &$form_state) {
      //            <input type='radio' id='tab-1' name='tab-group-1' checked>
      //            <label for='tab-1'>Textbook Companion</label>
      //            <div class='tabcontent'><div id='tbctabledata'
-     //      style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div><div id='tbcchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . "</div></div></div>";
+     //      style='float:left;width:2200px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div><div id='tbcchartdata' style='float:left;width:2100px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . "</div></div></div>";
      //            } else if ($value == "lab_migration") {
      //                $pagecontent .= "<div class='tab-preview'>
      //        <input type='radio' id='tab-2' name='tab-group-1'>
      //              <label for='tab-2'>Lab Migration</label>
      //              <div class='tabcontent'>
-     //        <div id='lmtabledata' style='float:left;width:280px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div>
-     //        <div id='lmchartdata' style='float:left;width:250px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . "<div></div></div></div></div>";
+     //        <div id='lmtabledata' style='float:left;width:2200px;height:200px'>" . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . "</div>
+     //        <div id='lmchartdata' style='float:left;width:2100px;height:200px;'>" . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . "<div></div></div></div></div>";
      //            } else if ($value == "workshop") {
 
      //                $event_type = "Workshop";
@@ -2304,12 +2321,12 @@ foreach ($optiondata as $value) {
                  }
                  elseif ($value == "spoken_tutorial") {
 
-                  $spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
-                }elseif ($value == "flow_sheet") {
-                    $other_activities = "<h5>No Flowsheet is available</h5>";
-                }elseif ($value == "circuit_simulation") {
-                    $other_activities = "<h5>No Circuit Simulation is available</h5>";
-                }
+        $spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
+                 }elseif ($value == "flow_sheet") {
+                     $other_activities = "<h5>No Flowsheet is available</h5>";
+                 }elseif ($value == "circuit_simulation") {
+                     $other_activities = "<h5>No Circuit Simulation is available</h5>";
+                 }
              }
          }
 
@@ -2333,14 +2350,13 @@ foreach ($optiondata as $value) {
             <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . $tbcchartcheck . '</div>
             </div>
             <div id="lmtabledata" class="tab-pane fade ">' . $lmdatacheck . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . $lmchartcheck . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . $lmchartcheck . '</div>
         </div>
          <div id="workshopdata" class="tab-pane fade ">
          '. $workshopdatacheck . '</div>
          <div id="conferencedata" class="tab-pane fade ">' . $conferencedatacheck . '</div>
 
         <div id="spokentutorialdata" class="tab-pane fade ">' . $spoken_tutorialdatacheck . '</div>
-
         <div id="otheractivities" class="tab-pane fade ">' . $other_activities . '</div>
         </div>
                     ';
@@ -2373,7 +2389,7 @@ foreach ($optiondata as $value) {
                         <div class="tab-content">
 
        <div id="lmtabledata" class="tab-pane fade in active ">' . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . '</div>
+        <div id="lmchartdata" style="float:left;width:3100px;height:300px;">' . drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) . '</div>
         </div>   </div>';
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
@@ -2428,37 +2444,37 @@ foreach ($optiondata as $value) {
 
         $form['default_load']['#markup'] = $pagecontent;
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-    }elseif ($foss_type != '--------------' && $foss_sub_project == "Flowsheet" && $foss_sub_project_status == "--------------") {
+}elseif ($foss_type != '--------------' && $foss_sub_project == "Flowsheet" && $foss_sub_project_status == "--------------") {
 
-        $form['displaytext']['#markup'] = "Statistic of project : DWSIM";
-        $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
-
-
-        $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">
-                         <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
-                        <div class="tab-content">
-
-       <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('DWSIM',"",$startdate,$enddate) . '</div></div>';
-
-        $form['default_load']['#markup'] = $pagecontent;
-        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-    }elseif ($foss_type != '--------------' && $foss_sub_project == "Circuit Simulation" && $foss_sub_project_status == "--------------") {
-
-        $form['displaytext']['#markup'] = "Statistic of project : eSim";
-        $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
+    $form['displaytext']['#markup'] = "Statistic of project : DWSIM";
+    $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
 
 
-        $pagecontent = "";
-        $pagecontent .= '<ul class="nav nav-tabs">
-                         <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
-                        <div class="tab-content">
+    $pagecontent = "";
+    $pagecontent .= '<ul class="nav nav-tabs">
+                     <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
+                    <div class="tab-content">
 
-       <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('eSim',"",$startdate,$enddate) . '</div></div>';
+   <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('DWSIM',"",$startdate,$enddate) . '</div></div>';
 
-        $form['default_load']['#markup'] = $pagecontent;
-        $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
-    }
+    $form['default_load']['#markup'] = $pagecontent;
+    $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
+}elseif ($foss_type != '--------------' && $foss_sub_project == "Circuit Simulation" && $foss_sub_project_status == "--------------") {
+
+    $form['displaytext']['#markup'] = "Statistic of project : eSim";
+    $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
+
+
+    $pagecontent = "";
+    $pagecontent .= '<ul class="nav nav-tabs">
+                     <li><a data-toggle="tab" href="#otheractivities">Other Activities</a></li></ul>
+                    <div class="tab-content">
+
+   <div id="otheractivities" class="tab-pane fade  in active ">' . other_activities('eSim',"",$startdate,$enddate) . '</div></div>';
+
+    $form['default_load']['#markup'] = $pagecontent;
+    $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
+}
 
 /* else if ($foss_type != '--------------' && $foss_sub_project == "Postal Campaigns") {
 
@@ -2477,7 +2493,7 @@ foreach ($optiondata as $value) {
 
     }*/
 
-  elseif ($foss_type != '--------------' && ($foss_sub_project == "Textbook Companion" || $foss_sub_project == "Lab Migration" || $foss_sub_project == "Flowsheet" || $foss_sub_project == "Circuit Simulation" || $foss_sub_project == "Flowsheet" || $foss_sub_project == "Circuit Simulation")  && $foss_sub_project_status != "--------------") {
+  elseif ($foss_type != '--------------' && ($foss_sub_project == "Textbook Companion" || $foss_sub_project == "Lab Migration") && $foss_sub_project_status != "--------------") {
         if ($foss_sub_project == "Textbook Companion" && $foss_sub_project_status == "Completed Books") {
             $title = "Textbook Companion";
             $datatable = get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', "completed", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
@@ -2707,7 +2723,7 @@ function get_tabledata_TBC_or_LM($sub_type, $startdate, $enddate) {
             $result2 = $query2->execute();
             $completedlabcount = $result2->fetchObject()->count;
             if ($foss_detail->lm_completed != "" && $foss_detail->lm_completed != NULL) {
-                $clink =   "<a href=" . $foss_detail->lm_completed . " target='_blank'>" . $completedlabcount . "</a>";
+                $clink = "<a href=" . $foss_detail->lm_completed . " target='_blank'>" . $completedlabcount . "</a>";
                 $completedlabcount = $clink;
             }
             $query3 = db_select('lab_migration_proposal');
@@ -3607,7 +3623,7 @@ function get_country_list($foss_type, $foss_sub_project) {
                 }
 
             }
-            elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
+            elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
                 $sub_project = "workshop";
                 $foss_type_db = 'default';
 
@@ -3627,7 +3643,12 @@ function get_country_list($foss_type, $foss_sub_project) {
                 }
 
             }
+            elseif ($foss_sub_project == 4) {
 
+                $options[0] = '--------------';
+                $options[1] = 'India';
+
+            }
 
 
             db_set_active('default'); // We need to call the main (drupal) db back
@@ -3654,10 +3675,14 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
         $query->fields('foss_type', array(
             'foss_name'
         ));
+  $query->fields('foss_type', array(
+            'foss_selfworkshop_no'
+        ));
         $query->condition('id', $foss_type);
         $result = $query->execute();
         $foss_detail = $result->fetchObject();
         $foss_type_name = $foss_detail->foss_name;
+  $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
         $options = array();
 
         if ($foss_sub_project == 1 && $foss_type!=3) {
@@ -3699,45 +3724,7 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             }
 
         }
-        elseif ($foss_sub_project == 7 && $foss_type!=3) {
-            $sub_project = "dwsim_flowsheet_proposal";
-            $options = array();
-            db_set_active($foss_type_name); //Active other database
-
-            $options[0] = '--------------';
-            $query = "
-       SELECT * FROM " . $sub_project . "
-       WHERE country = :country
-       ";
-            $args = array(
-                ":country" => $country
-            );
-            $result = db_query($query, $args);
-            while ($state_detail = $result->fetchObject()) {
-                $options[$state_detail->state] = $state_detail->state;
-            }
-
-        }
-        elseif ($foss_sub_project == 8 && $foss_type!=3) {
-            $sub_project = "esim_circuit_simulation_proposal";
-            $options = array();
-            db_set_active($foss_type_name); //Active other database
-
-            $options[0] = '--------------';
-            $query = "
-       SELECT * FROM " . $sub_project . "
-       WHERE country = :country
-       ";
-            $args = array(
-                ":country" => $country
-            );
-            $result = db_query($query, $args);
-            while ($state_detail = $result->fetchObject()) {
-                $options[$state_detail->state] = $state_detail->state;
-            }
-
-        }
-        elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
+        elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
             $options = array();
             $sub_project = "workshop";
             $foss_type_db = 'default';
@@ -3755,6 +3742,23 @@ function get_state_list($foss_type, $foss_sub_project, $country) {
             $result = db_query($query, $args);
             while ($state_detail = $result->fetchObject()) {
                 $options[$state_detail->state] = $state_detail->state;
+            }
+
+        }
+        elseif ($foss_sub_project == 4) {
+
+            db_set_active('selfworkshop'); //Active other database
+            $options[0] = '--------------';
+            $query = "SELECT distinct (s.name) as state FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id )
+       ";
+            $args = array(
+                ":foss_id" => $foss_selfworkshop_no,
+            );
+            $result = db_query($query, $args);
+
+            while ($state_detail = $result->fetchObject()) {
+                $options[$state_detail->state] = $state_detail->state;
+
             }
 
         }
@@ -3780,10 +3784,14 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
         $query->fields('foss_type', array(
             'foss_name'
         ));
+  $query->fields('foss_type', array(
+            'foss_selfworkshop_no'
+        ));
         $query->condition('id', $foss_type);
         $result = $query->execute();
         $foss_detail = $result->fetchObject();
         $foss_type = $foss_detail->foss_name;
+        $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
         if ($foss_sub_project == 1  && $foss_type!="Python") {
             $sub_project = "textbook_companion_proposal";
             db_set_active($foss_type); //Active other database
@@ -3823,47 +3831,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
 
 
         }
-        elseif ($foss_sub_project == 7  && $foss_type!="Python") {
-            $sub_project = "dwsim_flowsheet_proposal";
-            db_set_active($foss_type); //Active other database
-            $options = array();
-            $options[0] = '--------------';
-            $query = "
-       SELECT * FROM " . $sub_project . "
-       WHERE country = :country and state = :state
-       ";
-            $args = array(
-                ":country" => $country,
-                ":state" => $state
-            );
-            $result = db_query($query, $args);
-            while ($city_detail = $result->fetchObject()) {
-                $options[$city_detail->city] = $city_detail->city;
-            }
-
-
-        }
-        elseif ($foss_sub_project == 8  && $foss_type!="Python") {
-            $sub_project = "esim_circuit_simulation_proposal";
-            db_set_active($foss_type); //Active other database
-            $options = array();
-            $options[0] = '--------------';
-            $query = "
-       SELECT * FROM " . $sub_project . "
-       WHERE country = :country and state = :state
-       ";
-            $args = array(
-                ":country" => $country,
-                ":state" => $state
-            );
-            $result = db_query($query, $args);
-            while ($city_detail = $result->fetchObject()) {
-                $options[$city_detail->city] = $city_detail->city;
-            }
-
-
-        }
-        elseif ($foss_sub_project == 3||$foss_sub_project == 4) {
+        elseif ($foss_sub_project == 3||$foss_sub_project == 5) {
             $sub_project = "workshop";
             $foss_type_db = 'default';
 
@@ -3884,6 +3852,27 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state) {
                 $options[$city_detail->city] = $city_detail->city;
             }
         }
+        elseif ($foss_sub_project == 4) {
+
+
+  db_set_active('selfworkshop'); //Active other database
+        $options[0] = '--------------';
+
+  $query="SELECT distinct (c.name) as city FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :statename";
+
+  $args = array(
+                ":foss_id" => $foss_selfworkshop_no,
+    ":statename" => $state,
+            );
+            $result = db_query($query, $args);
+
+            while ($city_detail = $result->fetchObject()) {
+                $options[$city_detail->city] = $city_detail->city;
+
+            }
+
+  }
+
 
 
         db_set_active('default'); // We need to call the main (drupal) db back
@@ -3937,45 +3926,48 @@ $query = "
             "#type" => "textfield",
             "#title" => "Name",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select Start Date Of Event :'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => '',
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
+
         $form['end_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select End Date Of Event:'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => '',
-            '#date_format' => 'Y-m-d',
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
+            '#suffix' => t('<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p> <p id="validate_time" style="visibility:hidden; color:red">Invalid time! End\'t time cannot be earlier than start time</p>')
         );
         $form["venue"] = array(
             "#type" => "textfield",
             "#title" => "Venue",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => '',
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100,
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -4033,6 +4025,24 @@ $query = "
                 )
             )
         );
+
+        $form['other_pincode'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Pincode'),
+            '#size' => 30,
+            '#maxlength' => 6,
+            '#attributes' => array(
+                'placeholder' => 'Enter pincode....'
+            ),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'Others'
+                    )
+                )
+            ),
+        );
+
         $form['all_state'] = array(
             '#type' => 'select',
             '#title' => t('State'),
@@ -4044,29 +4054,47 @@ $query = "
                         'value' => 'India'
                     )
                 )
+            ),
+            '#ajax'=> array(
+                'callback'=>'list_city_for_state',
+                'wrapper'=>'city-wrapper',
             )
         );
+
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
-            '#options' => _list_of_cities(),
+            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: null),
+            '#validated' => TRUE,
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
                         'value' => 'India'
                     )
                 )
-            )
+            ),
+            '#ajax'=> array(
+                'callback'=>'list_pincode_for_city',
+                'wrapper'=>'pincode-wrapper',
+            ),
+            '#prefix'=> '<div id="city-wrapper">',
+            '#suffix'=> '</div>',
         );
+
         $form['pincode'] = array(
-            '#type' => 'textfield',
+            '#type' => 'select',
             '#title' => t('Pincode'),
-            '#size' => 30,
-            '#maxlength' => 6,
-            '#required' => True,
-            '#attributes' => array(
-                'placeholder' => 'Enter pincode....'
-            )
+            '#validated' => TRUE,
+            '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: null),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'India'
+                    )
+                )
+            ),
+            '#prefix'=> '<div id="pincode-wrapper">',
+            '#suffix'=> '</div>',
         );
 
         $form["no_of_participant"] = array(
@@ -4079,13 +4107,15 @@ $query = "
         $form["event_link"] = array(
             "#type" => "textfield",
             "#title" => "Link to event's website",
-            "#default_value" => ''
+            "#default_value" => '',
+            '#suffix' => t('<p id="validate_url" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>')
         );
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details",
+            "#title" => "Details (Max characters: 2000)",
             "#default_value" => '',
-            "#required" => TRUE
+            "#maxlength" => 2000,
+            "#required" => TRUE,
         );
         $form['speakers_fieldset'] = array(
             '#type' => 'fieldset',
@@ -4106,17 +4136,20 @@ $query = "
             $form['speakers_fieldset'][$i]["speakername"] = array(
                 "#type" => "textfield",
                 "#title" => "Name: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 100,
             );
             $form['speakers_fieldset'][$i]["institute"] = array(
                 "#type" => "textfield",
                 "#title" => "Institute: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 100,
             );
             $form['speakers_fieldset'][$i]["place"] = array(
                 "#type" => "textfield",
                 "#title" => "Place: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 100,
             );
         }
         $form["speakers_count"] = array(
@@ -4173,26 +4206,30 @@ $query = "
             $temp = $i;
             $form['testimonial_fieldset'][$i]["t_text"] = array(
                 "#type" => "item",
-                "#markup" => "<h4><label>Testimonial : " . ($temp + 1) . "</label></h4>"
+                "#markup" => "<h4><label>Testimonial : " . ($temp + 1) . "</label></h4>",
             );
             $form['testimonial_fieldset'][$i]["t_name"] = array(
                 "#type" => "textfield",
                 "#title" => "Name: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                '#maxlength' => 100,
             );
             $form['testimonial_fieldset'][$i]["t_department"] = array(
                 "#type" => "textfield",
                 "#title" => "Department: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 100,
             );
             $form['testimonial_fieldset'][$i]["t_university"] = array(
                 "#type" => "textfield",
                 "#title" => "University: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 200,
             );
             $form['testimonial_fieldset'][$i]["t_body"] = array(
                 "#type" => "textarea",
-                "#title" => "Testimonial: "
+                "#title" => "Testimonial: ",
+                "#maxlength" => 2000,
             );
         }
         $form["testimonial_count"] = array(
@@ -4244,6 +4281,7 @@ $query = "
         if (empty($form_state['num_videolink'])) {
             $form_state['num_videolink'] = 1;
         }
+
         $temp = 0;
         for ($i = 0; $i < $form_state['num_videolink']; $i++) {
             $temp1 = $i;
@@ -4254,15 +4292,20 @@ $query = "
             $form['videolink_fieldset'][$i]["videolink_title"] = array(
                 "#type" => "textfield",
                 "#title" => "Title: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                "#maxlength" => 100,
             );
             $form['videolink_fieldset'][$i]["videolink_link"] = array(
                 "#type" => "textfield",
                 "#title" => "Link: ",
-                "#default_value" => ""
+                "#default_value" => "",
+                '#suffix' => t('<p id="validate_url_'.$temp1.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>')
             );
 
         }
+
+        drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
+
         $form["videolink_count"] = array(
             "#type" => "hidden",
             "#value" => $temp1
@@ -4310,17 +4353,38 @@ $query = "
         if (empty($form_state['num_names'])) {
             $form_state['num_names'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_names']; $i++) {
-            $form['names_fieldset'][$i]['name'] = array(
+
+        if($form_state['num_names'] == 1)
+        {
+            $form['names_fieldset'][0]['name'] = array(
                 '#title' => t('Add Event Image'),
                 '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
                 '#weight' => '5',
                 '#description' => t('Upload an image'),
                 // We need this to know which file element this is.
                 // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_' . $i . '_name]'
+                '#name' => 'files[names_fieldset_0_name]',
+                '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+        else
+        {
+            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
+                '#title' => t('Add Event Image'),
+                '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
+                '#weight' => '5',
+                '#description' => t('Upload an image'),
+                // We need this to know which file element this is.
+                // By default drupal would name all as files[names_fieldset]
+                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
+                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
+                '#suffix' => '</div>'
+            );
+        }
+
         $form['names_fieldset']['add_name'] = array(
             '#type' => 'submit',
             '#value' => t('Add Image'),
@@ -4329,24 +4393,23 @@ $query = "
                 'workshop_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'workshop_add_more_callback',
-                'wrapper' => 'names-fieldset-wrapper'
+                'callback' => 'workshop_add_more_add_one_callback',
+                'wrapper' => 'names-wrapper',
+                'method' => 'append'
+            ),
+        );
+
+        $form['names_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Image'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'workshop_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'workshop_remove_callback',
             )
         );
-        if ($form_state['num_names'] > 1) {
-            $form['names_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove Image'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'workshop_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'workshop_add_more_callback',
-                    'wrapper' => 'names-fieldset-wrapper'
-                )
-            );
-        }
         if ($no_js_use) {
             if (!empty($form['names_fieldset']['remove_name']['#ajax'])) {
                 unset($form['names_fieldset']['remove_name']['#ajax']);
@@ -4378,45 +4441,49 @@ $query = "
             "#type" => "textfield",
             "#title" => "Name",
             "#default_value" => $row->w_name,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100,
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select Start Date Of Event :'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
-            '#default_value' => $row->startdate,
-            '#date_format' => 'Y-m-d',
+            '#default_value' => $row->startdate.' '.$row->starttime,
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
+
         $form['end_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select End Date Of Event:'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
-            '#default_value' => $row->enddate,
-            '#date_format' => 'Y-m-d',
+            '#default_value' => $row->enddate.' '.$row->endtime,
+            '#date_format' => 'Y-m-d h:i A',
             '#attributes' => array(
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
+            '#suffix' => '<p id="validate_date" style="visibility:hidden; color:red;">Invalid dates! End date can\'t be earlier than start date.</p> <p id="validate_time" style="visibility:hidden; color:red">Invalid time! End\'t time cannot be earlier than start time</p>'
         );
+
         $form["venue"] = array(
             "#type" => "textfield",
             "#title" => "Venue",
             "#default_value" => $row->venue,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100,
         );
         $form["street"] = array(
             "#type" => "textfield",
             "#title" => "Street",
             "#default_value" => $row->street,
-            "#required" => TRUE
+            "#required" => TRUE,
+            "#maxlength" => 100
         );
         $form['country'] = array(
             '#type' => 'select',
@@ -4478,6 +4545,24 @@ $query = "
             ),
             "#default_value" => $row->city
         );
+        $form['other_pincode'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Pincode'),
+            '#size' => 30,
+            '#maxlength' => 6,
+            '#attributes' => array(
+                'placeholder' => 'Enter pincode....'
+            ),
+            "#default_value" => $row->pincode,
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'Others'
+                    )
+                )
+            ),
+        );
+
         $form['all_state'] = array(
             '#type' => 'select',
             '#title' => t('State'),
@@ -4490,12 +4575,18 @@ $query = "
                     )
                 )
             ),
+            '#ajax'=> array(
+                'callback'=>'list_city_for_state',
+                'wrapper'=>'city-wrapper',
+            ),
             "#default_value" => $row->state
         );
+
         $form['city'] = array(
             '#type' => 'select',
             '#title' => t('City'),
-            '#options' => _list_of_cities(),
+            '#validated' => TRUE,
+            '#options' => _list_of_cities(isset($form_state['values']['all_state'])? $form_state['values']['all_state']: $row->state),
             '#states' => array(
                 'visible' => array(
                     ':input[name="country"]' => array(
@@ -4503,19 +4594,31 @@ $query = "
                     )
                 )
             ),
-            "#default_value" => $row->city
+            '#prefix'=> '<div id="city-wrapper">',
+            '#suffix'=>'</div>',
+            "#default_value" => $row->city,
+            '#ajax'=> array(
+                'callback'=>'list_pincode_for_city',
+                'wrapper'=>'pincode-wrapper',
+            ),
         );
         $form['pincode'] = array(
-            '#type' => 'textfield',
+            '#type' => 'select',
             '#title' => t('Pincode'),
-            '#size' => 30,
-            '#maxlength' => 6,
-            '#required' => True,
-            '#attributes' => array(
-                'placeholder' => 'Enter pincode....'
+            '#validated' => TRUE,
+            '#options' => _list_of_pincodes(isset($form_state['values']['city'])? $form_state['values']['city']: $row->city),
+            '#states' => array(
+                'visible' => array(
+                    ':input[name="country"]' => array(
+                        'value' => 'India'
+                    )
+                )
             ),
-            "#default_value" => $row->pincode
+            '#prefix'=> '<div id="pincode-wrapper">',
+            '#suffix'=> '</div>',
+            "#default_value" => $row->pincode,
         );
+
         $form["no_of_participant"] = array(
             "#type" => "textfield",
             "#title" => "Number Of Participants",
@@ -4526,15 +4629,17 @@ $query = "
   $form["event_link"] = array(
             "#type" => "textfield",
             "#title" => "Link to event's website",
-            "#default_value" => $row->event_link
+            "#default_value" => $row->event_link,
+            '#suffix' => '<p id="validate_url" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
 
         );
 
         $form["body"] = array(
             "#type" => "textarea",
-            "#title" => "Details",
+            "#title" => "Details (Max characters: 2000)",
             "#default_value" => $row->body,
-            "#required" => TRUE
+            '#maxlength' => 2000,
+            "#required" => TRUE,
         );
         /*Edit Speakers*/
 
@@ -4569,17 +4674,20 @@ $query = "
                 $form['speakers_fieldset'][$i]["speakername"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => $row_s->name
+                    "#default_value" => $row_s->name,
+                    "#maxlength" => 100
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Institute",
-                    "#default_value" => $row_s->institute
+                    "#default_value" => $row_s->institute,
+                    "#maxlength" => 200,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "Place",
-                    "#default_value" => $row_s->place
+                    "#default_value" => $row_s->place,
+                    "#maxlength" => 100,
                 );
 
                 $i++;
@@ -4606,19 +4714,21 @@ $query = "
                 $form['speakers_fieldset'][$i]["speakername"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 100
                 );
                 $form['speakers_fieldset'][$i]["institute"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 200,
                 );
                 $form['speakers_fieldset'][$i]["place"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 100,
                 );
-
             }
             $form["speakers_count"] = array(
                 "#type" => "hidden",
@@ -4692,17 +4802,20 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_title"] = array(
                     "#type" => "textfield",
                     "#title" => "Title: ",
-                    "#default_value" => $row_v->title
+                    "#default_value" => $row_v->title,
+                    "#maxlength" => 100,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
                     "#title" => "Institute",
-                    "#default_value" => $row_v->link
+                    "#default_value" => $row_v->link,
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
                 );
 
                 $i++;
             }
 
+            drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'], 'flag'=>'many')), array('type' => 'setting'));
 
             $form["videolink_count"] = array(
                 "#type" => "hidden",
@@ -4724,16 +4837,21 @@ $query = "
                 $form['videolink_fieldset'][$i]["videolink_title"] = array(
                     "#type" => "textfield",
                     "#title" => "Title: ",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 100,
                 );
                 $form['videolink_fieldset'][$i]["videolink_link"] = array(
                     "#type" => "textfield",
                     "#title" => "Link: ",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
+
                 );
 
 
             }
+            drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
+
             $form["videolink_count"] = array(
                 "#type" => "hidden",
                 "#value" => $temp
@@ -4807,22 +4925,26 @@ $query = "
                 $form['testimonial_fieldset'][$i]["t_name"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => $row_t->name
+                    "#default_value" => $row_t->name,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => $row_t->department
+                    "#default_value" => $row_t->department,
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => $row_t->university
+                    "#default_value" => $row_t->university,
+                    "#maxlength" => 200,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
                     "#title" => "Testimonial",
-                    "#default_value" => $row_t->body
+                    "#default_value" => $row_t->body,
+                    "#maxlength" => 2000,
                 );
                 $i++;
             }
@@ -4845,21 +4967,25 @@ $query = "
                 $form['testimonial_fieldset'][$i]["t_name"] = array(
                     "#type" => "textfield",
                     "#title" => "Name",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_department"] = array(
                     "#type" => "textfield",
                     "#title" => "Department",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 100,
                 );
                 $form['testimonial_fieldset'][$i]["t_university"] = array(
                     "#type" => "textfield",
                     "#title" => "University",
-                    "#default_value" => ""
+                    "#default_value" => "",
+                    "#maxlength" => 200,
                 );
                 $form['testimonial_fieldset'][$i]["t_body"] = array(
                     "#type" => "textarea",
-                    "#title" => "Testimonial"
+                    "#title" => "Testimonial",
+                    "#maxlength" => 2000,
                 );
             }
             $form["testimonial_count"] = array(
@@ -4909,17 +5035,34 @@ $query = "
         $query->condition('w_id', $workshop_id);
         $result = $query->execute();
         $row = $result->fetchObject();
-        $eventfolder = str_replace(' ',  '_', $row->w_name) ;
-        $query1 = db_select('workshop_images');
-        $query1->fields('workshop_images');
-        $query1->condition('w_id', $workshop_id);
-        $result1 = $query1->execute();
-        while ($row1 = $result1->fetchObject()) {
-            $form['imagecheck@' . $row1->id] = array(
-                '#type' => 'checkbox',
-                '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . ' />'
+
+        if($row->images_folder == '')
+        {
+            $form['noimagestillnow'] = array(
+                '#markup' => '<p>No Images uploaded till now</p>'
             );
         }
+        else
+        {
+            $query1 = db_select('workshop_images');
+            $query1->fields('workshop_images');
+            $query1->condition('w_id', $workshop_id);
+            $result1 = $query1->execute();
+            if($result1->rowCount() == 0){
+                 $form['noimagestillnow'] = array(
+                '#markup' => '<p>No Images uploaded till now</p>'
+                );
+            }
+            else {
+                while ($row1 = $result1->fetchObject()) {
+                    $form['imagecheck@' . $row1->id] = array(
+                        '#type' => 'checkbox',
+                        '#field_suffix' => '<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/events_images/" .$row1->path . ' />'
+                    );
+                }
+            }
+        }
+
         $form['enduploadphotos'] = array(
             '#markup' => '',
             '#prefix' => '',
@@ -4936,43 +5079,64 @@ $query = "
         if (empty($form_state['num_names'])) {
             $form_state['num_names'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_names']; $i++) {
-            $form['names_fieldset'][$i]['name'] = array(
+
+        if($form_state['num_names'] == 1)
+        {
+            $form['names_fieldset'][0]['name'] = array(
                 '#title' => t('Add Event Image'),
                 '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
                 '#weight' => '5',
                 '#description' => t('Upload an image'),
                 // We need this to know which file element this is.
                 // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_' . $i . '_name]'
+                '#name' => 'files[names_fieldset_0_name]',
+                '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+        else
+        {
+            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
+                '#title' => t('Add Event Image'),
+                '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
+                '#weight' => '5',
+                '#description' => t('Upload an image'),
+                // We need this to know which file element this is.
+                // By default drupal would name all as files[names_fieldset]
+                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
+                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
+                '#suffix' => '</div>'
+            );
+        }
+
         $form['names_fieldset']['add_name'] = array(
             '#type' => 'submit',
-            '#value' => t('Add one more'),
+            '#value' => t('Add Image'),
             '#limit_validation_errors' => array(),
             '#submit' => array(
                 'workshop_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'workshop_add_more_callback',
-                'wrapper' => 'names-fieldset-wrapper'
+                'callback' => 'workshop_add_more_add_one_callback',
+                'wrapper' => 'names-wrapper',
+                'method' => 'append'
+            ),
+        );
+
+        $form['names_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Image'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'workshop_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'workshop_remove_callback',
             )
         );
-        if ($form_state['num_names'] > 1) {
-            $form['names_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove one'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'workshop_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'workshop_add_more_callback',
-                    'wrapper' => 'names-fieldset-wrapper'
-                )
-            );
-        }
+
         if ($no_js_use) {
             if (!empty($form['names_fieldset']['remove_name']['#ajax'])) {
                 unset($form['names_fieldset']['remove_name']['#ajax']);
@@ -4992,7 +5156,7 @@ $query = "
 }
 
 
-function workshop_add_form_validate($form, &$form_state) {
+function workshop_add_form_validate(&$form, &$form_state) {
     if ($form_state['values']['country'] == 'Others') {
         if ($form_state['values']['other_country'] == '') {
             form_set_error('other_country', t('Enter country name'));
@@ -5014,6 +5178,13 @@ function workshop_add_form_validate($form, &$form_state) {
         }
         else {
             $form_state['values']['city'] = $form_state['values']['other_city'];
+        }
+        if ($form_state['values']['other_pincode'] == '') {
+            form_set_error('other_city', t('Enter pincode'));
+            // $form_state['values']['country'] = $form_state['values']['other_country'];
+        }
+        else {
+            $form_state['values']['pincode'] = $form_state['values']['other_pincode'];
         }
     }
     else {
@@ -5112,15 +5283,23 @@ function testimonial_add_more_remove_one($form, &$form_state) {
 }
 
 
-function workshop_add_more_callback($form, $form_state) {
+function workshop_add_more_callback($form, &$form_state) {
     return $form['names_fieldset'];
+}
+
+function workshop_remove_callback($form, &$form_state){
+	  $commands[] = ajax_command_remove('#image_'.$form_state['num_names']);
+	  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+function workshop_add_more_add_one_callback($form, &$form_state) {
+    return $form['names_fieldset'][$form_state['num_names']-1];//[$form_state['num_names']+1]['name'];
 }
 
 
 function workshop_add_more_add_one($form, &$form_state) {
     $form_state['num_names']++;
     $form_state['rebuild'] = TRUE;
-    //$form_state['no_redirect'] = TRUE;
 }
 
 
@@ -5128,15 +5307,131 @@ function workshop_add_more_remove_one($form, &$form_state) {
     if ($form_state['num_names'] > 1) {
         $form_state['num_names']--;
     }
+  //  array_push($form_state['invalid'], $form_state['values']['remove_img']);
     $form_state['rebuild'] = TRUE;
 }
 
+function list_city_for_state($form, &$form_state) {
+    return $form['city'];
+}
+
+function list_pincode_for_city($form, &$form_state) {
+    return $form['pincode'];
+}
 
 function workshop_display_all() {
     $page_content = "";
+    drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/validators.js");
     $workshop_add_form = drupal_get_form("workshop_add_form");
     $page_content = drupal_render($workshop_add_form);
     return $page_content;
+}
+
+function upload_csv_form($form, &$form_state) {
+
+    $form['csv_file'] = array(
+    '#name' => 'files[csv_file]',
+    '#type' => 'file', //you can find a list of available types in the form api
+    '#title' => 'Upload csv file form events',
+    );
+
+    $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    );
+
+    $form['edit'] = array(
+        '#type' => 'item',
+        '#markup' => l("Click here to edit event and add images",'events/edit'),
+        '#weight' => 100,
+    );
+
+    return $form;
+}
+
+function upload_csv_form_validate($form, &$form_state) {
+
+    require_once(DRUPAL_ROOT.'/'.drupal_get_path('module', 'fossee_stats').'/parsecsv-for-php/parsecsv.lib.php');
+
+    if(!isset($_FILES['files']['name']['csv_file']))
+        drupal_set_message(t("!Error uploading csv file"), 'error');
+
+    $file_path = $_FILES['files']['tmp_name']['csv_file'];
+    if(get_file_size_MB($file_path) > variable_get('max_upload_size', 1))
+        { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); $form_state['csv_error_flag'] = TRUE; return; }
+
+    $csv = new ParseCsv\Csv($file_path);
+
+    //validating csv header
+    $std_header = array('foss_name'=>0, 'type'=>0, 'w_name'=>0, 'body'=>0, 'no_of_participant'=>0, 'event_link'=>0, 'startdate'=>0, 'starttime'=>0, 'enddate'=>0, 'endtime'=>0, 'venue'=>0, 'street'=>0, 'country'=>0, 'state'=>0, 'city'=>0, 'pincode'=>0);
+
+    $user_header = array_keys($csv->data[0]);
+
+    foreach($user_header as $i=>$value)
+    {
+        if(!in_array($value, array_keys($std_header)))
+            { drupal_set_message(t('Field '.'"'.$value.'"'.' does not match any expected field'), 'error'); $form_state['csv_error_flag'] = TRUE; }
+        else
+            $std_header[$value]++;
+    }
+    foreach($std_header as $key=>$value)
+    {
+        if($value > 1)
+           { drupal_set_message(t("Multiple values for field ".$key), 'error'); $form_state['csv_error_flag'] = TRUE; }
+        else if($value == 0 and !in_array($key, array('event_link', 'starttime', 'endtime')))
+           { drupal_set_message(t("Field ".$key." is missing"), 'error'); $form_state['csv_error_flag'] = TRUE; }
+    }
+
+    if(isset($form_state['csv_error_flag']))
+        return;
+
+    //validating csv data
+    foreach($csv->data as $rno=>$row)
+    {
+        foreach($row as $key=>$value)
+        {
+            if( !in_array($key, array('event_link', 'starttime', 'endtime')) and ($value == '' or $value == NULL))
+                { drupal_set_message(t("Missing value for field '".$key."' in row ".($rno+1)), 'error'); $form_state['csv_error_flag'] = TRUE; }
+        }
+    }
+}
+
+function upload_csv_form_submit($form, &$form_state) {
+
+    if(isset($form_state['csv_error_flag']))
+        return;
+
+    $file_path = $_FILES['files']['tmp_name']['csv_file'];
+    $csv = new ParseCsv\Csv($file_path);
+
+    $fields = array_keys($csv->data[0]);
+    array_push($fields, 'images_folder');
+    $insertquery = db_insert('workshop')->fields($fields);
+
+    $eventsfolder = array();
+    foreach($csv->data as $i=>$rows)
+    {
+        $foldername = str_replace(' ', '_', $rows["w_name"]) . time();
+        $root_path = events_images_path();
+        $dest_path = $foldername . '/';
+        if (!is_dir($root_path . $dest_path)) {
+            mkdir($root_path . $dest_path);
+        }
+        array_push($eventsfolder, $foldername);
+    }
+
+    $eventfolder = str_replace(' ', '_', $csv->data["name"]) . time();
+    foreach($csv->data as $i=>$record)
+    {
+        if($record['starttime'] == NULL or $record['starttime'] == '')
+            $record['starttime'] = "00:00";
+        else if($record['endtime'] == NULL or $record['endtime'] == '')
+            $record['endtime'] = "00:00";
+        $record['images_folder'] = $eventsfolder[$i];
+        $insertquery->values($record);
+    }
+    $insertquery->execute();
+    drupal_set_message(t("Successfully submitted"));
 }
 
 
@@ -5176,28 +5471,32 @@ function get_country_dropdown_options() {
 
 
 function workshop_add_form_submit($form, &$form_state) {
+
     $v = $form_state["values"];
-    //$start_datetime= explode(" ",$v["start_date"]);
-    //$end_datetime= explode(" ",$v["end_date"]);
+    $start_datetime= explode(" ",$v["start_date"]);
+    $end_datetime= explode(" ",$v["end_date"]);
+
     if ($v["workshop_id"]) {
+    	global $user;
         $query = db_update('workshop');
         $query->fields(array(
-            'foss_name' => $v["foss_select"],
-            'w_name' => $v["name"],
+            'foss_name' => trim($v["foss_select"]),
+            'w_name' => trim($v["name"]),
             'type' => $v["type"],
-            'startdate' => $v["start_date"],
-            'starttime' => "00:00",
-            'enddate' => $v["end_date"],
-            'endtime' => "00:00",
-            'venue' => $v["venue"],
-            'street' => $v["street"],
-            'country' => $v["country"],
-            'state' => $v["all_state"],
-            'city' => $v["city"],
-            'pincode' => $v["pincode"],
-      'event_link' => $v["event_link"],
+            'startdate' => $start_datetime[0],
+            'starttime' => $start_datetime[1],
+            'enddate' => $end_datetime[0],
+            'endtime' => $end_datetime[1],
+            'venue' => trim($v["venue"]),
+            'street' => trim($v["street"]),
+            'country' => trim($v["country"]),
+            'state' => trim($v["all_state"]),
+            'city' => trim($v["city"]),
+            'pincode' => trim($v["pincode"]),
+            'event_link' => trim($v["event_link"]),
             'no_of_participant' => $v["no_of_participant"],
-            'body' => $v["body"]
+            'body' => trim($v["body"]),
+            'last_edited_by' => $user->uid,
         ));
         $query->condition('w_id', $v["workshop_id"]);
         $result = $query->execute();
@@ -5206,14 +5505,15 @@ function workshop_add_form_submit($form, &$form_state) {
 
         $speakersupload = 0;
         for ($i = 0; $i <= $v["speakers_count"]; $i++) {
-           $s_id=$v['speakers_fieldset'][$i]["s_id"];
-            if ($s_id != "") {
+           drupal_set_message($s_id);
+            if (isset($v['speakers_fieldset'][$i]["s_id"])) {
+
                 if ($v['speakers_fieldset'][$i]["speakername"] != "") {
                     $query = db_update('speakers');
                     $query->fields(array(
-                        'name' => $v['speakers_fieldset'][$i]["speakername"],
-                        'institute' => $v['speakers_fieldset'][$i]["institute"],
-                        'place' => $v['speakers_fieldset'][$i]["place"]
+                        'name' => trim($v['speakers_fieldset'][$i]["speakername"]),
+                        'institute' => trim($v['speakers_fieldset'][$i]["institute"]),
+                        'place' => trim($v['speakers_fieldset'][$i]["place"])
                     ));
                     $query->condition('s_id', $v['speakers_fieldset'][$i]["s_id"]);
                     $result = $query->execute();
@@ -5232,9 +5532,9 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $speakersargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":name" => $v['speakers_fieldset'][$i]["speakername"],
-                        ":institute" => $v['speakers_fieldset'][$i]["institute"],
-                        ":place" => $v['speakers_fieldset'][$i]["place"]
+                        ":name" => trim($v['speakers_fieldset'][$i]["speakername"]),
+                        ":institute" => trim($v['speakers_fieldset'][$i]["institute"]),
+                        ":place" => trim($v['speakers_fieldset'][$i]["place"])
                     );
                     /* storing the row id in $result */
                     $speakersresult = db_query($speakersquery, $speakersargs, array(
@@ -5258,8 +5558,8 @@ function workshop_add_form_submit($form, &$form_state) {
                 if ($v['videolink_fieldset'][$i]["videolink_title"] != "") {
                     $query = db_update('workshop_videolinks');
                     $query->fields(array(
-                        'title' => $v['videolink_fieldset'][$i]["videolink_title"],
-                        'link' => $v['videolink_fieldset'][$i]["videolink_link"]
+                        'title' => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                        'link' => trim($v['videolink_fieldset'][$i]["videolink_link"])
 
                     ));
                     $query->condition('v_id', $v['videolink_fieldset'][$i]["v_id"]);
@@ -5279,8 +5579,8 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $videolinkargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":title" => $v['videolink_fieldset'][$i]["videolink_title"],
-                        ":link" => $v['videolink_fieldset'][$i]["videolink_link"]
+                        ":title" => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                        ":link" => trim($v['videolink_fieldset'][$i]["videolink_link"])
 
                     );
                     /* storing the row id in $result */
@@ -5305,10 +5605,10 @@ function workshop_add_form_submit($form, &$form_state) {
                 if ($v['testimonial_fieldset'][$i]["t_name"] != "") {
                     $query = db_update('testimonials');
                     $query->fields(array(
-                        'body' => $v['testimonial_fieldset'][$i]["t_body"],
-                        'name' => $v['testimonial_fieldset'][$i]["t_name"],
-                        'department' => $v['testimonial_fieldset'][$i]["t_department"],
-                        'university' => $v['testimonial_fieldset'][$i]["t_university"]
+                        'body' => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                        'name' => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                        'department' => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                        'university' => trim($v['testimonial_fieldset'][$i]["t_university"])
                     ));
                     $query->condition('t_id', $v['testimonial_fieldset'][$i]["t_id"]);
                     $result = $query->execute();
@@ -5327,10 +5627,10 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                     $testimonialargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":body" => $v['testimonial_fieldset'][$i]["t_body"],
-                        ":name" => $v['testimonial_fieldset'][$i]["t_name"],
-                        ":department" => $v['testimonial_fieldset'][$i]["t_department"],
-                        ":university" => $v['testimonial_fieldset'][$i]["t_university"]
+                        ":body" => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                        ":name" => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                        ":department" => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                        ":university" => trim($v['testimonial_fieldset'][$i]["t_university"])
                     );
                     /* storing the row id in $result */
                     $testimonialresult = db_query($testimonialquery, $testimonialargs, array(
@@ -5391,17 +5691,21 @@ function workshop_add_form_submit($form, &$form_state) {
                 }
 
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                if(get_file_size_MB($_FILES['files']['tmp_name'][$file_form_name]) > variable_get('max_upload_size', 1))
+                { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); return; }
+
+                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $sanitized_file_name)) {
                     $imagequery = "
-  INSERT INTO workshop_images
-  (w_id,name,path)
-  VALUES
-  (:w_id,:name, :path)
-  ";
+                                  INSERT INTO workshop_images
+                                  (w_id,name,path)
+                                  VALUES
+                                  (:w_id, :name, :path)
+                                  ";
                     $imageargs = array(
                         ":w_id" => $v["workshop_id"],
-                        ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":name" => $file_name,//$_FILES['files']['name'][$file_form_name],
+                        ":path" => $dest_path . $sanitized_file_name,//$_FILES['files']['name'][$file_form_name]
                     );
                     /* storing the row id in $result */
                     $imageresult = db_query($imagequery, $imageargs, array(
@@ -5434,28 +5738,30 @@ function workshop_add_form_submit($form, &$form_state) {
         $eventfolder = str_replace(' ', '_', $v["name"]) . time();
         $query = "
   INSERT INTO {workshop}
-  (foss_name, type, w_name, images_folder, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body)
+  (foss_name, type, w_name, images_folder, startdate, starttime,enddate, endtime, venue, street, country, state, city, pincode, event_link, no_of_participant,body,last_edited_by)
   VALUES  (:foss_name, :type, :w_name, :images_folder, :startdate, :starttime,:enddate, :endtime, :venue, :street, :country, :state, :city, :pincode, :event_link,
-:no_of_participant, :body)
+:no_of_participant, :body, :last_edited_by)
   ";
+  		global $user;
         $args = array(
             ":foss_name" => $v["foss_select"],
       ":type" => $v["type"],
-            ":w_name" => $v["name"],
-            ":images_folder" => $eventfolder,
-            ":startdate" => $v["start_date"],
-            ":starttime" => "00:00",
-            ":enddate" => $v["end_date"],
-            ":endtime" => "00:00",
-            ":venue" => $v["venue"],
-            ":street" => $v["street"],
-            ":country" => $v["country"],
-            ":state" => $v["all_state"],
-            ":city" => $v["city"],
+            ":w_name" => trim($v["name"]),
+            ":images_folder" => trim($eventfolder),
+            ':startdate' => $start_datetime[0],
+            ':starttime' => $start_datetime[1],
+            ':enddate' => $end_datetime[0],
+            ':endtime' => $end_datetime[1],
+            ":venue" => trim($v["venue"]),
+            ":street" => trim($v["street"]),
+            ":country" => trim($v["country"]),
+            ":state" => trim($v["all_state"]),
+            ":city" => trim($v["city"]),
             ":pincode" => $v["pincode"],
-      ":event_link" => $v["event_link"],
+      ":event_link" => trim($v["event_link"]),
             ":no_of_participant" => $v["no_of_participant"],
-            ":body" => $v["body"]
+            ":body" => trim($v["body"]),
+            ":last_edited_by" => $user->uid,
         );
         /* storing the row id in $result */
         $result = db_query($query, $args, array(
@@ -5473,9 +5779,9 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $speakerargs = array(
                     ":w_id" => $result,
-                    ":name" => $v['speakers_fieldset'][$i]["speakername"],
-                    ":institute" => $v['speakers_fieldset'][$i]["institute"],
-                    ":place" => $v['speakers_fieldset'][$i]["place"]
+                    ":name" => trim($v['speakers_fieldset'][$i]["speakername"]),
+                    ":institute" => trim($v['speakers_fieldset'][$i]["institute"]),
+                    ":place" => trim($v['speakers_fieldset'][$i]["place"])
                 );
                 /* storing the row id in $result */
                 $speakerresult = db_query($speakerquery, $speakerargs, array(
@@ -5498,10 +5804,10 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $testimonialargs = array(
                     ":w_id" => $result,
-                    ":body" => $v['testimonial_fieldset'][$i]["t_body"],
-                    ":name" => $v['testimonial_fieldset'][$i]["t_name"],
-                    ":department" => $v['testimonial_fieldset'][$i]["t_department"],
-                    ":university" => $v['testimonial_fieldset'][$i]["t_university"]
+                    ":body" => trim($v['testimonial_fieldset'][$i]["t_body"]),
+                    ":name" => trim($v['testimonial_fieldset'][$i]["t_name"]),
+                    ":department" => trim($v['testimonial_fieldset'][$i]["t_department"]),
+                    ":university" => trim($v['testimonial_fieldset'][$i]["t_university"])
                 );
                 /* storing the row id in $result */
                 $testimonialresult = db_query($testimonialquery, $testimonialargs, array(
@@ -5526,8 +5832,8 @@ function workshop_add_form_submit($form, &$form_state) {
   ";
                 $videolinkargs = array(
                     ":w_id" => $result,
-                    ":title" => $v['videolink_fieldset'][$i]["videolink_title"],
-                    ":link" => $v['videolink_fieldset'][$i]["videolink_link"]
+                    ":title" => trim($v['videolink_fieldset'][$i]["videolink_title"]),
+                    ":link" => trim($v['videolink_fieldset'][$i]["videolink_link"])
                 );
                 /* storing the row id in $result */
                 $videolinkresult = db_query($videolinkquery, $videolinkargs, array(
@@ -5559,7 +5865,11 @@ function workshop_add_form_submit($form, &$form_state) {
                 }
                 $imageupload = 0;
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                if(get_file_size_MB($_FILES['files']['tmp_name'][$file_form_name]) > variable_get('max_upload_size', 1))
+                { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); return; }
+
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path .$sanitized_file_name)) {
                     $imagequery = "
   INSERT INTO {workshop_images}
   (w_id,name,path)
@@ -5569,7 +5879,7 @@ function workshop_add_form_submit($form, &$form_state) {
                     $imageargs = array(
                         ":w_id" => $result,
                         ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":path" => $dest_path . $sanitized_file_name
                     );
                     /* storing the row id in $result */
                     $imageresult = db_query($imagequery, $imageargs, array(
@@ -5604,10 +5914,11 @@ function workshop_add_form_submit($form, &$form_state) {
             }
         }
     }
+    drupal_goto('events/edit');
 }
 
 
-function ajax_country_dependent_dropdown_callback($form, $form_state) {
+function ajax_country_dependent_dropdown_callback($form, &$form_state) {
     $country = $form_state['values']['country'];
     $form['state']['#options'] = ajax_getstate_callback($country);
     $commands[] = ajax_command_replace("#dropdown-state-replace", drupal_render($form['state']));
@@ -5618,7 +5929,7 @@ function ajax_country_dependent_dropdown_callback($form, $form_state) {
 }
 
 
-function ajax_state_dependent_dropdown_callback($form, $form_state) {
+function ajax_state_dependent_dropdown_callback($form, &$form_state) {
     $state = $form_state['values']['state'];
     $form['city']['#options'] = ajax_getcity_callback($state);
     $commands[] = ajax_command_replace("#dropdown-city-replace", drupal_render($form['city']));
@@ -5678,7 +5989,7 @@ function workshop_view_image_all($id = 0) {
     $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $previous = ($row1->id) - 1;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:550px; height:350px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:5100px; height:3100px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     $page_content .= "<a href=" . $GLOBALS['base_url'] . "/events/images/change/" . $previous . " name=" . $row1->id . " id=" . $row1->id . "  class='autodialog' data-dialog-width='600px'>PREVIOUS</a>";
     return $page_content;
@@ -5752,7 +6063,7 @@ function workshop_view_image_change($id = 0) {
     $row = $result->fetchObject();
     $eventfolder = str_replace(' ',  '_', $row->w_name) ;
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:600px; height:500px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
+    $page_content .= "<tr><td><img style='width:600px; height:2000px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
     $page_content .= "</table>";
     return $page_content;
 }
@@ -5776,94 +6087,257 @@ function delete_directory($dirname) {
     return TRUE;
 }
 
+function workshop_delete_prompt($workshop_id = 0) {
+    $page_content = '';
+    $form = drupal_get_form('workshop_delete_form', $workshop_id);
+    $page_content = drupal_render($form);
+    return $page_content;
+}
 
-function workshop_delete_all($workshop_id = 0) {
-    $page_content = "";
+function workshop_delete_form($form, &$form_state, $workshop_id=0){
+
     $query = db_select('workshop');
     $query->fields('workshop');
     $query->condition('w_id', $workshop_id);
     $result = $query->execute();
     $row = $result->fetchObject();
-    $root_path = events_images_path();
-    $eventfolder = str_replace(' ', '_', $row->w_name);
-    $dest_path = $eventfolder;
-    $dir_path = $root_path . $dest_path;
-    if (is_dir($dir_path)) {
-        $res = delete_directory($dir_path);
-        if (!$res) {
-            drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
-            return;
-        }
-        else {
-            $query2 = db_delete('workshop_images');
-            $query2->condition('w_id', $workshop_id);
-            $result2 = $query2->execute();
-        }
-    }
-    else {
-        drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
-    }
-    $query_t = db_delete('testimonials');
-    $query_t->condition('w_id', $workshop_id);
-    $result_t = $query_t->execute();
-    $query3 = db_delete('workshop');
-    $query3->condition('w_id', $workshop_id);
-    $result3 = $query3->execute();
 
-    if (!$result3) {
-        drupal_set_message(t("Something went wrong, please try again."), "error");
-    }
-    else {
-        if (!$result2 && (!$result_t)) {
-            drupal_set_message(t("Workshop Deleted successfully"), "status");
+    if(empty($row))
+        drupal_goto('events/edit');
+
+    $form = array();
+    $form['text'] = array(
+        '#type'=>'item',
+        '#markup'=>'Are you sure you want to delete "'.$row->w_name.'"?',
+    );
+    $form['yes'] = array(
+        '#type'=>'submit',
+        '#value'=>'Yes',
+        '#name'=>'yes',
+    );
+    $form['no'] = array(
+        '#type'=>'submit',
+        '#value'=>'No',
+        '#name'=>'no',
+    );
+    $form['w_id'] = array(
+        '#type'=>'hidden',
+        '#value'=>$workshop_id,
+    );
+    return $form;
+}
+
+function workshop_delete_form_submit($form, &$form_state) {
+    $page_content = "";
+    $workshop_id = $form_state['values']['w_id'];
+
+    if($form_state['triggering_element']['#name'] == 'yes')
+    {
+        $query = db_select('workshop');
+        $query->fields('workshop');
+        $query->condition('w_id', $workshop_id);
+        $result = $query->execute();
+        $row = $result->fetchObject();
+        $root_path = events_images_path();
+        $eventfolder = $row->images_folder;
+        $dest_path = $eventfolder;
+        $dir_path = $root_path . $dest_path;
+        if (is_dir($dir_path)) {
+            $res = delete_directory($dir_path);
+            if (!$res) {
+                drupal_set_message(t('Cannot delete Event directory :') . $dir_path . t(',Please contact administrator.'), 'error');
+                return;
+            }
         }
         else {
-            drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
+            drupal_set_message(t("Event directory not present :") . $dir_path . t(", Skipping deleting directory."), 'status');
+        }
+
+        $query2 = db_delete('workshop_images');
+        $query2->condition('w_id', $workshop_id);
+        $result2 = $query2->execute();
+        $query_t = db_delete('testimonials');
+        $query_t->condition('w_id', $workshop_id);
+        $result_t = $query_t->execute();
+        $query3 = db_delete('workshop');
+        $query3->condition('w_id', $workshop_id);
+        $result3 = $query3->execute();
+
+        if (!$result3) {
+            drupal_set_message(t("Something went wrong, please try again."), "error");
+        }
+        else {
+            if (!$result2 && (!$result_t)) {
+                drupal_set_message(t("Workshop Deleted successfully"), "status");
+            }
+            else {
+                drupal_set_message(t("Workshop, testimonials and related photos are Deleted successfully"), "status");
+            }
         }
     }
+    drupal_goto('events/edit');
     return $page_content;
 }
 
 
 function workshop_edit_all($workshop_id = 0) {
+     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/validators.js");
     $page_content = "";
     if ($workshop_id) {
         $workshop_add_form = drupal_get_form("workshop_add_form", $workshop_id);
         $page_content = drupal_render($workshop_add_form);
     }
     else {
-        $query = db_select('workshop');
-        $query->fields('workshop');
-        $query->orderBy('startdate', 'DESC');
-        $result = $query->execute();
-        $headers = array(
-            "Name",
-            "Start Date",
-            "Venue",
-            "No of Participant",
-            ""
-        );
-        $rows = array();
-        $options = array(
-            'attributes' => array(
-                'class' => 'delete'
-            )
-        );
-        while ($row = $result->fetchObject()) {
-            $item = array(
-                $row->w_name,
-                $row->startdate,
-                $row->venue,
-                $row->no_of_participant,
-                l("Edit", "events/edit/{$row->w_id}") . " | " . l("Delete", "events/delete/{$row->w_id}", $options)
-            );
-            array_push($rows, $item);
-        }
-        $page_content = bootstrap_table_format($headers, $rows);
+
+        $workshop_display_form = drupal_get_form("workshop_display_form");
+        $page_content = drupal_render($workshop_display_form);
     }
     return $page_content;
 }
 
+function workshop_display_form($form, &$form_state) {
+
+    $form = array();
+    $form['sort_fieldset'] = array(
+                '#type' => 'fieldset',
+                '#tree' => TRUE,
+                '#prefix' => '<div id="sort-fieldset-wrapper">',
+                '#suffix' => '</div>',
+    );
+
+    $form['sort_fieldset']['sort_by_date'] = array(
+        '#type' => 'submit',
+        '#value' => t('Sort by date'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit',
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper',
+        ),
+        '#name' => 'startdate',
+    );
+
+    $form['sort_fieldset']['last_added'] = array(
+        '#type' => 'submit',
+        '#value' => t('Sort by time of adding events'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit',
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper',
+        ),
+        '#name' => 'w_id',
+    );
+
+    $form['sort_fieldset']['sort_by_name'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by name'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit',
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper',
+        ),
+        '#name'=>'w_name',
+    );
+
+    $form['sort_fieldset']['sort_by_venue'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by venue'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit'
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper'
+        ),
+        '#name'=>'venue',
+    );
+
+    $form['sort_fieldset']['sort_by_participant'] = array(
+        '#type' => 'button',
+        '#value' => t('Sort by participants'),
+        '#limit_validation_errors' => array(),
+        '#submit' => array(
+            'sort_by_submit'
+        ),
+        '#ajax' => array(
+            'callback' => 'workshop_display_form_callback',
+            'wrapper' => 'sort-fieldset-wrapper'
+        ),
+        '#name'=>'no_of_participant',
+    );
+
+
+    $events_table_content = '';
+    if(!isset($form_state['triggering_element']['#name']))
+    {
+        $events_table_content = get_workshop_table_content('w_id');
+        drupal_add_js(array('fossee_stats' => array('sortby' => 'w_id')), array('type' => 'setting'));
+    }
+    else
+    {
+        $events_table_content = get_workshop_table_content($form_state['triggering_element']['#name']);
+        drupal_add_js(array('fossee_stats' => array('sortby' => $form_state['triggering_element']['#name'])), array('type' => 'setting'));
+    }
+    $form['sort_fieldset']['events_table'] = array(
+        '#type' => 'item',
+        '#markup' => $events_table_content,
+    );
+    return $form;
+}
+
+function workshop_display_form_callback($form, &$form_state) {
+    return $form['sort_fieldset'];
+}
+
+function sort_by_submit($form, &$form_state) {
+    $form_state['rebuild'] = TRUE;
+}
+
+function get_workshop_table_content($criteria) {
+
+    $criteria_order = array('w_id'=>'DESC', 'startdate'=>'DESC', 'w_name'=>'INC', 'venue'=>'INC', 'no_of_participant'=>'INC');
+    $query = db_select('workshop');
+    $query->fields('workshop');
+    $query->orderBy($criteria, $criteria_order[$criteria]);
+    $result = $query->execute();
+    $headers = array(
+        "S No.",
+        "Name",
+        "Start Date",
+        "Venue",
+        "No of Participant",
+        ""
+    );
+    $rows = array();
+    $options = array(
+        'attributes' => array(
+            'class' => 'delete',
+        )
+    );
+    $num = 1;
+    while ($row = $result->fetchObject()) {
+        $item = array(
+            $num,
+            $row->w_name,
+            $row->startdate,
+            $row->venue,
+            $row->no_of_participant,
+            l("Edit", "events/edit/{$row->w_id}") . " | " . l("Delete", "events/delete/{$row->w_id}", $options)
+        );
+        array_push($rows, $item);
+        $num++;
+    }
+    return bootstrap_table_format($headers, $rows);
+}
 
 function events_view_filter($foss_name, $event_type, $startdate, $enddate,
     $countryname, $statename, $cityname) {
@@ -6062,7 +6536,7 @@ function event_activities_all() {
 
 }
 
-function event_seminar_view_all($workshop_id, $startdate, $enddate) {
+function event_seminar_view_all() {
     $page_content = "";
     $headers = array(
         "Name",
@@ -6388,28 +6862,52 @@ function _list_of_states() {
     $states = array(
         0 => '-Select-'
     );
-    $query = db_select('list_states_of_india');
-    $query->fields('list_states_of_india');
+    $query = db_select('ai_pincode');
+    $query->fields('ai_pincode', array('statename'));
     $states_list = $query->execute();
     while ($states_list_data = $states_list->fetchObject()) {
-        $states[$states_list_data->state] = $states_list_data->state;
+        $states[$states_list_data->statename] = $states_list_data->statename;
     }
     return $states;
 }
 
 
-function _list_of_cities() {
+function _list_of_cities($state) {
+
     $city = array(
         0 => '-Select-'
     );
-    $query = db_select('list_cities_of_india');
-    $query->fields('list_cities_of_india');
-    $query->orderBy('city', 'ASC');
-    $city_list = $query->execute();
-    while ($city_list_data = $city_list->fetchObject()) {
-        $city[$city_list_data->city] = $city_list_data->city;
+    if($state != null and $state != '')
+    {
+        $query = db_select('ai_pincode');
+        $query->fields('ai_pincode', array('districtname'));
+        $query->orderBy('districtname', 'ASC');
+        $query->condition('statename', $state,'=');
+        $district_list = $query->execute();
+        while ($district_list_data = $district_list->fetchObject()) {
+            $city[$district_list_data->districtname] = $district_list_data->districtname;
+        }
     }
     return $city;
+}
+
+function _list_of_pincodes($city) {
+
+    $pincode = array(
+        0 => '-Select-'
+    );
+    if($city != null and $city != '')
+    {
+        $query = db_select('ai_pincode');
+        $query->fields('ai_pincode', array('pincode', 'officename'));
+        $query->orderBy('pincode', 'ASC');
+        $query->condition('districtname', $city, '=');
+        $pincode_list = $query->execute();
+        while($pincode_list_data = $pincode_list->fetchObject()){
+            $pincode[$pincode_list_data->pincode] = $pincode_list_data->pincode.' - '.$pincode_list_data->officename;
+        }
+    }
+    return $pincode;
 }
 
 
@@ -6437,7 +6935,7 @@ function getselfworkshoplcount($foss_name, $startdate, $enddate, $state, $city) 
     else {
         $state = $state;
     }
-    if ($startdate == "") {
+  if ($startdate == "") {
         $startdate = '1960-01-01';
     }
     else {
@@ -6472,112 +6970,112 @@ function getselfworkshoplcount($foss_name, $startdate, $enddate, $state, $city) 
     $query->condition('foss_selfworkshop_no', "null", '!=');
     $result = $query->execute();
     if ($result!=NULL) {
-      $page_content = "";
+  $page_content = "";
 
-      if ($city == "%"&&$state!="%") {
-      $city="NONE";
-      while ($foss_detail = $result->fetchObject()) {
+if ($city == "%"&&$state!="%") {
+$city="NONE";
+while ($foss_detail = $result->fetchObject()) {
 
-            db_set_active('selfworkshop');
-            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
-              ':state' => $state,
-              ':startdate' => $startdate,
-              ':enddate'  => $enddate,
-                                  ));
+      db_set_active('selfworkshop');
+      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
+        ':state' => $state,
+        ':startdate' => $startdate,
+        ':enddate'  => $enddate,
+                            ));
 
-            $count = $query2->fetchObject()->count;
+      $count = $query2->fetchObject()->count;
 
-            db_set_active('default'); // We need to call the main (drupal) db back
-                  db_set_active();
-              $item = array(
-                  $foss_detail->foss_name,
-                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-                );
+      db_set_active('default'); // We need to call the main (drupal) db back
+            db_set_active();
+        $item = array(
+            $foss_detail->foss_name,
+            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+          );
 
-              array_push($rows, $item);
-          }
+        array_push($rows, $item);
+    }
 
 
-      }
-      elseif ($state == "%"&&$city!="%") {
-      $state="NONE";
-      while ($foss_detail = $result->fetchObject()) {
+}
+elseif ($state == "%"&&$city!="%") {
+$state="NONE";
+while ($foss_detail = $result->fetchObject()) {
 
-            db_set_active('selfworkshop');
-            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city  AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
-              ':city' => $city,
+      db_set_active('selfworkshop');
+      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city  AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
+        ':city' => $city,
 
-              ':startdate' => $startdate,
-              ':enddate' => $enddate,
-                                  ));
+        ':startdate' => $startdate,
+        ':enddate' => $enddate,
+                            ));
 
-            $count = $query2->fetchObject()->count;
+      $count = $query2->fetchObject()->count;
 
-            db_set_active('default'); // We need to call the main (drupal) db back
-                  db_set_active();
-              $item = array(
-                  $foss_detail->foss_name,
-                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-                );
+      db_set_active('default'); // We need to call the main (drupal) db back
+            db_set_active();
+        $item = array(
+            $foss_detail->foss_name,
+            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+          );
 
-              array_push($rows, $item);
-          }
+        array_push($rows, $item);
+    }
 
-      }
-      elseif ($city == "%"&&$state == "%")  {
-      $city="NONE";
-      $state="NONE";
-      while ($foss_detail = $result->fetchObject()) {
+}
+elseif ($city == "%"&&$state == "%")  {
+$city="NONE";
+$state="NONE";
+while ($foss_detail = $result->fetchObject()) {
 
-            db_set_active('selfworkshop');
-            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
+      db_set_active('selfworkshop');
+      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
 
-              ':startdate' => $startdate,
-              ':enddate' => $enddate,
-                                  ));
+        ':startdate' => $startdate,
+        ':enddate' => $enddate,
+                            ));
 
-            $count = $query2->fetchObject()->count;
+      $count = $query2->fetchObject()->count;
 
-            db_set_active('default'); // We need to call the main (drupal) db back
-                  db_set_active();
-              $item = array(
-                  $foss_detail->foss_name,
-                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-                );
+      db_set_active('default'); // We need to call the main (drupal) db back
+            db_set_active();
+        $item = array(
+            $foss_detail->foss_name,
+            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+          );
 
-              array_push($rows, $item);
-          }
+        array_push($rows, $item);
+    }
 
-      }
-      else{
+}
+else{
 
-      while ($foss_detail = $result->fetchObject()) {
+while ($foss_detail = $result->fetchObject()) {
 
-            db_set_active('selfworkshop');
-            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
-                                      ':foss_id' => $foss_detail->foss_selfworkshop_no,
-              ':city' => $city,
-              ':state' => $state,
-              ':startdate' => $startdate,
-              ':enddate' => $enddate,
-                                  ));
+      db_set_active('selfworkshop');
+      $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and c.name LIKE :city and s.name LIKE :state AND t.tdate >= :startdate AND t.tdate <= :enddate ", array(
+                                ':foss_id' => $foss_detail->foss_selfworkshop_no,
+        ':city' => $city,
+        ':state' => $state,
+        ':startdate' => $startdate,
+        ':enddate' => $enddate,
+                            ));
 
-            $count = $query2->fetchObject()->count;
+      $count = $query2->fetchObject()->count;
 
-            db_set_active('default'); // We need to call the main (drupal) db back
-                  db_set_active();
-              $item = array(
-                  $foss_detail->foss_name,
-                  "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
-                );
+      db_set_active('default'); // We need to call the main (drupal) db back
+            db_set_active();
+        $item = array(
+            $foss_detail->foss_name,
+            "<a href=" . $GLOBALS['base_url'] . "/completed-workshops-list/" . $foss_detail->foss_selfworkshop_no . "/" . $city . "/" . $state . "/" . $startdate . "/" . $enddate . " target='_blank' title='Click to view workshop list'>" . $count . "</a>"
+          );
 
-              array_push($rows, $item);
-          }
+        array_push($rows, $item);
+    }
 
-      }
+}
 
     $page_content .= bootstrap_table_format($headers, $rows);
 
@@ -6650,7 +7148,7 @@ function completed_workshops_list($String, $foss_id, $city, $state, $startdate, 
     $query->condition('s.name', $state, 'LIKE');
     $query->condition('t.tdate', $startdate, '>=');
         $query->condition('t.tdate', $enddate, '<=');
-    $result = $query->extend('PagerDefault')->limit(50)->extend('TableSort')->orderByHeader($header)->execute();
+    $result = $query->extend('PagerDefault')->limit(100)->extend('TableSort')->orderByHeader($header)->execute();
     $number_of_rows = $result->rowCount();
 
 
@@ -7165,7 +7663,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
 }
 
 
-function poster_add_more_callback($form, $form_state) {
+function poster_add_more_callback($form, &$form_state) {
     return $form['poster_fieldset'];
 }
 
@@ -7914,24 +8412,24 @@ $pdf->AddPage();
 
  $page_content .= '<table cellpadding="3" width="100%" cellspacing="1" bordercolor="RED" border="1" style="text-align:left;border-collapse: collapse;"><tbody>';
     $page_content .= '
-   <tr><td width="20%"><b>Name</b></td><td width="80%" >' . $row->w_name . '</td></tr>
+   <tr><td width="20%"><b>Name</b></td><td width="200%" >' . $row->w_name . '</td></tr>
 
-<tr><td width="20%"><b>Start Date</b></td><td width="80%">' . $startdate . '</td></tr>
+<tr><td width="20%"><b>Start Date</b></td><td width="200%">' . $startdate . '</td></tr>
 
-  <tr><td width="20%"><b>End Date</b></td><td width="80%">' . $enddate . '</td></tr>
+  <tr><td width="20%"><b>End Date</b></td><td width="200%">' . $enddate . '</td></tr>
 
-<tr><td width="20%"><b>No. of Participants</b></td><td width="80%">' . $row->no_of_participant . '</td></tr>
+<tr><td width="20%"><b>No. of Participants</b></td><td width="200%">' . $row->no_of_participant . '</td></tr>
 
- <tr><td width="20%"><b>Venue</b></td><td width="80%">' . $row->venue . '</td></tr>';
+ <tr><td width="20%"><b>Venue</b></td><td width="200%">' . $row->venue . '</td></tr>';
 
 if ($num_of_speakercount!=0) {
     $page_content .= '<tr><td><b>Speakers</b></td><td>' . $textdisplay . '</td></tr>';
     }
 
-$page_content .= '<tr><td width="20%"><b>Details</b></td><td align="justify"  width="80%">' . $row->body . '</td></tr>';
+$page_content .= '<tr><td width="20%"><b>Details</b></td><td align="justify"  width="200%">' . $row->body . '</td></tr>';
 
 if (trim(strlen($row->event_link))!=0) {
- $page_content .= '<tr><td width="20%"><b>Event website</b></td><td width="80%" style="color:blue"><a href="' . $row->event_link . '" target="_blank">' . $row->event_link . '</a></td></tr>';
+ $page_content .= '<tr><td width="20%"><b>Event website</b></td><td width="200%" style="color:blue"><a href="' . $row->event_link . '" target="_blank">' . $row->event_link . '</a></td></tr>';
 }
 $page_content .= '</tbody></table>';
 
@@ -8052,6 +8550,18 @@ function fossee_stats_init() {
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/confirm.js");
     drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/testimonials_script.js");
 }
+
+function fossee_stats_date_popup_process_alter(&$element, &$form_state, $context) {
+  if ($element['#name'] == 'start_date') {
+    $element['date']['#title'] = t('Start Date<span style="color:red;">*</span>:');
+    $element['time']['#title'] = t('Start Time<span style="color:red;">*</span>:');
+  }
+  else if($element['#name'] = 'end_date') {
+  	$element['date']['#title'] = t('End Date<span style="color:red;">*</span>:');
+  	$element['time']['#title'] = t('End Time<span style="color:red;">*</span>:');
+  }
+}
+
 /* Form for Map Stats */
 function fossee_map_form($form, $form_state) {
 
@@ -8096,7 +8606,7 @@ function fossee_map_form($form, $form_state) {
    /* Calling additional files like css and js to run the map smoothly */
    drupal_add_css(drupal_get_path('module','fossee_stats')."/css/map.css");
    drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/map.js");
-   drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/loadingoverlay.min.js");
+   //drupal_add_js(drupal_get_path('module','fossee_stats'). "/js/loadingoverlay.min.js");
   return $form;
 }
 

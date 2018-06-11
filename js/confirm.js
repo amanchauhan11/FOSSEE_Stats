@@ -1,15 +1,17 @@
-$(document).ready(function()
-{	
-	
-    $( ".delete").bind("click", function () {
-	var e=confirm('Are you sure?');
-	if(e)
+(function ($) {
+	$(document).ready(function()
 	{
-	return true;
-	}
-	else
-	{
-	return false;
-	}   
- });
+
+	    $( ".delete").bind("click", function () {
+		var e=confirm('Are you sure?');
+		if(e)
+		{
+		return true;
+		}
+		else
+		{
+		return false;
+		}
+	 });
+	});
 });

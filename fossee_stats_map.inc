@@ -1926,9 +1926,9 @@ function stats_map($states,$max,$total){
     }
     // Generating individual data for each states
     if($flag){
-      $result .= '<path id="'.$key[$i].'" fill ="'.$flag.'" class="state" onclick="hello(\''.$key[$i].'\')" stroke="#FFFFFF" stroke-width="3.543" d="'.$m.'"><title>'.$key[$i].'</title></path>';
+      $result .= '<path id="'.$key[$i].'" fill ="'.$flag.'" class="state" onclick="state(\''.$key[$i].'\')" stroke="#FFFFFF" stroke-width="3.543" d="'.$m.'"><title>'.$key[$i].'</title></path>';
     }else{
-      $result .= '<path id="'.$key[$i].'" fill = "#666666" class="state" onclick="hello(\''.$key[$i].'\')" stroke="#FFFFFF" stroke-width="3.543" d="'.$m.'"><title>'.$key[$i].'</title></path>';
+      $result .= '<path id="'.$key[$i].'" fill = "#666666" class="state" onclick="state(\''.$key[$i].'\')" stroke="#FFFFFF" stroke-width="3.543" d="'.$m.'"><title>'.$key[$i].'</title></path>';
     }
     $i++;
   }

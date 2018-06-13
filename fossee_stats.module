@@ -329,6 +329,13 @@ function fossee_stats_menu() {
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
     );
+    /* Ajax request for state's map data */
+    $items['state-map-stats'] = array(
+      'page callback'=>'state_map_stats',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
     return $items;
 }
 
@@ -9525,6 +9532,24 @@ function map_stats() {
     echo get_map_data($type,$postBody->activities,0);
   }else {
     echo get_map_data($type,0,0);
+  }
+}
+
+/* To generate map with activities and status (dropdown data) */
+function state_map_stats() {
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  $state = $postBody->state;
+  /* Configuration of map */
+  require_once('state_map_data.inc');
+  if ($postBody->activities && $postBody->status) {
+    echo state_map_data($type,$postBody->activities,$postBody->status,$state);
+  }elseif ($postBody->activities) {
+    echo state_map_data($type,$postBody->activities,0,$state);
+  }else {
+    echo state_map_data($type,0,0,$state);
   }
 }
 

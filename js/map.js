@@ -119,6 +119,30 @@ function map(){
   });
 }
 
+// To generate state map according to activities and status
+function state(state){
+  var add = '';
+  if(jQuery('#edit-foss-activities').val()){
+    add += ', "activities" : "'+jQuery('#edit-foss-activities').val()+'"';
+  }
+  if(jQuery('#edit-foss-status').val()){
+    add += ', "status" : "'+jQuery('#edit-foss-status').val()+'"';
+  }
+  // Ajax request to generate map
+  jQuery.ajax({
+    type: 'POST',
+    url: 'state-map-stats',
+    data: '{ "type" : "'+jQuery('#edit-foss-type').val()+'"'+add+', "state" : "'+state+'"}',
+    processData:false,
+    contentType: "application/json",
+    success:function(r){
+      jQuery('#load_map').html(r);
+    },error:function(r){
+      alert('not working!');
+    }
+  });
+}
+
 // To enable the activities dropdown
 function check_activities() {
   jQuery.ajax({

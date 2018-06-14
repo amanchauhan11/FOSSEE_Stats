@@ -5398,6 +5398,9 @@ function upload_csv_form_validate($form, &$form_state) {
 
 function upload_csv_form_submit($form, &$form_state) {
 
+    global $user;
+    drupal_mail('fossee_stats', 'upload_csv_mail', $user->mail, language_default(), array('csv_filename'=>$_FILES['files']['name']['csv_file']));
+
     if(isset($form_state['csv_error_flag']))
         return;
 
@@ -5475,6 +5478,9 @@ function workshop_add_form_submit($form, &$form_state) {
     $v = $form_state["values"];
     $start_datetime= explode(" ",$v["start_date"]);
     $end_datetime= explode(" ",$v["end_date"]);
+
+    global $user;
+    drupal_mail('fossee_stats', 'edit_mail', $user->mail, language_default(), array('workshop_name'=>trim($v['name'])));
 
     if ($v["workshop_id"]) {
     	global $user;

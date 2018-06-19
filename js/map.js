@@ -1,8 +1,9 @@
 
 // To popup state data
-function hello(state){
+function hello(state,district = false){
   var add = '';
   var sub = '';
+  var title = '';
   if (!jQuery('#edit-foss-type').val()) {
     sub += '0'
   }
@@ -18,11 +19,16 @@ function hello(state){
   }else {
     sub += ',0';
   }
+  if(district){
+    title = '<h1>'+district+'</h1><h4>State: '+state+'</h4>';
+  }else {
+    title = '<h1>'+state+'</h1>';
+  }
   // Ajax request to get state data
   jQuery.ajax({
     type: 'POST',
     url: 'state-details',
-    data: '{  "type" : "'+jQuery('#edit-foss-type').val()+'", "state" : "'+state+'" '+add+'}',
+    data: '{  "type" : "'+jQuery('#edit-foss-type').val()+'", "state" : "'+state+'", "district" : "'+district+'" '+add+'}',
     processData:false,
     contentType: "application/json",
     success:function(r){
@@ -76,7 +82,7 @@ function hello(state){
       if (status == 0) {
         out = '<h3>There is no data available</h3>';
       }
-      jQuery('body').html(jQuery('body').html() + '<div id="poped" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')"><div id="popup"><div class="head"><span id="closer" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')">&times;</span><h1>'+state+'</h1></div><div class="body">'+out+'</div></div></div>');
+      jQuery('body').html(jQuery('body').html() + '<div id="poped" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')"><div id="popup"><div class="head"><span id="closer" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')">&times;</span>'+title+'</div><div class="body">'+out+'</div></div></div>');
     },error:function(r){
       alert('not working!');
     }
@@ -97,6 +103,8 @@ function close_popup(type,activities,status) {
 
 // To generate map according to activities and status
 function map(){
+  jQuery("#wait").css("display", "block");
+  jQuery("#load_map").hide();
   var add = '';
   if(jQuery('#edit-foss-activities').val()){
     add += ', "activities" : "'+jQuery('#edit-foss-activities').val()+'"';
@@ -113,6 +121,8 @@ function map(){
     contentType: "application/json",
     success:function(r){
       jQuery('#load_map').html(r);
+      jQuery("#wait").css("display", "none");
+      jQuery('#load_map').show();
     },error:function(r){
       alert('not working!');
     }
@@ -121,6 +131,8 @@ function map(){
 
 // To generate state map according to activities and status
 function state(state){
+  jQuery("#wait").css("display", "block");
+  jQuery("#load_map").hide();
   var add = '';
   if(jQuery('#edit-foss-activities').val()){
     add += ', "activities" : "'+jQuery('#edit-foss-activities').val()+'"';
@@ -137,6 +149,8 @@ function state(state){
     contentType: "application/json",
     success:function(r){
       jQuery('#load_map').html(r);
+      jQuery("#wait").css("display", "none");
+      jQuery('#load_map').show();
     },error:function(r){
       alert('not working!');
     }

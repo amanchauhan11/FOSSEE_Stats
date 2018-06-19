@@ -7,18 +7,16 @@ function state_map_data($type,$activities,$status,$state){
     ->condition('name',$state)
     ->execute()
     ->fetchField();
-  
+
   $district_list = db_select('districts','d')
     ->fields('d', array('name'))
     ->condition('state_id',$state_id)
     ->execute();
-
   $districts = array();
 
   while($each = $district_list->fetchObject()){
     $districts[$each->name] = 0;
   }
-  //print_r($districts);
   /* For separation of state name from key of $states array */
   $key = array_keys($districts);
   /* Checking the foss type */
@@ -36,88 +34,67 @@ function state_map_data($type,$activities,$status,$state){
       /* For fetching data from all foss type */
       while($foss = $query->fetchObject()){
         $name = $foss->foss_name;
+        //echo '<h1>'.$name.'</h1>';
         // Workshop
         if($foss->workshop){
           $query1 = db_select('workshop', 'w')
-            ->fields('w', array('city'))
+            ->fields('w', array('pincode'))
             ->condition('type','workshop')
             ->condition('foss_name',$name)
+            ->condition('state',$state)
             ->execute()
             ->fetchAll();
           // Assigning to each states
           foreach ($query1 as $s) {
-            if($s->city){
-              $districts[$s->city]++;
-            }
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            $districts[$district]++;
           }
         }
+        //echo '<br>Workshop<br>';
+        //print_r($districts);
         // Conference
         if($foss->conference){
           $query1 = db_select('workshop', 'w')
-            ->fields('w',array('city'))
+            ->fields('w', array('pincode'))
             ->condition('type','conference')
             ->condition('foss_name',$name)
+            ->condition('state',$state)
             ->execute()
             ->fetchAll();
+          // Assigning to each states
           foreach ($query1 as $s) {
-            if($s->city){
-              $districts[$s->city]++;
-            }
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            $districts[$district]++;
           }
         }
+        //echo '<br>Conference<br>';
+        //print_r($districts);
 
         // Text Book companion
         db_set_active($name);
         if($foss->tbc){
           if ($name != 'Python') {
-            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-            if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                if ($name != 'DWSIM') {
-                  foreach ($key as $k) {
-                    /* Completed Textbook Companion */
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                        ':city' => $k,
-                    ));
-                    /* Pending Textbook Companion */
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                        ':city' => $k,
-                        ':enddate' => $pending_enddate
-                    ));
-                    $districts[$k] += $query2->fetchObject()->book_count;
-                    $districts[$k] += $query3->fetchObject()->book_count;
-                  }
-                }
-                else {
-                  foreach ($key as $k) {
-                    /* Completed Textbook Companion */
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                        ':city' => $k,
-                    ));
-                    /* Pending Textbook Companion */
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                        ':city' => $k,
-                        ':enddate' => $pending_enddate
-                    ));
-                    $districts[$k] += $query2->fetchObject()->book_count;
-                    $districts[$k] += $query3->fetchObject()->book_count;
-                  }
-                }
-            }
-            else {
-              foreach ($key as $k) {
-                /* Completed Textbook Companion */
-                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city", array(
-                    ':city' => $k,
-                ));
-                /* Pending Textbook Companion */
-                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                    ':city' => $k,
-                    ':enddate' => $pending_enddate
-                ));
-                $districts[$k] += $query2->fetchObject()->book_count;
-                $districts[$k] += $query3->fetchObject()->book_count;
+              $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              db_set_active('default');
+              while($pin = $query2->fetchObject()->pin) {
+                $district = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$pin)
+                  ->execute()
+                  ->fetchField();
+                $districts[$district]++;
               }
-            }
+              db_set_active($name);
           }
           else {
               /*$query5 = db_select('tbc_book');
@@ -132,32 +109,31 @@ function state_map_data($type,$activities,$status,$state){
               $pendingbookcount += $result6->fetchObject()->count;*/
           }
         }
+        //echo '<br>TBC<br>';
+        //print_r($districts);
 
         // Lab Migration
         if($foss->lab_migration){
           /* Completed Lab Migration */
           $query1 = db_select('lab_migration_proposal','u')
-            ->fields('u', array('city'))
-            ->condition('approval_status', 3)
+            ->fields('u', array('pincode'))
+            ->condition('approval_status', 2,'!=')
+            ->condition('state',$state)
             ->execute()
             ->fetchAll();
+          db_set_active('default');
           foreach ($query1 as $s) {
-            if($s->city){
-              $districts[$s->city]++;
-            }
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            $districts[$district]++;
           }
-          /* Lab in Progress of Lab Migration */
-          $query1 = db_select('lab_migration_proposal','u')
-            ->fields('u', array('city'))
-            ->condition('approval_status', 1)
-            ->execute()
-            ->fetchAll();
-          foreach ($query1 as $s) {
-            if($s->city){
-              $districts[$s->city]++;
-            }
-          }
+          db_set_active($name);
         }
+        //echo '<br>LM<br>';
+        //print_r($districts);
         /*
         //  Self Workshop space
         if($foss->foss_selfworkshop_no){
@@ -175,43 +151,44 @@ function state_map_data($type,$activities,$status,$state){
         /* DWSIM Flowsheet */
         if($name == 'DWSIM'){
           db_set_active('DWSIM');
-          foreach ($key as $k) {
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 2,'!=')
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         /* eSim Circuit Simulation */
         }else if($name == 'eSim'){
           db_set_active('eSim');
-          foreach ($key as $k) {
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 2,'!=')
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
-
+          db_set_active($name);
         }
+        //echo '<br>Final<br>';
+        //print_r($districts);
         db_set_active('default');
         db_set_active();
       }
@@ -255,41 +232,20 @@ function state_map_data($type,$activities,$status,$state){
           db_set_active($name);
           if($query->tbc){
             if ($name != 'Python') {
-                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                        if ($name != 'DWSIM') {
-                          foreach ($key as $k) {
-                            /* Pending Textbook Companion */
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query3->fetchObject()->book_count;
-                          }
-                        }
-                        else {
-                          foreach ($key as $k) {
-                            /* Pending Textbook Companion */
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query3->fetchObject()->book_count;
-                          }
-                        }
-                    }
-                    else {
-                      foreach ($key as $k) {
-                        /* Pending Textbook Companion */
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':city' => $k,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $districts[$k] += $query3->fetchObject()->book_count;
-                      }
-                    }
-
+                /* Pending Textbook Companion */
+                $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state
+                ));
+                db_set_active('default');
+                while($pin = $query3->fetchObject()->pin) {
+                  $district = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  $districts[$district]++;
+                }
+                db_set_active($name);
             }
             else {
                 /*$query5 = db_select('tbc_book');
@@ -309,43 +265,21 @@ function state_map_data($type,$activities,$status,$state){
           db_set_active($name);
           if($query->tbc){
             if ($name != 'Python') {
-                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                        if ($name != 'DWSIM') {
-                          foreach ($key as $k) {
-                            /* Completed Textbook Companion */
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query2->fetchObject()->book_count;
-                          }
-                        }
-                        else {
-                          foreach ($key as $k) {
-                            /* Completed Textbook Companion */
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query2->fetchObject()->book_count;
-                          }
-                        }
-                    }
-                    else {
-                      foreach ($key as $k) {
-                        /* Completed Textbook Companion */
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':city' => $k,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $districts[$k] += $query2->fetchObject()->book_count;
-                      }
-                    }
-
-            }
-            else {
+                /* Completed Textbook Companion */
+                $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                db_set_active('default');
+                while($pin = $query2->fetchObject()->pin) {
+                  $district = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  $districts[$district]++;
+                }
+                db_set_active($name);
+            }else {
                 /*$query5 = db_select('tbc_book');
                 $query5->addExpression('count(*)', 'count');
                 $query5->condition('approved', 1);
@@ -363,75 +297,115 @@ function state_map_data($type,$activities,$status,$state){
           db_set_active($name);
           if($query->lab_migration){
             $query1 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('city'))
+              ->fields('u', array('pincode'))
               ->condition('approval_status', 1)
+              ->condition('state',$state)
               ->execute()
               ->fetchAll();
+            db_set_active('default');
             foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
+              $district = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              $districts[$district]++;
             }
+            db_set_active($name);
           }
         /* Completed Labs for Lab Migration */
         }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
           db_set_active($name);
           if($query->lab_migration){
             $query1 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('city'))
+              ->fields('u', array('pincode'))
               ->condition('approval_status', 3)
+              ->condition('state',$state)
               ->execute()
               ->fetchAll();
+            db_set_active('default');
             foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
+              $district = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              $districts[$district]++;
             }
+            db_set_active($name);
           }
         }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
           db_set_active('DWSIM');
-          foreach ($key as $k) {
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
           db_set_active('DWSIM');
-          foreach ($key as $k) {
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
           db_set_active('eSim');
-          foreach ($key as $k) {
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
           db_set_active('eSim');
-          foreach ($key as $k) {
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }
       /* When status not set */
       }else {
@@ -439,30 +413,40 @@ function state_map_data($type,$activities,$status,$state){
         if ($act == 'Workshop') {
           if($query->workshop){
             $query1 = db_select('workshop', 'w')
-              ->fields('w', array('city'))
+              ->fields('w', array('pincode'))
               ->condition('type','workshop')
               ->condition('foss_name',$name)
+              ->condition('state',$state)
               ->execute()
               ->fetchAll();
+            // Assigning to each states
             foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
+              $district = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              $districts[$district]++;
             }
           }
         // Conference
         }elseif ($act == 'Conference') {
           if($query->conference){
             $query1 = db_select('workshop', 'w')
-              ->fields('w',array('city'))
+              ->fields('w', array('pincode'))
               ->condition('type','conference')
               ->condition('foss_name',$name)
+              ->condition('state',$state)
               ->execute()
               ->fetchAll();
+            // Assigning to each states
             foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
+              $district = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              $districts[$district]++;
             }
           }
         // Textbook  Companion
@@ -471,56 +455,19 @@ function state_map_data($type,$activities,$status,$state){
           if($query->tbc){
 
             if ($name != 'Python') {
-                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                        if ($name != 'DWSIM') {
-                          foreach ($key as $k) {
-                            /* Completed Textbook */
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                                ':city' => $k,
-                            ));
-                              /* Pending Textbook */
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query2->fetchObject()->book_count;
-                            $districts[$k] += $query3->fetchObject()->book_count;
-                          }
-                        }
-                        else {
-                          foreach ($key as $k) {
-                            /* Completed Textbook */
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                                ':city' => $k,
-                            ));
-                              /* Pending Textbook */
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':city' => $k,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $districts[$k] += $query2->fetchObject()->book_count;
-                            $districts[$k] += $query3->fetchObject()->book_count;
-                          }
-                        }
-                    }
-                    else {
-                      foreach ($key as $k) {
-                        /* Completed Textbook */
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city", array(
-                            ':city' => $k,
-                        ));
-                          /* Pending Textbook */
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':city' => $k,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $districts[$k] += $query2->fetchObject()->book_count;
-                        $districts[$k] += $query3->fetchObject()->book_count;
-                      }
-                    }
-
+              $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              db_set_active('default');
+              while($pin = $query2->fetchObject()->pin) {
+                $district = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$pin)
+                  ->execute()
+                  ->fetchField();
+                $districts[$district]++;
+              }
+              db_set_active($name);
             }
             else {
                 /*$query5 = db_select('tbc_book');
@@ -539,94 +486,98 @@ function state_map_data($type,$activities,$status,$state){
         }elseif ($act == 'Lab Migration') {
           db_set_active($name);
           if($query->lab_migration){
-            /* Completed Lab Migration */
             $query1 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('city'))
-              ->condition('approval_status', 3)
+              ->fields('u', array('pincode'))
+              ->condition('approval_status', 2,'!=')
+              ->condition('state',$state)
               ->execute()
               ->fetchAll();
+            db_set_active('default');
             foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
+              $district = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              $districts[$district]++;
             }
-            /* Lab in Progress of Lab Migration */
-            $query1 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('city'))
-              ->condition('approval_status', 1)
-              ->execute()
-              ->fetchAll();
-            foreach ($query1 as $s) {
-              if($s->city){
-                $districts[$s->city]++;
-              }
-            }
+            db_set_active($name);
           }
         }elseif ($act == "Flowsheet") {
           db_set_active('DWSIM');
-          foreach ($key as $k) {
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 2,'!=')
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
-            $query1 = db_select('dwsim_flowsheet_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }elseif ($act == "Circuit Simulation") {
           db_set_active('eSim');
-          foreach ($key as $k) {
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 3)
-              ->condition('city',$k)
-              ->countQuery()
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 2,'!=')
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $districts[$k] += $query1;
-            $query1 = db_select('esim_circuit_simulation_proposal')
-              ->condition('approval_status', 1)
-              ->condition('city',$k)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $districts[$k] += $query1;
+            $districts[$district]++;
           }
+          db_set_active($name);
         }
       }
     }else {
       // Workshop
       if($query->workshop){
         $query1 = db_select('workshop', 'w')
-          ->fields('w', array('city'))
+          ->fields('w', array('pincode'))
           ->condition('type','workshop')
           ->condition('foss_name',$name)
+          ->condition('state',$state)
           ->execute()
           ->fetchAll();
+        // Assigning to each states
         foreach ($query1 as $s) {
-          if($s->city){
-            $districts[$s->city]++;
-          }
+          $district = db_select('ai_pincode','a')
+            ->fields('a', array('districtname'))
+            ->condition('pincode',$s->pincode)
+            ->execute()
+            ->fetchField();
+          $districts[$district]++;
         }
       }
       // Conference
       if($query->conference){
         $query1 = db_select('workshop', 'w')
-          ->fields('w',array('city'))
+          ->fields('w', array('pincode'))
           ->condition('type','conference')
           ->condition('foss_name',$name)
+          ->condition('state',$state)
           ->execute()
           ->fetchAll();
+        // Assigning to each states
         foreach ($query1 as $s) {
-          if($s->city){
-            $districts[$s->city]++;
-          }
+          $district = db_select('ai_pincode','a')
+            ->fields('a', array('districtname'))
+            ->condition('pincode',$s->pincode)
+            ->execute()
+            ->fetchField();
+          $districts[$district]++;
         }
       }
       // Text Book companion
@@ -634,55 +585,19 @@ function state_map_data($type,$activities,$status,$state){
       if($query->tbc){
 
         if ($name != 'Python') {
-              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                    if ($name != 'DWSIM') {
-                      foreach ($key as $k) {
-                        /* Completed Textbook */
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                            ':city' => $k,
-                        ));
-                          /* Pending Textbook */
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':city' => $k,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $districts[$k] += $query2->fetchObject()->book_count;
-                        $districts[$k] += $query3->fetchObject()->book_count;
-                      }
-                    }
-                    else {
-                      foreach ($key as $k) {
-                        /* Completed Textbook */
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.city LIKE :city", array(
-                            ':city' => $k,
-                        ));
-                          /* Pending Textbook */
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':city' => $k,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $districts[$k] += $query2->fetchObject()->book_count;
-                        $districts[$k] += $query3->fetchObject()->book_count;
-                      }
-                    }
-                }
-                else {
-                  foreach ($key as $k) {
-                    /* Completed Textbook */
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.city LIKE :city", array(
-                        ':city' => $k,
-                    ));
-                      /* Pending Textbook */
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.city LIKE :city AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                        ':city' => $k,
-                        ':enddate' => $pending_enddate
-                    ));
-                    $districts[$k] += $query2->fetchObject()->book_count;
-                    $districts[$k] += $query3->fetchObject()->book_count;
-                  }
-                }
+          $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+              ':state' => $state,
+          ));
+          db_set_active('default');
+          while($pin = $query2->fetchObject()->pin) {
+            $district = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$pin)
+              ->execute()
+              ->fetchField();
+            $districts[$district]++;
+          }
+          db_set_active($name);
 
         }
         else {
@@ -700,28 +615,22 @@ function state_map_data($type,$activities,$status,$state){
       }
       // Lab Migration
       if($query->lab_migration){
-        /* completed Lab Migration */
         $query1 = db_select('lab_migration_proposal','u')
-          ->fields('u', array('city'))
-          ->condition('approval_status', 3)
+          ->fields('u', array('pincode'))
+          ->condition('approval_status', 2,'!=')
+          ->condition('state',$state)
           ->execute()
           ->fetchAll();
+        db_set_active('default');
         foreach ($query1 as $s) {
-          if($s->city){
-            $districts[$s->city]++;
-          }
+          $district = db_select('ai_pincode','a')
+            ->fields('a', array('districtname'))
+            ->condition('pincode',$s->pincode)
+            ->execute()
+            ->fetchField();
+          $districts[$district]++;
         }
-        /* Lab in Progress of Lab Migration */
-        $query1 = db_select('lab_migration_proposal','u')
-          ->fields('u', array('city'))
-          ->condition('approval_status', 1)
-          ->execute()
-          ->fetchAll();
-        foreach ($query1 as $s) {
-          if($s->city){
-            $districts[$s->city]++;
-          }
-        }
+        db_set_active($name);
       }
       /*
       //  Self Workshop space
@@ -740,41 +649,41 @@ function state_map_data($type,$activities,$status,$state){
       /* DWSIM Flowsheet */
       if($name == 'DWSIM'){
         db_set_active('DWSIM');
-        foreach ($key as $k) {
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 3)
-            ->condition('city',$k)
-            ->countQuery()
+        $query1 = db_select('dwsim_flowsheet_proposal','d')
+          ->fields('d', array('pincode'))
+          ->condition('approval_status', 2,'!=')
+          ->condition('state',$state)
+          ->execute()
+          ->fetchAll();
+        db_set_active('default');
+        foreach ($query1 as $s) {
+          $district = db_select('ai_pincode','a')
+            ->fields('a', array('districtname'))
+            ->condition('pincode',$s->pincode)
             ->execute()
             ->fetchField();
-          $districts[$k] += $query1;
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 1)
-            ->condition('city',$k)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $districts[$k] += $query1;
+          $districts[$district]++;
         }
+        db_set_active($name);
       /*  eSim Circuit Simulation */
       }else if($name == 'eSim'){
         db_set_active('eSim');
-        foreach ($key as $k) {
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 3)
-            ->condition('city',$k)
-            ->countQuery()
+        $query1 = db_select('esim_circuit_simulation_proposal','e')
+          ->fields('e', array('pincode'))
+          ->condition('approval_status', 2,'!=')
+          ->condition('state',$state)
+          ->execute()
+          ->fetchAll();
+        db_set_active('default');
+        foreach ($query1 as $s) {
+          $district = db_select('ai_pincode','a')
+            ->fields('a', array('districtname'))
+            ->condition('pincode',$s->pincode)
             ->execute()
             ->fetchField();
-          $districts[$k] += $query1;
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 1)
-            ->condition('city',$k)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $districts[$k] += $query1;
+          $districts[$district]++;
         }
+        db_set_active($name);
 
       }
 
@@ -784,6 +693,7 @@ function state_map_data($type,$activities,$status,$state){
 
   }
   $i =0;
+  //print_r($districts);
   // Findiing Maximum and Total Value from states
   $max = max($districts);
   $total = array_sum($districts);

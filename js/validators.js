@@ -7,30 +7,22 @@
       	var numvidlink = Drupal.settings.fossee_stats.numvidlink;
     		for(let i = 0; i < numvidlink; i++)
     		{
-          let videoid = "";
-          if(i!=numvidlink-1)
-      		 videoid = "#edit-videolink-fieldset-"+i.toString()+"-videolink-link--"+(numvidlink-i).toString();
-          else
-           videoid = "#edit-videolink-fieldset-"+i.toString()+"-videolink-link";
-
+          let videoid = "#videolink_"+i.toString();
           $(videoid).change(
       	 	function(){
       	 				let link = $(this).val();
-                console.log(i.toString());
       	 				if( link.indexOf("http://") && link.indexOf("https://") && link.length)
       	 					{ $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}
       	 				else
       	 					{ $("#validate_url_"+i.toString()).css("visibility", "hidden");  }
       	 			   }
      	    );
-          if(i!=numvidlink-1)
-          {
-            let link = $(videoid).val();
-            if( link.indexOf("http://") && link.indexOf("https://") && link.length)
-               { $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}
-            else
-                { $("#validate_url_"+i.toString()).css("visibility", "hidden"); }
-          }
+
+          let link = $(videoid).val();
+          if( link.indexOf("http://") && link.indexOf("https://") && link.length)
+            { $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}
+          else
+            { $("#validate_url_"+i.toString()).css("visibility", "hidden");  }
     		}
       }
 
@@ -44,28 +36,28 @@
        				}
        );
 
-       $("#edit-end-date-datepicker-popup-0").change(
+       $("input[name='end_date[date]']").change(
        		function() {
-       					if( $(this).val() < $("#edit-start-date-datepicker-popup-0").val())
+       					if( $(this).val() < $("input[name='start_date[date]']").val())
        						{ $("#validate_date").css("visibility","visible"); $('#edit-submit').prop('disabled', true);}
        					else
                 { $("#validate_date").css("visibility","hidden"); }
        				 }
       	);
 
-       $("#edit-start-date-datepicker-popup-0").change(
+       $("input[name='start_date[date]']").change(
           function() {
-                if( $("#edit-end-date-datepicker-popup-0").val()!="" && $(this).val() > $("#edit-end-date-datepicker-popup-0").val())
+                if( $("input[name='end_date[date]']").val()!="" && $(this).val() > $("input[name='end_date[date]']").val())
                  { $("#validate_date").css("visibility","visible");  $('#edit-submit').prop('disabled', true);}
                 else
                   { $("#validate_date").css("visibility","hidden");}
                }
         );
 
-       $('#edit-start-date-timepicker-popup-1').change(
+      /* $("input[name='start_date[time]']").change(
        		function() {
-       			if($("#edit-end-date-datepicker-popup-0").val()==$("#edit-start-date-datepicker-popup-0").val())
-       				if($(this).val()>$("#edit-end-date-timepicker-popup-1"))
+       			if($("input[name='end_date[date]']").val()==$("input[name='start_date[date]']").val())
+       				if($(this).val()>$("input[name='end_date[time]']"))
        					{ $("#validate_time").css("visibility","visible"); $('#edit-submit').prop('disabled', true);}
        				else
        					{ $("#validate_time").css("visibility","hidden"); }
@@ -73,15 +65,15 @@
 
        	);
 
-       $('#edit-end-date-timepicker-popup-1').change(
+       $("input[name='end_date[time]']").change(
        		function() {
-       			if($("#edit-end-date-datepicker-popup-0").val()==$("#edit-start-date-datepicker-popup-0").val())
-       				if($(this).val()<$("#edit-start-date-timepicker-popup-1"))
+       			if($("input[name='end_date[date]']").val()==$("input[name='start_date[date]']").val())
+       				if($(this).val()<$("input[name='start_date[time]']"))
        					{ $("#validate_time").css("visibility","visible");  $('#edit-submit').prop('disabled', true);}
        				else
        					{ $("#validate_time").css("visibility","hidden");}
        		}
-       	);
+       	);*/
 
       if(typeof Drupal.settings.fossee_stats.sortby !== undefined)
        	{ $("input[name='"+Drupal.settings.fossee_stats.sortby+"']").css("background", "lightgray"); }

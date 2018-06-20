@@ -4,8 +4,10 @@ function hello(state,district = false){
   var add = '';
   var sub = '';
   var title = '';
-  if (!jQuery('#edit-foss-type').val()) {
-    sub += '0'
+  if (jQuery('#edit-foss-type').val()) {
+    sub += jQuery('#edit-foss-type').val();
+  }else{
+    sub += '0';
   }
   if(jQuery('#edit-foss-activities').val()){
     add += ', "activities" : "'+jQuery('#edit-foss-activities').val()+'"';
@@ -35,6 +37,14 @@ function hello(state,district = false){
       var data = JSON.parse(r);
       var out = '';
       var status = 0;
+      var select = '';
+      if(data.City.length > 1){
+        select += '<div>Place : <select onchange="post_office(\''+state+'\',\''+district+'\','+sub+')" id="posts"><option value="'+district+'">All</option>';
+        $(data.City).each(function(i) {
+          select += '<option value="'+data.Pincodes[i]+'">'+data.City[i]+'</option>';
+        });
+        select += '</select></div>';
+      }
       if(data.Workshop != 0){
         out += '<h3>Workshop - '+data.Workshop+'</h3>';
         status = 1;
@@ -82,7 +92,7 @@ function hello(state,district = false){
       if (status == 0) {
         out = '<h3>There is no data available</h3>';
       }
-      jQuery('body').html(jQuery('body').html() + '<div id="poped" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')"><div id="popup"><div class="head"><span id="closer" onclick="close_popup('+jQuery('#edit-foss-type').val()+sub+')">&times;</span>'+title+'</div><div class="body">'+out+'</div></div></div>');
+      jQuery('body').html(jQuery('body').html() + '<div id="poped"><div id="popup"><div class="head"><span id="closer" onclick="close_popup('+sub+')">&times;</span>'+title+'</div><div class="body">'+select+'<div id="data">'+out+'</div></div></div></div>');
     },error:function(r){
       alert('not working!');
     }
@@ -183,6 +193,60 @@ function check_status() {
     contentType: "application/json",
     success:function(r){
       jQuery('#status').html(r);
+    },error:function(r) {
+      alert('Not working!!!');
+    }
+  });
+}
+
+function post_office(state,district,type,activities,status) {
+  var add = '';
+  if (activities != 0) {
+      add += ', "activities" : "'+activities+'"';
+  }
+  if (status != 0) {
+      add += ', "status" : "'+status+'"';
+  }
+  jQuery.ajax({
+    type: 'POST',
+    url: 'post-office-data',
+    data: '{ "type" : "'+type+'" '+add+', "pincode" : "'+jQuery('#posts').val()+'", "state" : "'+state+'", "district" : "'+district+'"}',
+    processData: false,
+    contentType: "application/json",
+    success:function(r){
+      var data = JSON.parse(r);
+      var out ='';
+      if(data.Workshop != 0){
+        out += '<h3>Workshop - '+data.Workshop+'</h3>';
+      }
+      if(data.Conference != 0){
+        out += '<h3>Conference - '+data.Conference+'</h3>';
+      }
+      if(data.lab_migration_completed != 0){
+        out += '<h3>Lab Migration (Completed) - '+data.lab_migration_completed+'</h3>';
+      }
+      if(data.lab_migration_pending != 0){
+        out += '<h3>Lab Migration (Pending) - '+data.lab_migration_pending+'</h3>';
+      }
+      if(data.PendingBookCount != 0){
+        out += '<h3>TextBook Companion (Pending) - '+data.PendingBookCount+'</h3>';
+      }
+      if(data.CompletedBookCount != 0){
+        out += '<h3>TextBook Companion (Completed) - '+data.CompletedBookCount+'</h3>';
+      }
+      if (data.Flowsheet_completed != 0) {
+        out += '<h3>DWSIM Flowsheet (Completed)- '+data.Flowsheet_completed+'</h3>';
+      }
+      if (data.Flowsheet_pending != 0) {
+        out += '<h3>DWSIM Flowsheet (Pending)- '+data.Flowsheet_pending+'</h3>';
+      }
+      if (data.circuit_simulation_completed != 0) {
+        out += '<h3>eSim Ciruit Simulation (Completed)- '+data.circuit_simulation_completed+'</h3>';
+      }
+      if (data.circuit_simulation_pending != 0) {
+        out += '<h3>eSim Ciruit Simulation (Pending)- '+data.circuit_simulation_pending+'</h3>';
+      }
+      jQuery('#data').html(out);
     },error:function(r) {
       alert('Not working!!!');
     }

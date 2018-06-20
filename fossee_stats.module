@@ -336,6 +336,12 @@ function fossee_stats_menu() {
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
     );
+    $items['post-office-data'] = array(
+      'page callback'=>'post_office_data',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
     return $items;
 }
 
@@ -9584,6 +9590,7 @@ function state_details() {
   $dwsim_flowsheet_pending = 0;
   $circuit_simulation_completed = 0;
   $circuit_simulation_pending = 0;
+  $city = array();
   /* Checking foss type */
   if($district){
     if($type == "" || $type == NULL){
@@ -9613,13 +9620,16 @@ function state_details() {
             // Assigning to each states
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a',array('districtname'))
+                ->fields('a',array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $workshop++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
           }
@@ -9635,13 +9645,16 @@ function state_details() {
             // Assigning to each states
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a',array('districtname'))
+                ->fields('a',array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $conference++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
           }
@@ -9649,33 +9662,39 @@ function state_details() {
           db_set_active($name);
           if($foss->tbc){
             if ($name != 'Python') {
-              $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+              $query2 = db_query("SELECT po.pincode AS pin, po.city AS city FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                   ':state' => $state,
               ));
-              $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+              $query3 = db_query("SELECT po.pincode AS pin, po.city AS city FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
                   ':state' => $state,
               ));
               db_set_active('default');
               while($pin = $query2->fetchObject()->pin) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$pin)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $pendingbookcount++;
+                  if(!in_array($check,$city)){
+                    $city[$pin] = $check;
+                  }
                 }
               }
               while($pin = $query3->fetchObject()->pin) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$pin)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $completedbookcount++;
+                  if(!in_array($check,$city)){
+                    $city[$pin] = $check;
+                  }
                 }
               }
               db_set_active($name);
@@ -9698,13 +9717,13 @@ function state_details() {
           if($foss->lab_migration){
             /* Completed Lab Migration */
             $query1 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('pincode'))
+              ->fields('u', array('pincode','city'))
               ->condition('approval_status', 3)
               ->condition('state',$state)
               ->execute()
               ->fetchAll();
             $query2 = db_select('lab_migration_proposal','u')
-              ->fields('u', array('pincode'))
+              ->fields('u', array('pincode','city'))
               ->condition('approval_status', 1)
               ->condition('state',$state)
               ->execute()
@@ -9712,24 +9731,30 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $lab_migration_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $lab_migration_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -9750,13 +9775,13 @@ function state_details() {
           if($name == 'DWSIM'){
             db_set_active('DWSIM');
             $query1 = db_select('dwsim_flowsheet_proposal','d')
-              ->fields('d', array('pincode'))
+              ->fields('d', array('pincode','city'))
               ->condition('approval_status', 1)
               ->condition('state',$state)
               ->execute()
               ->fetchAll();
             $query2 = db_select('dwsim_flowsheet_proposal','d')
-              ->fields('d', array('pincode'))
+              ->fields('d', array('pincode','city'))
               ->condition('approval_status', 3)
               ->condition('state',$state)
               ->execute()
@@ -9764,24 +9789,30 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -9789,13 +9820,13 @@ function state_details() {
           }else if($name == 'eSim'){
             db_set_active('eSim');
             $query1 = db_select('esim_circuit_simulation_proposal','e')
-              ->fields('e', array('pincode'))
+              ->fields('e', array('pincode','city'))
               ->condition('approval_status', 3)
               ->condition('state',$state)
               ->execute()
               ->fetchAll();
             $query2 = db_select('esim_circuit_simulation_proposal','e')
-              ->fields('e', array('pincode'))
+              ->fields('e', array('pincode','city'))
               ->condition('approval_status', 1)
               ->condition('state',$state)
               ->execute()
@@ -9803,24 +9834,30 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -9874,13 +9911,16 @@ function state_details() {
                 db_set_active('default');
                 while($pin = $query2->fetchObject()->pin) {
                   $check = db_select('ai_pincode','a')
-                    ->fields('a', array('districtname'))
+                    ->fields('a', array('officename'))
                     ->condition('pincode',$pin)
                     ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
                     $pendingbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
                   }
                 }
                 db_set_active($name);
@@ -9910,13 +9950,16 @@ function state_details() {
                 db_set_active('default');
                 while($pin = $query3->fetchObject()->pin) {
                   $check = db_select('ai_pincode','a')
-                    ->fields('a', array('districtname'))
+                    ->fields('a', array('officename'))
                     ->condition('pincode',$pin)
                     ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
                     $completedbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
                   }
                 }
                 db_set_active($name);
@@ -9948,13 +9991,16 @@ function state_details() {
               db_set_active('default');
               foreach ($query2 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $lab_migration_pending++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
               db_set_active($name);
@@ -9972,13 +10018,16 @@ function state_details() {
               db_set_active('default');
               foreach ($query1 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $lab_migration_completed++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
               db_set_active($name);
@@ -9994,13 +10043,16 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10015,13 +10067,16 @@ function state_details() {
             db_set_active('default');
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10036,13 +10091,16 @@ function state_details() {
             db_set_active('default');
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10057,13 +10115,16 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10082,13 +10143,16 @@ function state_details() {
               // Assigning to each states
               foreach ($query1 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a',array('districtname'))
+                  ->fields('a',array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $workshop++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
             }
@@ -10105,13 +10169,16 @@ function state_details() {
               // Assigning to each states
               foreach ($query1 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a',array('districtname'))
+                  ->fields('a',array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $conference++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
             }
@@ -10129,24 +10196,30 @@ function state_details() {
                 db_set_active('default');
                 while($pin = $query2->fetchObject()->pin) {
                   $check = db_select('ai_pincode','a')
-                    ->fields('a', array('districtname'))
+                    ->fields('a', array('officename'))
                     ->condition('pincode',$pin)
                     ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
                     $pendingbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
                   }
                 }
                 while($pin = $query3->fetchObject()->pin) {
                   $check = db_select('ai_pincode','a')
-                    ->fields('a', array('districtname'))
+                    ->fields('a', array('officename'))
                     ->condition('pincode',$pin)
                     ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
                     $completedbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
                   }
                 }
                 db_set_active($name);
@@ -10184,24 +10257,30 @@ function state_details() {
               db_set_active('default');
               foreach ($query1 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $lab_migration_completed++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
               foreach ($query2 as $s) {
                 $check = db_select('ai_pincode','a')
-                  ->fields('a', array('districtname'))
+                  ->fields('a', array('officename'))
                   ->condition('pincode',$s->pincode)
                   ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
                   $lab_migration_pending++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
                 }
               }
               db_set_active($name);
@@ -10223,24 +10302,30 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10261,24 +10346,30 @@ function state_details() {
             db_set_active('default');
             foreach ($query1 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             foreach ($query2 as $s) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$s->pincode)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10297,13 +10388,16 @@ function state_details() {
           // Assigning to each states
           foreach ($query1 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a',array('districtname'))
+              ->fields('a',array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $workshop++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
 
@@ -10320,13 +10414,16 @@ function state_details() {
           // Assigning to each states
           foreach ($query1 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a',array('districtname'))
+              ->fields('a',array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $conference++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
         }
@@ -10343,24 +10440,30 @@ function state_details() {
             db_set_active('default');
             while($pin = $query2->fetchObject()->pin) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$pin)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $pendingbookcount++;
+                if(!in_array($check,$city)){
+                  $city[$pin] = $check;
+                }
               }
             }
             while($pin = $query3->fetchObject()->pin) {
               $check = db_select('ai_pincode','a')
-                ->fields('a', array('districtname'))
+                ->fields('a', array('officename'))
                 ->condition('pincode',$pin)
                 ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
                 $completedbookcount++;
+                if(!in_array($check,$city)){
+                  $city[$pin] = $check;
+                }
               }
             }
             db_set_active($name);
@@ -10397,24 +10500,30 @@ function state_details() {
           db_set_active('default');
           foreach ($query1 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $lab_migration_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           foreach ($query2 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $lab_migration_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           db_set_active($name);
@@ -10449,24 +10558,30 @@ function state_details() {
           db_set_active('default');
           foreach ($query1 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $dwsim_flowsheet_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           foreach ($query2 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $dwsim_flowsheet_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           db_set_active($name);
@@ -10488,24 +10603,30 @@ function state_details() {
           db_set_active('default');
           foreach ($query1 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $circuit_simulation_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           foreach ($query2 as $s) {
             $check = db_select('ai_pincode','a')
-              ->fields('a', array('districtname'))
+              ->fields('a', array('officename'))
               ->condition('pincode',$s->pincode)
               ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
               $circuit_simulation_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
             }
           }
           db_set_active($name);
@@ -10544,7 +10665,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a',array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10566,7 +10686,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a',array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10589,7 +10708,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$pin)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -10600,7 +10718,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$pin)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -10643,7 +10760,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10654,7 +10770,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10695,7 +10810,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10706,7 +10820,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10734,7 +10847,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10745,7 +10857,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10805,7 +10916,6 @@ function state_details() {
                   $check = db_select('ai_pincode','a')
                     ->fields('a', array('districtname'))
                     ->condition('pincode',$pin)
-                    ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
@@ -10841,7 +10951,6 @@ function state_details() {
                   $check = db_select('ai_pincode','a')
                     ->fields('a', array('districtname'))
                     ->condition('pincode',$pin)
-                    ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
@@ -10879,7 +10988,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -10903,7 +11011,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -10925,7 +11032,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10946,7 +11052,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10967,7 +11072,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -10988,7 +11092,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11013,7 +11116,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a',array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -11036,7 +11138,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a',array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -11060,7 +11161,6 @@ function state_details() {
                   $check = db_select('ai_pincode','a')
                     ->fields('a', array('districtname'))
                     ->condition('pincode',$pin)
-                    ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
@@ -11071,7 +11171,6 @@ function state_details() {
                   $check = db_select('ai_pincode','a')
                     ->fields('a', array('districtname'))
                     ->condition('pincode',$pin)
-                    ->condition('districtname',$district)
                     ->execute()
                     ->fetchField();
                   if ($check) {
@@ -11115,7 +11214,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -11126,7 +11224,6 @@ function state_details() {
                 $check = db_select('ai_pincode','a')
                   ->fields('a', array('districtname'))
                   ->condition('pincode',$s->pincode)
-                  ->condition('districtname',$district)
                   ->execute()
                   ->fetchField();
                 if ($check) {
@@ -11154,7 +11251,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11165,7 +11261,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11192,7 +11287,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11203,7 +11297,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$s->pincode)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11228,7 +11321,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a',array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11251,7 +11343,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a',array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11274,7 +11365,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$pin)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11285,7 +11375,6 @@ function state_details() {
               $check = db_select('ai_pincode','a')
                 ->fields('a', array('districtname'))
                 ->condition('pincode',$pin)
-                ->condition('districtname',$district)
                 ->execute()
                 ->fetchField();
               if ($check) {
@@ -11328,7 +11417,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11339,7 +11427,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11380,7 +11467,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11391,7 +11477,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11419,7 +11504,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11430,7 +11514,6 @@ function state_details() {
             $check = db_select('ai_pincode','a')
               ->fields('a', array('districtname'))
               ->condition('pincode',$s->pincode)
-              ->condition('districtname',$district)
               ->execute()
               ->fetchField();
             if ($check) {
@@ -11444,7 +11527,44 @@ function state_details() {
       }
     }
   }
-
+  $pincode_out = "[]";
+  $city_out = "[]";
+  if($district != "false" && $workshop + $conference + $lab_migration_pending + $lab_migration_completed + $pendingbookcount + $completedbookcount + $dwsim_flowsheet_pending + $dwsim_flowsheet_completed + $circuit_simulation_pending + $circuit_simulation_completed != 0){
+    $pincode_out = "[";
+    $city_out = "[";
+    $pincodes = array_keys($city);
+    $i =0;
+    foreach ($city as $c) {
+      $c = str_replace('S.O', '', $c) ;
+      $c = str_replace('H.O', '', $c) ;
+      $c = str_replace('B.O', '', $c) ;
+      $city_out .= '"'.$c.'",';
+      $pincode_out .= '"'.$pincodes[$i++].'",';
+    }
+    $pincode_out = substr($pincode_out, 0, strlen($pincode_out)-1);
+    $city_out = substr($city_out, 0, strlen($city_out)-1);
+    $pincode_out .= ']';
+    $city_out .= ']';
+  }
   // Converting generated data to JSON format
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet_completed" : '.$dwsim_flowsheet_completed.', "Flowsheet_pending" : '.$dwsim_flowsheet_pending.', "circuit_simulation_completed" : '.$circuit_simulation_completed.', "circuit_simulation_pending" : '.$circuit_simulation_pending.'}';
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet_completed" : '.$dwsim_flowsheet_completed.', "Flowsheet_pending" : '.$dwsim_flowsheet_pending.', "circuit_simulation_completed" : '.$circuit_simulation_completed.', "circuit_simulation_pending" : '.$circuit_simulation_pending.', "Pincodes":'.$pincode_out.',"City":'.$city_out.'}';
+}
+
+function post_office_data() {
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  $pincode = $postBody->pincode;
+  $state = $postBody->state;
+  $district = $postBody->district;
+  /* Configuration of map */
+  require_once('state_map_data.inc');
+  if ($postBody->activities && $postBody->status) {
+    echo post_data($type,$postBody->activities,$postBody->status,$pincode,$state,$district);
+  }elseif ($postBody->activities) {
+    echo post_data($type,$postBody->activities,0,$pincode,$state,$district);
+  }else {
+    echo post_data($type,0,0,$pincode,$state,$district);
+  }
 }

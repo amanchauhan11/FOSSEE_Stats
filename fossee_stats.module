@@ -329,6 +329,19 @@ function fossee_stats_menu() {
       'access arguments'=>array('access content'),
       'type'=>MENU_CALLBACK
     );
+    /* Ajax request for state's map data */
+    $items['state-map-stats'] = array(
+      'page callback'=>'state_map_stats',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
+    $items['post-office-data'] = array(
+      'page callback'=>'post_office_data',
+      'access callback'=>'user_access',
+      'access arguments'=>array('access content'),
+      'type'=>MENU_CALLBACK
+    );
     return $items;
 }
 
@@ -8545,7 +8558,7 @@ function fossee_map_form($form, $form_state) {
   /* Space to display the map by default and by Ajax request */
   $form['map'] = array(
       '#type' => 'item',
-      '#prefix' => '<div id="poper"></div><div id="loader"><div id="load_map" >'.get_map_data(NULL,0,0),
+      '#prefix' => '<div id="poper"></div><div id="loader"><div id="wait"><img src="'.drupal_get_path('module','fossee_stats').'/images/loader.svg" alt="Loading ..."></div><div id="load_map" >'.get_map_data(NULL,0,0),
       '#markup' => '',
       '#suffix' => '</div></div></div>'
    );
@@ -9474,6 +9487,24 @@ function map_stats() {
   }
 }
 
+/* To generate map with activities and status (dropdown data) */
+function state_map_stats() {
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  $state = $postBody->state;
+  /* Configuration of map */
+  require_once('state_map_data.inc');
+  if ($postBody->activities && $postBody->status) {
+    echo state_map_data($type,$postBody->activities,$postBody->status,$state);
+  }elseif ($postBody->activities) {
+    echo state_map_data($type,$postBody->activities,0,$state);
+  }else {
+    echo state_map_data($type,0,0,$state);
+  }
+}
+
 /* Generating State data for popup */
 function state_details() {
   $postBody = file_get_contents("php://input");
@@ -9481,6 +9512,7 @@ function state_details() {
 
   $type = $postBody->type;
   $state = $postBody->state;
+  $district = $postBody->district;
   /* Configuration of activities and status for generation of data */
   if ($postBody->activities && $postBody->status) {
     $activities = $postBody->activities;
@@ -9504,86 +9536,883 @@ function state_details() {
   $dwsim_flowsheet_pending = 0;
   $circuit_simulation_completed = 0;
   $circuit_simulation_pending = 0;
+  $city = array();
   /* Checking foss type */
-  if($type == "" || $type == NULL){
-    /* When foss type is not set */
-    $query = db_select('foss_type','u')
-      ->fields('u', array(
-        'foss_name',
-        'tbc',
-        'lab_migration',
-        'workshop',
-        'conference',
-        'foss_selfworkshop_no'
-      ))
-      ->execute();
-      /* Taking all foss type's data */
-      while($foss = $query->fetchObject()){
-        $name = $foss->foss_name;
+  if($district){
+    if($type == "" || $type == NULL){
+      /* When foss type is not set */
+      $query = db_select('foss_type','u')
+        ->fields('u', array(
+          'foss_name',
+          'tbc',
+          'lab_migration',
+          'workshop',
+          'conference',
+          'foss_selfworkshop_no'
+        ))
+        ->execute();
+        /* Taking all foss type's data */
+        while($foss = $query->fetchObject()){
+          $name = $foss->foss_name;
+          // Workshop
+          if($foss->workshop){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w', array('pincode'))
+              ->condition('type','workshop')
+              ->condition('foss_name',$name)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            // Assigning to each states
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a',array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $workshop++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+          }
+          // Conference
+          if($foss->conference){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w', array('pincode'))
+              ->condition('type','conference')
+              ->condition('foss_name',$name)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            // Assigning to each states
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a',array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $conference++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+          }
+          // Text Book companion
+          db_set_active($name);
+          if($foss->tbc){
+            if ($name != 'Python') {
+              $query2 = db_query("SELECT po.pincode AS pin, po.city AS city FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              $query3 = db_query("SELECT po.pincode AS pin, po.city AS city FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              db_set_active('default');
+              while($pin = $query2->fetchObject()->pin) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$pin)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $pendingbookcount++;
+                  if(!in_array($check,$city)){
+                    $city[$pin] = $check;
+                  }
+                }
+              }
+              while($pin = $query3->fetchObject()->pin) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$pin)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $completedbookcount++;
+                  if(!in_array($check,$city)){
+                    $city[$pin] = $check;
+                  }
+                }
+              }
+              db_set_active($name);
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+
+          // Lab Migration
+          if($foss->lab_migration){
+            /* Completed Lab Migration */
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('pincode','city'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('pincode','city'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $lab_migration_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $lab_migration_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }
+          /*
+          //  Self Workshop space
+          if($foss->foss_selfworkshop_no){
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+              ':foss_id' => $foss->foss_selfworkshop_no,
+              ':state' => $state
+                                  ));
+
+            $self_workshop += $query2->fetchObject()->count;
+          }
+          */
+          // DWSIM Flowsheet
+          if($name == 'DWSIM'){
+            db_set_active('DWSIM');
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode','city'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode','city'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          // eSim Circuit Simulation
+          }else if($name == 'eSim'){
+            db_set_active('eSim');
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode','city'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode','city'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }
+          db_set_active('default');
+          db_set_active();
+        }
+    }else{
+      /* When foss type is set */
+      $query = db_select('foss_type','u')
+        ->fields('u', array(
+          'foss_name',
+          'tbc',
+          'lab_migration',
+          'workshop',
+          'conference',
+          'foss_selfworkshop_no',
+          'flow_sheet',
+          'circuit_simulation',
+          'case_study'
+        ))
+        ->condition('id',$type)
+        ->execute()
+        ->fetchObject();
+      $name = $query->foss_name;
+      /* Converting ID to name of Activities */
+      $options = get_activities_list($type);
+      for ($i=0; $i <= max(array_keys($options)) ; $i++) {
+        if ($i == $activities) {
+          $act = $options[$i];
+        }
+      }
+      /* When Activities are set */
+      if ($activities != 0) {
+        /* Converting ID to name of Activities */
+        $options = _ajax_example_get_third_dropdown_options($activities);
+        for ($i=0; $i <= max(array_keys($options)) ; $i++) {
+          if ($i == $status) {
+            $stat = $options[$i];
+          }
+        }
+        if ($status != 0) {
+          /* Book in Progress for TextBook Companion */
+          if ($act == 'Textbook Companion' && $stat == 'Books in Progress') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state
+                ));
+                db_set_active('default');
+                while($pin = $query2->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('officename'))
+                    ->condition('pincode',$pin)
+                    ->condition('districtname',$district)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $pendingbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
+                  }
+                }
+                db_set_active($name);
+
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          /* Completed Books for TextBook Companion */
+          }elseif ($act == 'Textbook Companion' && $stat == 'Completed Books') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state
+                ));
+                db_set_active('default');
+                while($pin = $query3->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('officename'))
+                    ->condition('pincode',$pin)
+                    ->condition('districtname',$district)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $completedbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
+                  }
+                }
+                db_set_active($name);
+
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          /* Lab in Progress for Lab Migration */
+          }elseif ($act == 'Lab Migration' && $stat == 'Labs in Progress') {
+            db_set_active($name);
+            if($query->lab_migration){
+              $query2 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 1)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query2 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_pending++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+              db_set_active($name);
+            }
+          /* Completed Labs for Lab Migration */
+          }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
+            db_set_active($name);
+            if($query->lab_migration){
+              $query1 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 3)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_completed++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+              db_set_active($name);
+            }
+          }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
+            db_set_active($name);
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
+            db_set_active($name);
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
+            db_set_active($name);
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
+            db_set_active($name);
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }
+        }else {
+          // Workshop
+          if ($act == 'Workshop') {
+            if($query->workshop){
+              $query1 = db_select('workshop', 'w')
+                ->fields('w', array('pincode'))
+                ->condition('type','workshop')
+                ->condition('foss_name',$name)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              // Assigning to each states
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a',array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $workshop++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+            }
+          // Conference
+          }elseif ($act == 'Conference') {
+            if($query->conference){
+              $query1 = db_select('workshop', 'w')
+                ->fields('w', array('pincode'))
+                ->condition('type','conference')
+                ->condition('foss_name',$name)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              // Assigning to each states
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a',array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $conference++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+            }
+          // Textbook Companion
+          }elseif ($act == 'Textbook Companion') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                db_set_active('default');
+                while($pin = $query2->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('officename'))
+                    ->condition('pincode',$pin)
+                    ->condition('districtname',$district)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $pendingbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
+                  }
+                }
+                while($pin = $query3->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('officename'))
+                    ->condition('pincode',$pin)
+                    ->condition('districtname',$district)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $completedbookcount++;
+                    if(!in_array($check,$city)){
+                      $city[$pin] = $check;
+                    }
+                  }
+                }
+                db_set_active($name);
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          // Lab Migration
+          }elseif ($act == 'Lab Migration') {
+            db_set_active($name);
+            if($query->lab_migration){
+              /* Completed Lab Migration */
+              $query1 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 3)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              $query2 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 1)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_completed++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+              foreach ($query2 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('officename'))
+                  ->condition('pincode',$s->pincode)
+                  ->condition('districtname',$district)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_pending++;
+                  if(!in_array($check,$city)){
+                    $city[$s->pincode] = $check;
+                  }
+                }
+              }
+              db_set_active($name);
+            }
+          }elseif ($act == "Flowsheet") {
+            db_set_active('DWSIM');
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == "Circuit Simulation") {
+            db_set_active('eSim');
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$s->pincode)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+                if(!in_array($check,$city)){
+                  $city[$s->pincode] = $check;
+                }
+              }
+            }
+            db_set_active($name);
+          }
+        }
+      }else {
         // Workshop
-        if($foss->workshop){
-          $query1 = db_select('workshop')
-            ->condition('state',$state)
+        if($query->workshop){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w', array('pincode'))
             ->condition('type','workshop')
             ->condition('foss_name',$name)
-            ->countQuery()
+            ->condition('state',$state)
             ->execute()
-            ->fetchField();
-          $workshop += $query1;
+            ->fetchAll();
+          // Assigning to each states
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a',array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $workshop++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+
         }
         // Conference
-        if($foss->conference){
-          $query1 = db_select('workshop')
-            ->condition('state',$state)
+        if($query->conference){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w', array('pincode'))
             ->condition('type','conference')
             ->condition('foss_name',$name)
-            ->countQuery()
+            ->condition('state',$state)
             ->execute()
-            ->fetchField();
-          $conference += $query1;
+            ->fetchAll();
+          // Assigning to each states
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a',array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $conference++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
         }
         // Text Book companion
         db_set_active($name);
-        if($foss->tbc){
+        if($query->tbc){
           if ($name != 'Python') {
-            $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-            if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                if ($name != 'DWSIM') {
-                  /* Completed Textbook */
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                        ':state' => $state,
-                    ));
-                  /* Pending Textbook */
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                        ':state' => $state,
-                        ':enddate' => $pending_enddate
-                    ));
+            $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                ':state' => $state,
+            ));
+            $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                ':state' => $state,
+            ));
+            db_set_active('default');
+            while($pin = $query2->fetchObject()->pin) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$pin)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $pendingbookcount++;
+                if(!in_array($check,$city)){
+                  $city[$pin] = $check;
                 }
-                else {
-                  /* Completed Textbook */
-                    $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                        ':state' => $state,
-                    ));
-                  /* Pending Textbook */
-                    $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                        ':state' => $state,
-                        ':enddate' => $pending_enddate
-                    ));
-                }
+              }
             }
-            else {
-              /* Completed Textbook */
-                $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
-                    ':state' => $state,
-                ));
-              /* Pending Textbook */
-                $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                    ':state' => $state,
-                    ':enddate' => $pending_enddate
-                ));
-            }// End
-            $completedbookcount += $query2->fetchObject()->book_count;
-            $pendingbookcount += $query3->fetchObject()->book_count;
+            while($pin = $query3->fetchObject()->pin) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('officename'))
+                ->condition('pincode',$pin)
+                ->condition('districtname',$district)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $completedbookcount++;
+                if(!in_array($check,$city)){
+                  $city[$pin] = $check;
+                }
+              }
+            }
+            db_set_active($name);
           }
           else {
               /*$query5 = db_select('tbc_book');
@@ -9600,30 +10429,57 @@ function state_details() {
         }
 
         // Lab Migration
-        if($foss->lab_migration){
-          /* Completed Lab Migration */
-          $query1 = db_select('lab_migration_proposal')
+        if($query->lab_migration){
+          // Completed Lab Migration
+          $query1 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('pincode'))
             ->condition('approval_status', 3)
             ->condition('state',$state)
-            ->countQuery()
             ->execute()
-            ->fetchField();
-          $lab_migration_completed += $query1;
-          /* Pending Lab Migration */
-          $query1 = db_select('lab_migration_proposal')
+            ->fetchAll();
+          $query2 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('pincode'))
             ->condition('approval_status', 1)
             ->condition('state',$state)
-            ->countQuery()
             ->execute()
-            ->fetchField();
-          $lab_migration_pending += $query1;
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $lab_migration_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $lab_migration_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          db_set_active($name);
         }
         /*
         //  Self Workshop space
-        if($foss->foss_selfworkshop_no){
+        if($query->foss_selfworkshop_no){
           db_set_active('selfworkshop');
           $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
-            ':foss_id' => $foss->foss_selfworkshop_no,
+            ':foss_id' => $query->foss_selfworkshop_no,
             ':state' => $state
                                 ));
 
@@ -9633,518 +10489,1028 @@ function state_details() {
         // DWSIM Flowsheet
         if($name == 'DWSIM'){
           db_set_active('DWSIM');
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 3)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_completed += $query1;
-          $query1 = db_select('dwsim_flowsheet_proposal')
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
             ->condition('approval_status', 1)
             ->condition('state',$state)
-            ->countQuery()
             ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_pending += $query1;
+            ->fetchAll();
+          $query2 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $dwsim_flowsheet_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $dwsim_flowsheet_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          db_set_active($name);
         // eSim Circuit Simulation
         }else if($name == 'eSim'){
           db_set_active('eSim');
-          $query1 = db_select('esim_circuit_simulation_proposal')
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
             ->condition('approval_status', 3)
             ->condition('state',$state)
-            ->countQuery()
             ->execute()
-            ->fetchField();
-          $circuit_simulation_completed += $query1;
-          $query1 = db_select('esim_circuit_simulation_proposal')
+            ->fetchAll();
+          $query2 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
             ->condition('approval_status', 1)
             ->condition('state',$state)
-            ->countQuery()
             ->execute()
-            ->fetchField();
-          $circuit_simulation_pending += $query1;
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $circuit_simulation_completed++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('officename'))
+              ->condition('pincode',$s->pincode)
+              ->condition('districtname',$district)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $circuit_simulation_pending++;
+              if(!in_array($check,$city)){
+                $city[$s->pincode] = $check;
+              }
+            }
+          }
+          db_set_active($name);
         }
         db_set_active('default');
         db_set_active();
       }
-  }else{
-    /* When foss type is set */
-    $query = db_select('foss_type','u')
-      ->fields('u', array(
-        'foss_name',
-        'tbc',
-        'lab_migration',
-        'workshop',
-        'conference',
-        'foss_selfworkshop_no',
-        'flow_sheet',
-        'circuit_simulation',
-        'case_study'
-      ))
-      ->condition('id',$type)
-      ->execute()
-      ->fetchObject();
-    $name = $query->foss_name;
-    /* Converting ID to name of Activities */
-    $options = get_activities_list($type);
-    for ($i=0; $i <= max(array_keys($options)) ; $i++) {
-      if ($i == $activities) {
-        $act = $options[$i];
-      }
     }
-    /* When Activities are set */
-    if ($activities != 0) {
-      /* Converting ID to name of Activities */
-      $options = _ajax_example_get_third_dropdown_options($activities);
-      for ($i=0; $i <= max(array_keys($options)) ; $i++) {
-        if ($i == $status) {
-          $stat = $options[$i];
-        }
-      }
-      if ($status != 0) {
-        /* Book in Progress for TextBook Companion */
-        if ($act == 'Textbook Companion' && $stat == 'Books in Progress') {
-          db_set_active($name);
-          if($query->tbc){
-            if ($name != 'Python') {
-                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                        if ($name != 'DWSIM') {
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':state' => $state,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $pendingbookcount += $query3->fetchObject()->book_count;
-                        }
-                        else {
-                            $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status != 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':state' => $state,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $pendingbookcount += $query3->fetchObject()->book_count;
-                        }
-                    }
-                    else {
-                        $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':state' => $state,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $pendingbookcount += $query3->fetchObject()->book_count;
-                    }
-
-            }
-            else {
-                /*$query5 = db_select('tbc_book');
-                $query5->addExpression('count(*)', 'count');
-                $query5->condition('approved', 1);
-                $result5 = $query5->execute();
-                $completedbookcount += $result5->fetchObject()->count;
-                $query6 = db_select('tbc_book');
-                $query6->addExpression('count(*)', 'count');
-                $query6->condition('approved', 1, '<>');
-                $result6 = $query6->execute();
-                $pendingbookcount += $result6->fetchObject()->count;*/
-            }
-          }
-        /* Completed Books for TextBook Companion */
-        }elseif ($act == 'Textbook Companion' && $stat == 'Completed Books') {
-          db_set_active($name);
-          if($query->tbc){
-            if ($name != 'Python') {
-                  $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-
-                    if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                        if ($name != 'DWSIM') {
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':state' => $state,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $completedbookcount += $query2->fetchObject()->book_count;
-                        }
-                        else {
-                            $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                                ':state' => $state,
-                                ':enddate' => $pending_enddate
-                            ));
-                            $completedbookcount += $query2->fetchObject()->book_count;
-                        }
-                    }
-                    else {
-                        $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                            ':state' => $state,
-                            ':enddate' => $pending_enddate
-                        ));
-                        $completedbookcount += $query2->fetchObject()->book_count;
-                    }
-
-            }
-            else {
-                /*$query5 = db_select('tbc_book');
-                $query5->addExpression('count(*)', 'count');
-                $query5->condition('approved', 1);
-                $result5 = $query5->execute();
-                $completedbookcount += $result5->fetchObject()->count;
-                $query6 = db_select('tbc_book');
-                $query6->addExpression('count(*)', 'count');
-                $query6->condition('approved', 1, '<>');
-                $result6 = $query6->execute();
-                $pendingbookcount += $result6->fetchObject()->count;*/
-            }
-          }
-        /* Lab in Progress for Lab Migration */
-        }elseif ($act == 'Lab Migration' && $stat == 'Labs in Progress') {
-          db_set_active($name);
-          if($query->lab_migration){
-            $query1 = db_select('lab_migration_proposal')
-              ->condition('approval_status', 1)
+  }else {
+    if($type == "" || $type == NULL){
+      /* When foss type is not set */
+      $query = db_select('foss_type','u')
+        ->fields('u', array(
+          'foss_name',
+          'tbc',
+          'lab_migration',
+          'workshop',
+          'conference',
+          'foss_selfworkshop_no'
+        ))
+        ->execute();
+        /* Taking all foss type's data */
+        while($foss = $query->fetchObject()){
+          $name = $foss->foss_name;
+          // Workshop
+          if($foss->workshop){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w', array('pincode'))
+              ->condition('type','workshop')
+              ->condition('foss_name',$name)
               ->condition('state',$state)
-              ->countQuery()
               ->execute()
-              ->fetchField();
-            $lab_migration_pending += $query1;
+              ->fetchAll();
+            // Assigning to each states
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a',array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $workshop++;
+              }
+            }
           }
-        /* Completed Labs for Lab Migration */
-        }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
+          // Conference
+          if($foss->conference){
+            $query1 = db_select('workshop', 'w')
+              ->fields('w', array('pincode'))
+              ->condition('type','conference')
+              ->condition('foss_name',$name)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            // Assigning to each states
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a',array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $conference++;
+              }
+            }
+          }
+          // Text Book companion
           db_set_active($name);
-          if($query->lab_migration){
-            $query1 = db_select('lab_migration_proposal')
+          if($foss->tbc){
+            if ($name != 'Python') {
+              $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                  ':state' => $state,
+              ));
+              db_set_active('default');
+              while($pin = $query2->fetchObject()->pin) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$pin)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $pendingbookcount++;
+                }
+              }
+              while($pin = $query3->fetchObject()->pin) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$pin)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $completedbookcount++;
+                }
+              }
+              db_set_active($name);
+            }
+            else {
+                /*$query5 = db_select('tbc_book');
+                $query5->addExpression('count(*)', 'count');
+                $query5->condition('approved', 1);
+                $result5 = $query5->execute();
+                $completedbookcount += $result5->fetchObject()->count;
+                $query6 = db_select('tbc_book');
+                $query6->addExpression('count(*)', 'count');
+                $query6->condition('approved', 1, '<>');
+                $result6 = $query6->execute();
+                $pendingbookcount += $result6->fetchObject()->count;*/
+            }
+          }
+
+          // Lab Migration
+          if($foss->lab_migration){
+            /* Completed Lab Migration */
+            $query1 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('pincode'))
               ->condition('approval_status', 3)
               ->condition('state',$state)
-              ->countQuery()
               ->execute()
-              ->fetchField();
-            $lab_migration_completed += $query1;
+              ->fetchAll();
+            $query2 = db_select('lab_migration_proposal','u')
+              ->fields('u', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $lab_migration_completed++;
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $lab_migration_pending++;
+              }
+            }
+            db_set_active($name);
           }
-        }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
-          db_set_active($name);
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 1)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_pending += $query1;
-        }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
-          db_set_active($name);
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 3)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_completed += $query1;
-        }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
-          db_set_active($name);
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 1)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $circuit_simulation_pending += $query1;
-        }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
-          db_set_active($name);
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 3)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $circuit_simulation_completed += $query1;
+          /*
+          //  Self Workshop space
+          if($foss->foss_selfworkshop_no){
+            db_set_active('selfworkshop');
+            $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+              ':foss_id' => $foss->foss_selfworkshop_no,
+              ':state' => $state
+                                  ));
+
+            $self_workshop += $query2->fetchObject()->count;
+          }
+          */
+          // DWSIM Flowsheet
+          if($name == 'DWSIM'){
+            db_set_active('DWSIM');
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+              }
+            }
+            db_set_active($name);
+          // eSim Circuit Simulation
+          }else if($name == 'eSim'){
+            db_set_active('eSim');
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+              }
+            }
+            db_set_active($name);
+          }
+          db_set_active('default');
+          db_set_active();
+        }
+    }else{
+      /* When foss type is set */
+      $query = db_select('foss_type','u')
+        ->fields('u', array(
+          'foss_name',
+          'tbc',
+          'lab_migration',
+          'workshop',
+          'conference',
+          'foss_selfworkshop_no',
+          'flow_sheet',
+          'circuit_simulation',
+          'case_study'
+        ))
+        ->condition('id',$type)
+        ->execute()
+        ->fetchObject();
+      $name = $query->foss_name;
+      /* Converting ID to name of Activities */
+      $options = get_activities_list($type);
+      for ($i=0; $i <= max(array_keys($options)) ; $i++) {
+        if ($i == $activities) {
+          $act = $options[$i];
+        }
+      }
+      /* When Activities are set */
+      if ($activities != 0) {
+        /* Converting ID to name of Activities */
+        $options = _ajax_example_get_third_dropdown_options($activities);
+        for ($i=0; $i <= max(array_keys($options)) ; $i++) {
+          if ($i == $status) {
+            $stat = $options[$i];
+          }
+        }
+        if ($status != 0) {
+          /* Book in Progress for TextBook Companion */
+          if ($act == 'Textbook Companion' && $stat == 'Books in Progress') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state
+                ));
+                db_set_active('default');
+                while($pin = $query2->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $pendingbookcount++;
+                  }
+                }
+                db_set_active($name);
+
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          /* Completed Books for TextBook Companion */
+          }elseif ($act == 'Textbook Companion' && $stat == 'Completed Books') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state
+                ));
+                db_set_active('default');
+                while($pin = $query3->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $completedbookcount++;
+                  }
+                }
+                db_set_active($name);
+
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          /* Lab in Progress for Lab Migration */
+          }elseif ($act == 'Lab Migration' && $stat == 'Labs in Progress') {
+            db_set_active($name);
+            if($query->lab_migration){
+              $query2 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 1)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query2 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_pending++;
+                }
+              }
+              db_set_active($name);
+            }
+          /* Completed Labs for Lab Migration */
+          }elseif ($act == 'Lab Migration' && $stat == 'Completed Labs') {
+            db_set_active($name);
+            if($query->lab_migration){
+              $query1 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 3)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_completed++;
+                }
+              }
+              db_set_active($name);
+            }
+          }elseif ($act == 'Flowsheet' && $stat == 'Flowsheets in Progress') {
+            db_set_active($name);
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Flowsheet' && $stat == 'Completed Flowsheets') {
+            db_set_active($name);
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Circuit Simulation' && $stat == 'Simulations in Progress') {
+            db_set_active($name);
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == 'Circuit Simulation' && $stat == 'Completed Simulations') {
+            db_set_active($name);
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+              }
+            }
+            db_set_active($name);
+          }
+        }else {
+          // Workshop
+          if ($act == 'Workshop') {
+            if($query->workshop){
+              $query1 = db_select('workshop', 'w')
+                ->fields('w', array('pincode'))
+                ->condition('type','workshop')
+                ->condition('foss_name',$name)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              // Assigning to each states
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a',array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $workshop++;
+                }
+              }
+            }
+          // Conference
+          }elseif ($act == 'Conference') {
+            if($query->conference){
+              $query1 = db_select('workshop', 'w')
+                ->fields('w', array('pincode'))
+                ->condition('type','conference')
+                ->condition('foss_name',$name)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              // Assigning to each states
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a',array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $conference++;
+                }
+              }
+            }
+          // Textbook Companion
+          }elseif ($act == 'Textbook Companion') {
+            db_set_active($name);
+            if($query->tbc){
+              if ($name != 'Python') {
+                $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                    ':state' => $state,
+                ));
+                db_set_active('default');
+                while($pin = $query2->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $pendingbookcount++;
+                  }
+                }
+                while($pin = $query3->fetchObject()->pin) {
+                  $check = db_select('ai_pincode','a')
+                    ->fields('a', array('districtname'))
+                    ->condition('pincode',$pin)
+                    ->execute()
+                    ->fetchField();
+                  if ($check) {
+                    $completedbookcount++;
+                  }
+                }
+                db_set_active($name);
+              }
+              else {
+                  /*$query5 = db_select('tbc_book');
+                  $query5->addExpression('count(*)', 'count');
+                  $query5->condition('approved', 1);
+                  $result5 = $query5->execute();
+                  $completedbookcount += $result5->fetchObject()->count;
+                  $query6 = db_select('tbc_book');
+                  $query6->addExpression('count(*)', 'count');
+                  $query6->condition('approved', 1, '<>');
+                  $result6 = $query6->execute();
+                  $pendingbookcount += $result6->fetchObject()->count;*/
+              }
+            }
+          // Lab Migration
+          }elseif ($act == 'Lab Migration') {
+            db_set_active($name);
+            if($query->lab_migration){
+              /* Completed Lab Migration */
+              $query1 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 3)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              $query2 = db_select('lab_migration_proposal','u')
+                ->fields('u', array('pincode'))
+                ->condition('approval_status', 1)
+                ->condition('state',$state)
+                ->execute()
+                ->fetchAll();
+              db_set_active('default');
+              foreach ($query1 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_completed++;
+                }
+              }
+              foreach ($query2 as $s) {
+                $check = db_select('ai_pincode','a')
+                  ->fields('a', array('districtname'))
+                  ->condition('pincode',$s->pincode)
+                  ->execute()
+                  ->fetchField();
+                if ($check) {
+                  $lab_migration_pending++;
+                }
+              }
+              db_set_active($name);
+            }
+          }elseif ($act == "Flowsheet") {
+            db_set_active('DWSIM');
+            $query1 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('dwsim_flowsheet_proposal','d')
+              ->fields('d', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_pending++;
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $dwsim_flowsheet_completed++;
+              }
+            }
+            db_set_active($name);
+          }elseif ($act == "Circuit Simulation") {
+            db_set_active('eSim');
+            $query1 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 3)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            $query2 = db_select('esim_circuit_simulation_proposal','e')
+              ->fields('e', array('pincode'))
+              ->condition('approval_status', 1)
+              ->condition('state',$state)
+              ->execute()
+              ->fetchAll();
+            db_set_active('default');
+            foreach ($query1 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_completed++;
+              }
+            }
+            foreach ($query2 as $s) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$s->pincode)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $circuit_simulation_pending++;
+              }
+            }
+            db_set_active($name);
+          }
         }
       }else {
         // Workshop
-        if ($act == 'Workshop') {
-          if($query->workshop){
-            $query1 = db_select('workshop')
-              ->condition('type','workshop')
-              ->condition('state',$state)
-              ->condition('foss_name',$name)
-              ->countQuery()
+        if($query->workshop){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w', array('pincode'))
+            ->condition('type','workshop')
+            ->condition('foss_name',$name)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          // Assigning to each states
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a',array('districtname'))
+              ->condition('pincode',$s->pincode)
               ->execute()
               ->fetchField();
-            $workshop += $query1;
-
-          }
-        // Conference
-        }elseif ($act == 'Conference') {
-          if($query->conference){
-            $query1 = db_select('workshop')
-              ->condition('type','conference')
-              ->condition('state',$state)
-              ->condition('foss_name',$name)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $conference += $query1;
-          }
-        // Textbook Companion
-        }elseif ($act == 'Textbook Companion') {
-          db_set_active($name);
-          if($query->tbc){
-            if ($name != 'Python') {
-              $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-              if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-                  if ($name != 'DWSIM') {
-                      /* Completed Textbook */
-                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                          ':state' => $state,
-                      ));
-                      /* Pending Textbook */
-                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                          ':state' => $state,
-                          ':enddate' => $pending_enddate
-                      ));
-                  }
-                  else {
-                      /* Completed Textbook */
-                      $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                          ':state' => $state,
-                      ));
-                      /* Pending Textbook */
-                      $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                          ':state' => $state,
-                          ':enddate' => $pending_enddate
-                      ));
-
-                  }
-              }
-              else {
-                  /* Completed Textbook */
-                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
-                      ':state' => $state,
-                  ));
-                  /* Pending Textbook */
-                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                      ':state' => $state,
-                      ':enddate' => $pending_enddate
-                  ));
-              }// End
-              $completedbookcount += $query2->fetchObject()->book_count;
-              $pendingbookcount += $query3->fetchObject()->book_count;
-            }
-            else {
-                /*$query5 = db_select('tbc_book');
-                $query5->addExpression('count(*)', 'count');
-                $query5->condition('approved', 1);
-                $result5 = $query5->execute();
-                $completedbookcount += $result5->fetchObject()->count;
-                $query6 = db_select('tbc_book');
-                $query6->addExpression('count(*)', 'count');
-                $query6->condition('approved', 1, '<>');
-                $result6 = $query6->execute();
-                $pendingbookcount += $result6->fetchObject()->count;*/
+            if ($check) {
+              $workshop++;
             }
           }
-        // Lab Migration
-        }elseif ($act == 'Lab Migration') {
-          db_set_active($name);
-          if($query->lab_migration){
-            /* Completed Lab Migration */
-            $query1 = db_select('lab_migration_proposal')
-              ->condition('approval_status', 3)
-              ->condition('state',$state)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $lab_migration_completed += $query1;
-            /* Pending Lab Migration */
-            $query1 = db_select('lab_migration_proposal')
-              ->condition('approval_status', 1)
-              ->condition('state',$state)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            $lab_migration_pending += $query1;
-          }
-        }elseif ($act == "Flowsheet") {
-          db_set_active('DWSIM');
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 3)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_completed += $query1;
-          $query1 = db_select('dwsim_flowsheet_proposal')
-            ->condition('approval_status', 1)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $dwsim_flowsheet_pending += $query1;
-        }elseif ($act == "Circuit Simulation") {
-          db_set_active('eSim');
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 3)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $circuit_simulation_completed += $query1;
-          $query1 = db_select('esim_circuit_simulation_proposal')
-            ->condition('approval_status', 1)
-            ->condition('state',$state)
-            ->countQuery()
-            ->execute()
-            ->fetchField();
-          $circuit_simulation_pending += $query1;
+
         }
-      }
-    }else {
-      // Workshop
-      if($query->workshop){
-        $query1 = db_select('workshop')
-          ->condition('type','workshop')
-          ->condition('state',$state)
-          ->condition('foss_name',$name)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $workshop += $query1;
-
-      }
-      // Conference
-      if($query->conference){
-        $query1 = db_select('workshop')
-          ->condition('type','conference')
-          ->condition('state',$state)
-          ->condition('foss_name',$name)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $conference += $query1;
-      }
-      // Text Book companion
-      db_set_active($name);
-      if($query->tbc){
-        if ($name != 'Python') {
-          $pending_enddate = date('Y-m-d', strtotime("+5 months", strtotime( date("Y-m-d"))));
-          if ($name != 'eSim' && $name != 'OpenModelica' && $name != 'OpenFOAM' && $name != 'OR-Tools') {
-              if ($name != 'DWSIM') {
-                  /* Completed Textbook */
-                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                      ':state' => $state,
-                  ));
-                  /* Pending Textbook */
-                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                      ':state' => $state,
-                      ':enddate' => $pending_enddate
-                  ));
+        // Conference
+        if($query->conference){
+          $query1 = db_select('workshop', 'w')
+            ->fields('w', array('pincode'))
+            ->condition('type','conference')
+            ->condition('foss_name',$name)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          // Assigning to each states
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a',array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $conference++;
+            }
+          }
+        }
+        // Text Book companion
+        db_set_active($name);
+        if($query->tbc){
+          if ($name != 'Python') {
+            $query2 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                ':state' => $state,
+            ));
+            $query3 = db_query("SELECT po.pincode AS pin FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status = 3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
+                ':state' => $state,
+            ));
+            db_set_active('default');
+            while($pin = $query2->fetchObject()->pin) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$pin)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $pendingbookcount++;
               }
-              else {
-                  /* Completed Textbook */
-                  $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND pe.category>0 AND po.state LIKE :state", array(
-                      ':state' => $state,
-                  ));
-                  /* Pending Textbook */
-                  $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                      ':state' => $state,
-                      ':enddate' => $pending_enddate
-                  ));
-
+            }
+            while($pin = $query3->fetchObject()->pin) {
+              $check = db_select('ai_pincode','a')
+                ->fields('a', array('districtname'))
+                ->condition('pincode',$pin)
+                ->execute()
+                ->fetchField();
+              if ($check) {
+                $completedbookcount++;
               }
+            }
+            db_set_active($name);
           }
           else {
-              /* Completed Textbook */
-              $query2 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status =3 AND pe.approval_status =1 AND po.state LIKE :state", array(
-                  ':state' => $state,
-              ));
-              /* Pending Textbook */
-              $query3 = db_query("SELECT COUNT( pe.book ) AS book_count FROM {textbook_companion_preference} pe LEFT JOIN {textbook_companion_proposal} po ON pe.proposal_id = po.id WHERE po.proposal_status <> 3 AND pe.approval_status =1 AND po.state LIKE :state AND FROM_UNIXTIME(po.completion_date) <= :enddate", array(
-                  ':state' => $state,
-                  ':enddate' => $pending_enddate
-              ));
-          }// End
-          $completedbookcount += $query2->fetchObject()->book_count;
-          $pendingbookcount += $query3->fetchObject()->book_count;
+              /*$query5 = db_select('tbc_book');
+              $query5->addExpression('count(*)', 'count');
+              $query5->condition('approved', 1);
+              $result5 = $query5->execute();
+              $completedbookcount += $result5->fetchObject()->count;
+              $query6 = db_select('tbc_book');
+              $query6->addExpression('count(*)', 'count');
+              $query6->condition('approved', 1, '<>');
+              $result6 = $query6->execute();
+              $pendingbookcount += $result6->fetchObject()->count;*/
+          }
         }
-        else {
-            /*$query5 = db_select('tbc_book');
-            $query5->addExpression('count(*)', 'count');
-            $query5->condition('approved', 1);
-            $result5 = $query5->execute();
-            $completedbookcount += $result5->fetchObject()->count;
-            $query6 = db_select('tbc_book');
-            $query6->addExpression('count(*)', 'count');
-            $query6->condition('approved', 1, '<>');
-            $result6 = $query6->execute();
-            $pendingbookcount += $result6->fetchObject()->count;*/
+
+        // Lab Migration
+        if($query->lab_migration){
+          // Completed Lab Migration
+          $query1 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          $query2 = db_select('lab_migration_proposal','u')
+            ->fields('u', array('pincode'))
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $lab_migration_completed++;
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $lab_migration_pending++;
+            }
+          }
+          db_set_active($name);
         }
-      }
+        /*
+        //  Self Workshop space
+        if($query->foss_selfworkshop_no){
+          db_set_active('selfworkshop');
+          $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
+            ':foss_id' => $query->foss_selfworkshop_no,
+            ':state' => $state
+                                ));
 
-      // Lab Migration
-      if($query->lab_migration){
-        // Completed Lab Migration
-        $query1 = db_select('lab_migration_proposal')
-          ->condition('approval_status', 3)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $lab_migration_completed += $query1;
-        // Lab Migration in Progress
-        $query1 = db_select('lab_migration_proposal')
-          ->condition('approval_status', 1)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $lab_migration_pending += $query1;
+          $self_workshop += $query2->fetchObject()->count;
+        }
+        */
+        // DWSIM Flowsheet
+        if($name == 'DWSIM'){
+          db_set_active('DWSIM');
+          $query1 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          $query2 = db_select('dwsim_flowsheet_proposal','d')
+            ->fields('d', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $dwsim_flowsheet_pending++;
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $dwsim_flowsheet_completed++;
+            }
+          }
+          db_set_active($name);
+        // eSim Circuit Simulation
+        }else if($name == 'eSim'){
+          db_set_active('eSim');
+          $query1 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 3)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          $query2 = db_select('esim_circuit_simulation_proposal','e')
+            ->fields('e', array('pincode'))
+            ->condition('approval_status', 1)
+            ->condition('state',$state)
+            ->execute()
+            ->fetchAll();
+          db_set_active('default');
+          foreach ($query1 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $circuit_simulation_completed++;
+            }
+          }
+          foreach ($query2 as $s) {
+            $check = db_select('ai_pincode','a')
+              ->fields('a', array('districtname'))
+              ->condition('pincode',$s->pincode)
+              ->execute()
+              ->fetchField();
+            if ($check) {
+              $circuit_simulation_pending++;
+            }
+          }
+          db_set_active($name);
+        }
+        db_set_active('default');
+        db_set_active();
       }
-      /*
-      //  Self Workshop space
-      if($query->foss_selfworkshop_no){
-        db_set_active('selfworkshop');
-        $query2 = db_query("SELECT count(t.id) as count FROM {events_training} t, {events_academiccenter} ac, {events_city} c, {events_state} s WHERE t.academic_id=ac.id and ac.city_id=c.id and c.state_id=s.id and (t.status = 4 AND t.foss_id = :foss_id ) and s.name LIKE :state ", array(
-          ':foss_id' => $query->foss_selfworkshop_no,
-          ':state' => $state
-                              ));
-
-        $self_workshop += $query2->fetchObject()->count;
-      }
-      */
-      // DWSIM Flowsheet
-      if($name == 'DWSIM'){
-        db_set_active('DWSIM');
-        $query1 = db_select('dwsim_flowsheet_proposal')
-          ->condition('approval_status', 3)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $dwsim_flowsheet_completed += $query1;
-        $query1 = db_select('dwsim_flowsheet_proposal')
-          ->condition('approval_status', 1)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $dwsim_flowsheet_pending += $query1;
-      // eSim Circuit Simulation
-      }else if($name == 'eSim'){
-        db_set_active('eSim');
-        $query1 = db_select('esim_circuit_simulation_proposal')
-          ->condition('approval_status', 3)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $circuit_simulation_completed += $query1;
-        $query1 = db_select('esim_circuit_simulation_proposal')
-          ->condition('approval_status', 1)
-          ->condition('state',$state)
-          ->countQuery()
-          ->execute()
-          ->fetchField();
-        $circuit_simulation_pending += $query1;
-      }
-      db_set_active('default');
-      db_set_active();
     }
   }
+  $pincode_out = "[]";
+  $city_out = "[]";
+  if($district != "false" && $workshop + $conference + $lab_migration_pending + $lab_migration_completed + $pendingbookcount + $completedbookcount + $dwsim_flowsheet_pending + $dwsim_flowsheet_completed + $circuit_simulation_pending + $circuit_simulation_completed != 0){
+    $pincode_out = "[";
+    $city_out = "[";
+    $pincodes = array_keys($city);
+    $i =0;
+    foreach ($city as $c) {
+      $c = str_replace('S.O', '', $c) ;
+      $c = str_replace('H.O', '', $c) ;
+      $c = str_replace('B.O', '', $c) ;
+      $city_out .= '"'.$c.'",';
+      $pincode_out .= '"'.$pincodes[$i++].'",';
+    }
+    $pincode_out = substr($pincode_out, 0, strlen($pincode_out)-1);
+    $city_out = substr($city_out, 0, strlen($city_out)-1);
+    $pincode_out .= ']';
+    $city_out .= ']';
+  }
   // Converting generated data to JSON format
-  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet_completed" : '.$dwsim_flowsheet_completed.', "Flowsheet_pending" : '.$dwsim_flowsheet_pending.', "circuit_simulation_completed" : '.$circuit_simulation_completed.', "circuit_simulation_pending" : '.$circuit_simulation_pending.'}';
+  echo '{"Workshop" : '.$workshop.', "Conference" : '.$conference.', "lab_migration_completed" : '.$lab_migration_completed.', "lab_migration_pending" : '.$lab_migration_pending.', "PendingBookCount" : '.$pendingbookcount.', "CompletedBookCount" : '.$completedbookcount.', "selfworkshop": '.$self_workshop.', "Flowsheet_completed" : '.$dwsim_flowsheet_completed.', "Flowsheet_pending" : '.$dwsim_flowsheet_pending.', "circuit_simulation_completed" : '.$circuit_simulation_completed.', "circuit_simulation_pending" : '.$circuit_simulation_pending.', "Pincodes":'.$pincode_out.',"City":'.$city_out.'}';
+}
+
+function post_office_data() {
+  $postBody = file_get_contents("php://input");
+  $postBody = json_decode($postBody);
+
+  $type = $postBody->type;
+  $pincode = $postBody->pincode;
+  $state = $postBody->state;
+  $district = $postBody->district;
+  /* Configuration of map */
+  require_once('state_map_data.inc');
+  if ($postBody->activities && $postBody->status) {
+    echo post_data($type,$postBody->activities,$postBody->status,$pincode,$state,$district);
+  }elseif ($postBody->activities) {
+    echo post_data($type,$postBody->activities,0,$pincode,$state,$district);
+  }else {
+    echo post_data($type,0,0,$pincode,$state,$district);
+  }
 }

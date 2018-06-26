@@ -5400,8 +5400,6 @@ function upload_csv_form_validate($form, &$form_state) {
 function upload_csv_form_submit($form, &$form_state) {
 
     global $user;
-    drupal_mail('fossee_stats', 'upload_csv_mail', $user->mail, language_default(), array('csv_filename'=>$_FILES['files']['name']['csv_file']));
-
     if(isset($form_state['csv_error_flag']))
         return;
 
@@ -5424,7 +5422,7 @@ function upload_csv_form_submit($form, &$form_state) {
         array_push($eventsfolder, $foldername);
     }
 
-    $eventfolder = str_replace(' ', '_', $csv->data["name"]) . time();
+    //$eventfolder = str_replace(' ', '_', $csv->data["name"]) . time();
     foreach($csv->data as $i=>$record)
     {
         if($record['starttime'] == NULL or $record['starttime'] == '')
@@ -5432,10 +5430,12 @@ function upload_csv_form_submit($form, &$form_state) {
         else if($record['endtime'] == NULL or $record['endtime'] == '')
             $record['endtime'] = "00:00";
         $record['images_folder'] = $eventsfolder[$i];
+        $record['last_edited_by'] = $user->uid;
         $insertquery->values($record);
     }
     $insertquery->execute();
     drupal_set_message(t("Successfully submitted"));
+    drupal_mail('fossee_stats', 'upload_csv_mail', $user->mail, language_default(), array('csv_filename'=>$_FILES['files']['name']['csv_file']));
 }
 
 
@@ -6190,11 +6190,11 @@ function workshop_delete_form_submit($form, &$form_state) {
 function workshop_edit_all($arg1 = null, $arg2 = null) {
     $page_content = "";
     if (is_numeric($arg1)) {
-        $workshop_add_form = drupal_get_form("workshop_add_form", $workshop_id);
+        $workshop_add_form = drupal_get_form("workshop_add_form", $arg1);
         $page_content = drupal_render($workshop_add_form);
         drupal_add_js(drupal_get_path("module", "fossee_stats") . "/js/validators.js");
     }
-    else if(in_array($arg1, array('w_id', 'w_name', 'startdate', 'no_of_participant', 'venue'))) {
+    else if(in_array($arg1, array('w_id', 'w_name', 'startdate', 'no_of_participant', 'venue')) and in_array($arg2, array('asc', 'desc'))) {
         $page_content = get_workshop_table_content($arg1, $arg2);
     }
     else
@@ -8477,7 +8477,7 @@ $pdf->lastPage();
 // ---------------------------------------------------------
 
 //Close and output PDF document
-$eventfolder = str_replace(' ',  '_', $row->w_name) ;
+$eventfolder = str_replace(' ',  '_', $row->w_name);
 $pdf->Output($eventfolder . " . pdf", 'I');
 
 //============================================================+

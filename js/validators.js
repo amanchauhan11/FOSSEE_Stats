@@ -17,7 +17,6 @@
       	 					{ $("#validate_url_"+i.toString()).css("visibility", "hidden");  }
       	 			   }
      	    );
-
           let link = $(videoid).val();
           if( link.indexOf("http://") && link.indexOf("https://") && link.length)
             { $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}

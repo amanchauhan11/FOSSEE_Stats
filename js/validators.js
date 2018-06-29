@@ -1,7 +1,6 @@
 (function ($) {
   Drupal.behaviors.fossee_stats = {
     attach: function (context, settings) {
-
       if (typeof Drupal.settings.fossee_stats.numvidlink !== 'undefined')
       {
       	var numvidlink = Drupal.settings.fossee_stats.numvidlink;
@@ -14,14 +13,14 @@
       	 				if( link.indexOf("http://") && link.indexOf("https://") && link.length)
       	 					{ $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}
       	 				else
-      	 					{ $("#validate_url_"+i.toString()).css("visibility", "hidden");  }
+      	 					{ $("#validate_url_"+i.toString()).css("visibility", "hidden"); $('#edit-submit').prop('disabled', false); }
       	 			   }
      	    );
           let link = $(videoid).val();
           if( link.indexOf("http://") && link.indexOf("https://") && link.length)
             { $("#validate_url_"+i.toString()).css("visibility", "visible"); $('#edit-submit').prop('disabled', true);}
           else
-            { $("#validate_url_"+i.toString()).css("visibility", "hidden");  }
+            { $("#validate_url_"+i.toString()).css("visibility", "hidden"); $('#edit-submit').prop('disabled', false); }
     		}
       }
 
@@ -31,7 +30,7 @@
        					if( link.indexOf("http://") && link.indexOf("https://") && link.length)
        						{$("#validate_url").css("visibility", "visible");  $('#edit-submit').prop('disabled', true);}
        					else
-                  { $("#validate_url").css("visibility", "hidden"); }
+                  { $("#validate_url").css("visibility", "hidden"); $('#edit-submit').prop('disabled', false); }
        				}
        );
 
@@ -40,7 +39,7 @@
        					if( $(this).val() < $("input[name='start_date[date]']").val())
        						{ $("#validate_date").css("visibility","visible"); $('#edit-submit').prop('disabled', true);}
        					else
-                { $("#validate_date").css("visibility","hidden"); }
+                { $("#validate_date").css("visibility","hidden"); $('#edit-submit').prop('disabled', false); }
        				 }
       	);
 
@@ -49,7 +48,7 @@
                 if( $("input[name='end_date[date]']").val()!="" && $(this).val() > $("input[name='end_date[date]']").val())
                  { $("#validate_date").css("visibility","visible");  $('#edit-submit').prop('disabled', true);}
                 else
-                  { $("#validate_date").css("visibility","hidden");}
+                  { $("#validate_date").css("visibility","hidden"); $('#edit-submit').prop('disabled', false);}
                }
         );
 
@@ -81,8 +80,3 @@
   };
 
 }(jQuery));
-
-
-function deletePrompt(id){
-	if(prompt("Are you sure?")) window.location = "events/delete/"+ id;
-}

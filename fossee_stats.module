@@ -164,15 +164,7 @@ function fossee_stats_menu() {
         ),
         "type" => MENU_CALLBACK
     );
-  //For changing image
-    $items["events/images/change"] = array(
-        "title" => "Event's Images",
-        "page callback" => "workshop_view_image_change",
-        "access arguments" => array(
-            "view workshop"
-        ),
-        "type" => MENU_CALLBACK
-    );
+
     //Display all testimonial added for event in list
     $items["events/testimonials"] = array(
         //"title" => "Testimonials",
@@ -269,7 +261,7 @@ function fossee_stats_menu() {
     /*Spoken Tutorial*/
 
      //Add Spoken Tutorial
-
+    /*
     $items["spokentutorial/add"] = array(
         "title" => "Add Spoken Tutorial",
         "page callback" => "spokentutorial_display_all",
@@ -277,7 +269,7 @@ function fossee_stats_menu() {
             "view tutorial"
         ),
         "type" => MENU_CALLBACK
-    );
+    );*/
 
     /* ADMIN SETTINGS */
     //For mentioning extension allowed for image and pdf
@@ -4318,7 +4310,13 @@ $query = "
 
         }
 
-        drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
+        $form['#attached']['js'][] = array(
+            'data' => array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])),
+            'type' => 'setting',
+        );
+        drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting')); 
+
+        //Had to pass numvidlink through both ways in settings since drupal_add_js is not called when form is rebuilt after validation fails.
 
         $form["videolink_count"] = array(
             "#type" => "hidden",
@@ -4381,21 +4379,6 @@ $query = "
                 '#name' => 'files[names_fieldset_0_name]',
                 '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
                 '#suffix' => '</div> </div>',
-            );
-        }
-        else
-        {
-            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
-                '#title' => t('Add Event Image'),
-                '#type' => 'file',
-                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
-                '#weight' => '5',
-                '#description' => t('Upload an image'),
-                // We need this to know which file element this is.
-                // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
-                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
-                '#suffix' => '</div>'
             );
         }
 
@@ -4823,12 +4806,15 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Institute",
                     "#default_value" => $row_v->link,
-                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>',
+                    '#id' => 'videolink_'.$temp,
                 );
-
                 $i++;
             }
-
+            $form['#attached']['js'][] = array(
+                'data' => array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])),
+                'type' => 'setting',
+            );
             drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'], 'flag'=>'many')), array('type' => 'setting'));
 
             $form["videolink_count"] = array(
@@ -4858,12 +4844,18 @@ $query = "
                     "#type" => "textfield",
                     "#title" => "Link: ",
                     "#default_value" => "",
-                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>'
+                    '#suffix' => '<p id="validate_url_'.$temp.'" style="visibility:hidden; color:red;">Invalid url! Url must start with http:// or https://</p>',
+                    '#id' => 'videolink_'.$temp,
 
                 );
 
 
             }
+
+            $form['#attached']['js'][] = array(
+                'data' => array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])),
+                'type' => 'setting',
+            );
             drupal_add_js(array('fossee_stats' => array('numvidlink' => $form_state['num_videolink'])), array('type' => 'setting'));
 
             $form["videolink_count"] = array(
@@ -5093,7 +5085,6 @@ $query = "
         if (empty($form_state['num_names'])) {
             $form_state['num_names'] = 1;
         }
-
         if($form_state['num_names'] == 1)
         {
             $form['names_fieldset'][0]['name'] = array(
@@ -5107,21 +5098,6 @@ $query = "
                 '#name' => 'files[names_fieldset_0_name]',
                 '#prefix' => '<div id="names-wrapper"> <div id="image_0">',
                 '#suffix' => '</div> </div>',
-            );
-        }
-        else
-        {
-            $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
-                '#title' => t('Add Event Image'),
-                '#type' => 'file',
-                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
-                '#weight' => '5',
-                '#description' => t('Upload an image'),
-                // We need this to know which file element this is.
-                // By default drupal would name all as files[names_fieldset]
-                '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
-                '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
-                '#suffix' => '</div>'
             );
         }
 
@@ -5169,8 +5145,8 @@ $query = "
     return $form;
 }
 
-
 function workshop_add_form_validate(&$form, &$form_state) {
+
     if ($form_state['values']['country'] == 'Others') {
         if ($form_state['values']['other_country'] == '') {
             form_set_error('other_country', t('Enter country name'));
@@ -5235,6 +5211,7 @@ function workshop_add_form_validate(&$form, &$form_state) {
             }
         }
     }
+   // var_dump($form_state['num_names']);die;
 }
 
 function speakers_add_more_callback($form, $form_state) {
@@ -5302,27 +5279,49 @@ function workshop_add_more_callback($form, &$form_state) {
 }
 
 function workshop_remove_callback($form, &$form_state){
-	  $commands[] = ajax_command_remove('#image_'.$form_state['num_names']);
-	  return array('#type' => 'ajax', '#commands' => $commands);
+    $commands = [];
+    if($form_state['img_0']){
+        $commands[] = ajax_command_replace('#names-wrapper', drupal_render($form['names_fieldset'][0]));
+    }
+    else
+        $commands[] = ajax_command_remove('#image_'.$form_state['num_names']);
+    return array('#type' => 'ajax', '#commands' => $commands);
 }
 
+
 function workshop_add_more_add_one_callback($form, &$form_state) {
-    return $form['names_fieldset'][$form_state['num_names']-1];//[$form_state['num_names']+1]['name'];
+    
+    $form['names_fieldset'][$form_state['num_names']-1]['name'] = array(
+        '#title' => t('Add Event Image'),
+        '#type' => 'file',
+                //'#value' => $_FILES['files']['name']['names_fieldset_'.$i.'_name'],
+        '#weight' => '5',
+        '#description' => t('Upload an image'),
+                // We need this to know which file element this is.
+                // By default drupal would name all as files[names_fieldset]
+        '#name' => 'files[names_fieldset_'.($form_state['num_names']-1).'_name]',
+        '#prefix' => '<div id="image_'.($form_state['num_names']-1).'">',
+        '#suffix' => '</div>'
+    );
+    return $form['names_fieldset'][$form_state['num_names']-1];
 }
 
 
 function workshop_add_more_add_one($form, &$form_state) {
     $form_state['num_names']++;
-    $form_state['rebuild'] = TRUE;
+   // $form_state['rebuild'] = TRUE;
 }
 
 
 function workshop_add_more_remove_one($form, &$form_state) {
     if ($form_state['num_names'] > 1) {
         $form_state['num_names']--;
+        $form_state['img_0'] = FALSE;
     }
+    else
+        $form_state['img_0'] = TRUE;
   //  array_push($form_state['invalid'], $form_state['values']['remove_img']);
-    $form_state['rebuild'] = TRUE;
+   // $form_state['rebuild'] = TRUE;
 }
 
 function list_city_for_state($form, &$form_state) {
@@ -5669,21 +5668,23 @@ function workshop_add_form_submit($form, &$form_state) {
         $query_img->fields('workshop_images');
         $query_img->condition('w_id', $v["workshop_id"]);
         $result_img = $query_img->execute();
-  $root_path=events_images_path();
+        $root_path=events_images_path();
         while ($row_img = $result_img->fetchObject()) {
             if ($form_state['values']['imagecheck@' . $row_img->id] == 1) {
                 if (file_exists($root_path . $row_img->path)) {
                     unlink($root_path . $row_img->path);
-                    $query2 = db_delete('workshop_images');
-                    $query2->condition('id', $row_img->id);
-                    $delete_img = $query2->execute();
-                    if ($delete_img != 0) {
-                        $deletecounter++;
-                    }
                 }
                 else {
-                    drupal_set_message(t('Error Could not delete :') . $filename . t(', file does not exist'), 'error');
+                    drupal_set_message(t('File not found :') . $filename . t(', file does not exist'), 'error');
                 }
+                $query2 = db_delete('workshop_images');
+                $query2->condition('id', $row_img->id);
+                $delete_img = $query2->execute();
+                if ($delete_img != 0) {
+                    $deletecounter++;
+                }
+                else
+                  drupal_set_message(t('Error Could not delete record :') . $filename . t(', file does not exist'), 'error');  
             }
         }
         /* For adding more images to existing event */
@@ -5994,24 +5995,85 @@ function ajax_getcity_callback($state = '') {
 }
 
 
-function workshop_view_image_all($id = 0) {
+function workshop_view_image_all($wid = 0) {
     $page_content = "";
     $query = db_select('workshop_images');
     $query->fields('workshop_images');
-    $query->condition('id', $id);
+    $query->condition('w_id', $wid);
     $result = $query->execute();
-    $row1 = $result->fetchObject();
-    $query = db_select('workshop');
-    $query->fields('workshop');
-    $query->condition('w_id', $row1->w_id);
-    $result = $query->execute();
-    $row = $result->fetchObject();
-    $eventfolder = str_replace(' ',  '_', $row->w_name) ;
-    $previous = ($row1->id) - 1;
-    $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:5100px; height:3100px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
-    $page_content .= "</table>";
-    $page_content .= "<a href=" . $GLOBALS['base_url'] . "/events/images/change/" . $previous . " name=" . $row1->id . " id=" . $row1->id . "  class='autodialog' data-dialog-width='600px'>PREVIOUS</a>";
+    if(!$result->rowCount())
+        return "No images for this event";
+
+    $result1 = $query->execute();
+    $image_urls = array();
+    while($row1 = $result1->fetchObject()){
+        array_push($image_urls, $GLOBALS['base_url'].
+            '/events_images/'.$row1->path);
+    }
+    $page_content .= '<div id="myNav" class="overlay">
+    <div class="overlay-content">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <input id="previous-image" type="image" src="'.$GLOBALS['base_url'].'/'.drupal_get_path("module", "fossee_stats") . "/images/left-arrow.png".'" style="margin-right:5%;"> <img id="overlay-image" src="" style="height:500px;width:500px;"/> <input id="next-image" type="image" src="'.$GLOBALS['base_url'].'/'.drupal_get_path("module", "fossee_stats") . "/images/right-arrow.png".'" style="margin-left:5%;""> </div></div>';
+
+    $page_content .= "<table class='tablew tablew-bordered tablew-hover' > <tr>";    
+    $i=0;
+    while($row = $result->fetchObject()) {
+        $i++;
+        if(($i%3)==0){
+            $page_content .= '<td>'.$row->name.'<br> <img src="'.$GLOBALS['base_url'] . '/events_images/' .$row->path.'" style="height:200px;width:200px;cursor:pointer;" onclick="openNav('.$i.')"/> </td> </tr><tr>';
+        }
+        else {
+            $page_content .= '<td>'.$row->name.'<br> <img src="'.$GLOBALS['base_url'].
+            '/events_images/'.$row->path.'" style="height:200px;width:200px;cursor:pointer;" onclick="openNav('.$i.')"/> </td>';
+        }
+    }
+    $page_content .= '</tr></table>';
+    drupal_add_css(drupal_get_path("module", "fossee_stats") . "/css/image_overlay.css");
+
+    $image_ovelay_js = 
+    '(function ($) {
+        Drupal.behaviors.fossee_stats = {
+            attach: function (context, settings) { 
+                image_urls = [];
+                for(let i = 0; i < Drupal.settings.fossee_stats.image_urls.length; i++)
+                    image_urls.push(Drupal.settings.fossee_stats.image_urls[i]);
+                old_urls = image_urls;
+                $("#previous-image").click(shiftLeft);
+                $("#next-image").click(shiftRight);
+            }
+        };
+
+    }(jQuery));
+
+    function openNav(link) {
+        document.getElementById("myNav").style.width = "100%";
+        for(let i = 0; image_urls[0] != old_urls[link-1]; i++)
+            shiftLeft();
+    }
+    function closeNav() {
+        document.getElementById("myNav").style.width = "0%";
+    }
+
+    function reasignUrl() {
+        document.getElementById("overlay-image").src = image_urls[0];
+    }
+    function shiftLeft() {
+        let first_url = image_urls[0];
+        image_urls = image_urls.slice(1,image_urls.length).reverse();
+        image_urls.unshift(first_url);
+        image_urls = image_urls.reverse();
+        reasignUrl();
+    }
+    function shiftRight() {
+        let last_url = image_urls[image_urls.length-1];
+        image_urls = image_urls.slice(0,image_urls.length-1).reverse();
+        image_urls.push(last_url);
+        image_urls = image_urls.reverse();
+        reasignUrl();
+    }';
+
+    drupal_add_js(array('fossee_stats' => array('image_urls' => $image_urls)), 'setting');
+    drupal_add_js($image_ovelay_js, 'inline', 'header');
     return $page_content;
 }
 
@@ -6023,10 +6085,10 @@ function workshop_view_selected_testimonial($id = 0) {
     $query->condition('t_id', $id);
     $result = $query->execute();
     $row = $result->fetchObject();
-    $page_content .= "<br><ul><li><i><p style='margin-top:-7px'>{$row->body}</i></p>
+    $page_content .= "<br><ul><li><i style='font-style: italic;'>{$row->body}</i>
                                               <br>
             <br>
-                                                <p style='text-align:right;margin-top:-30px'>{$row->name},{$row->department},</p>
+                                                <p style='text-align:right;'>{$row->name},{$row->department},</p>
                                                 <p style='text-align:right;margin-top:-15px''>{$row->university}.</p>
                                                 </li><ul>";
     return $page_content;
@@ -6047,15 +6109,12 @@ function workshop_view_all_testimonials($workshop_id = 0) {
     $result1 = $query1->execute();
     $row1 = $result1->fetchObject();
     $page_content .= "<h2>Testimonials for " . $row1->w_name . " </h2>";
-    $page_content .= "<div id='testimonials-wrapper'>";
+    $page_content .= "<div id='testimonials-wrapper' style='margin-top:20px;'>";
     while ($row = $result->fetchObject()) {
         $page_content .= "
-                <div class='testimonial'>
-                    {$row->body}
-                    <div class='author'>
-                        - {$row->name}, {$row->department}, {$row->university}<br>
-
-                    </div>
+                <div class='testimonial' style='font-size:17px;'>
+                    <i style='font-style:italic;'>{$row->body}</i><br>
+                    <p style='margin-left:5%;'>- {$row->name}, {$row->department}, {$row->university}</p>
                 </div>
             ";
     }
@@ -6067,27 +6126,6 @@ function workshop_view_all_testimonials($workshop_id = 0) {
     ));
     return $page_content;
 }
-
-
-function workshop_view_image_change($id = 0) {
-    $page_content = "";
-    $query = db_select('workshop_images');
-    $query->fields('workshop_images');
-    $query->condition('id', $id);
-    $result = $query->execute();
-    $row1 = $result->fetchObject();
-    $query = db_select('workshop');
-    $query->fields('workshop');
-    $query->condition('w_id', $row1->w_id);
-    $result = $query->execute();
-    $row = $result->fetchObject();
-    $eventfolder = str_replace(' ',  '_', $row->w_name) ;
-    $page_content .= "<table class='tablew tablew-bordered tablew-hover' >" . $row1->name;
-    $page_content .= "<tr><td><img style='width:600px; height:2000px' src=" . $GLOBALS['base_url'] . "/events_images/" . $eventfolder . "/" . $row1->name . " /></td></tr>";
-    $page_content .= "</table>";
-    return $page_content;
-}
-
 
 function delete_directory($dirname) {
     if (is_dir($dirname))
@@ -6587,12 +6625,12 @@ $(document).ready(function(){
         text-align:justify;
         min-height:90px;
         margin-top: 10px;
+        margin-left: 5px;
+        margin-right: 5px;
         -moz-border-radius:12px;
         -webkit-border-radius:12px;
         border-radius:12px;
         box-shadow: 1px 1px 4px 1px #888888;
-        height:135px;
-
 }
 #testimonials_front a{
         /* float:left; */
@@ -6745,14 +6783,14 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
                     if (strlen($row->body) >= 260) {
                         $cut1 = substr($row->body, 0, 200);
                         $cut = $cut1 . "  ...   ";
-                        $page_testimonial = "<li><i><p style='margin-top:-7px ;color:#413E3E;'>{$cut}</i><a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
+                        $page_testimonial = "<li><p style='margin-top:-7px ;color:#413E3E;font-style:italic;'>{$cut}<a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
                                                 <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
                     }
                     else {
-                        $page_testimonial = "<li><i><p style='margin-top:-7px;color:#413E3E;'>{$row->body}</i></p>
+                        $page_testimonial = "<li><p style='margin-top:-7px;color:#413E3E;font-style:italic;'>{$row->body}</p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
                                                 <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
@@ -6773,14 +6811,14 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
                     if (strlen($row->body) >= 260) {
                         $cut1 = substr($row->body, 0, 200);
                         $cut = $cut1 . "  ...   ";
-                        $page_testimonial = "<li><i><p style='margin-top:-7px;color:#413E3E;'>{$cut}</i><a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
+                        $page_testimonial = "<li><p style='margin-top:-7px;color:#413E3E;font-style:italic;'>{$cut}<a href=" . $GLOBALS['base_url'] . "/events/testimonials/view/" . $row->t_id . " name=" . $row1->t_id . " id=" . $row1->t_id . "  class='autodialog' title='Click to read more'>Read more</a></p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
                                                 <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
                                                 </li>";
                     }
                     else {
-                        $page_testimonial = "<li><i><p style='margin-top:-7px ;color:#413E3E;'>$row->body</i></p>
+                        $page_testimonial = "<li><p style='margin-top:-7px ;color:#413E3E;font-style:italic;'>$row->body</p>
                                               <br>
                                                 <p style='text-align:right;margin-top:-30px;color:#413E3E;width:100%;'>{$row->name},{$row->department},</p>
                                                 <p style='text-align:right;margin-top:-15px;color:#413E3E;width:100%;'>{$row->university}.</p>
@@ -7233,7 +7271,6 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             '#default_value' => '',
             "#required" => TRUE
         );
-
         $form["name"] = array(
             "#type" => "textfield",
             "#title" => "Name",
@@ -7242,7 +7279,6 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Event Date:'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => '',
@@ -7251,16 +7287,14 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
-
         $form["body"] = array(
             "#type" => "textarea",
             "#title" => "Details",
             "#default_value" => '',
             "#required" => TRUE
         );
-
         $form['poster_fieldset'] = array(
             '#type' => 'fieldset',
             '#tree' => TRUE,
@@ -7270,15 +7304,19 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         if (empty($form_state['num_poster'])) {
             $form_state['num_poster'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_poster']; $i++) {
-            $form['poster_fieldset'][$i]['name'] = array(
+        if($form_state['num_poster'] == 1)
+        {
+            $form['poster_fieldset'][0]['name'] = array(
                 '#title' => t('Add poster'),
                 '#type' => 'file',
                 '#weight' => '5',
                 '#description' => t('Upload an poster'),
-                '#name' => 'files[poster_fieldset_' . $i . '_name]'
+                '#name' => 'files[poster_fieldset_0_name]',
+                '#prefix' => '<div id="poster-wrapper"> <div id="poster_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+
         $form['poster_fieldset']['add_name'] = array(
             '#type' => 'submit',
             '#value' => t('Add poster'),
@@ -7287,24 +7325,23 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
                 'poster_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'poster_add_more_callback',
-                'wrapper' => 'poster-fieldset-wrapper'
-            )
+                'callback' => 'poster_add_more_add_one_callback',
+                'wrapper' => 'poster-wrapper',
+                'method' => 'append'
+            ),
         );
-        if ($form_state['num_poster'] > 1) {
-            $form['poster_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove Poster'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'poster_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'poster_add_more_callback',
-                    'wrapper' => 'poster-fieldset-wrapper'
-                )
-            );
-        }
+
+        $form['poster_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Poster'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'poster_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'poster_remove_callback',
+            ),
+        );
         if ($no_js_use) {
             if (!empty($form['poster_fieldset']['remove_name']['#ajax'])) {
                 unset($form['poster_fieldset']['remove_name']['#ajax']);
@@ -7329,7 +7366,6 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         );
         $form['start_date'] = array(
             '#type' => 'date_popup',
-            '#title' => t('Select Start Date Of Event :'),
             '#date_increment' => 15,
             '#date_year_range' => '2008:+3',
             '#default_value' => $row->startdate,
@@ -7338,7 +7374,7 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
                 'autocomplete' => 'off',
                 'readonly' => 'readonly'
             ),
-            "#required" => TRUE
+            "#required" => TRUE,
         );
         $form["body"] = array(
             "#type" => "textarea",
@@ -7354,32 +7390,23 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
             '#prefix' => '<div id="uploaded_poster"><table><tr>',
             '#suffix' => ''
         );
-        $query = db_select('postercampaign');
-        $query->fields('postercampaign');
+
+        $query = db_select('postercampaign_poster');
+        $query->fields('postercampaign_poster');
         $query->condition('p_id', $postalcampaign_id);
         $result = $query->execute();
-        $row = $result->fetchObject();
-        $query1 = db_select('postercampaign_poster');
-        $query1->fields('postercampaign_poster');
-        $query1->condition('p_id', $postalcampaign_id);
-        $result1 = $query1->execute();
-        while ($row1 = $result1->fetchObject()) {
-    $suffix="";
-    $eventfolder = str_replace(' ',  '_', $row->p_name) ;
-    $ext = explode(".", $row1->name);
-    if (($ext[1]=="png")||($ext[1]=="PNG")||($ext[1]=="jpeg")||($ext[1]=="JPEG")||($ext[1]=="jpg")||($ext[1]=="JPG")) {
-                 $suffix='<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . ' />';
-    }
-    else{
-    $suffix='<a href=' . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " target=" . "_blank >" . $row1->name . '</a>';
-    }
-
-            $form['postercheck@' . $row1->id] = array(
+        while ($row = $result->fetchObject()) {
+            $suffix="";
+            $ext = end(explode(".", $row->path));
+            if (($ext=="png")||($ext=="PNG")||($ext=="jpeg")||($ext=="JPEG")||($ext=="jpg")||($ext=="JPG")) {
+                 $suffix='<img style="width:100px; padding-left :20px;height:100px" src=' . $GLOBALS['base_url'] . "/campaign_posters/" . $row->path . ' />';
+            }
+            else {
+                $suffix='<a href='.$GLOBALS['base_url']."/campaign_posters/".$row->path.'>'.$row->name.'</a>';
+            }
+            $form['postercheck@' . $row->id] = array(
                 '#type' => 'checkbox',
-    '#field_suffix' => $suffix,
-
-
-
+                '#field_suffix' => $suffix,
             );
         }
         $form['enduploadposter'] = array(
@@ -7397,15 +7424,19 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
         if (empty($form_state['num_poster'])) {
             $form_state['num_poster'] = 1;
         }
-        for ($i = 0; $i < $form_state['num_poster']; $i++) {
-            $form['poster_fieldset'][$i]['name'] = array(
+        if($form_state['num_poster'] == 1)
+        {
+            $form['poster_fieldset'][0]['name'] = array(
                 '#title' => t('Add poster'),
                 '#type' => 'file',
                 '#weight' => '5',
                 '#description' => t('Upload an poster'),
-                '#name' => 'files[poster_fieldset_' . $i . '_name]'
+                '#name' => 'files[poster_fieldset_0_name]',
+                '#prefix' => '<div id="poster-wrapper"> <div id="poster_0">',
+                '#suffix' => '</div> </div>',
             );
         }
+
         $form['poster_fieldset']['add_name'] = array(
             '#type' => 'submit',
             '#value' => t('Add poster'),
@@ -7414,24 +7445,23 @@ function postalcampaign_add_form($form, &$form_state, $postalcampaign_id = 0, $n
                 'poster_add_more_add_one'
             ),
             '#ajax' => array(
-                'callback' => 'poster_add_more_callback',
-                'wrapper' => 'poster-fieldset-wrapper'
-            )
+                'callback' => 'poster_add_more_add_one_callback',
+                'wrapper' => 'poster-wrapper',
+                'method' => 'append'
+            ),
         );
-        if ($form_state['num_poster'] > 1) {
-            $form['poster_fieldset']['remove_name'] = array(
-                '#type' => 'submit',
-                '#value' => t('Remove Poster'),
-                '#limit_validation_errors' => array(),
-                '#submit' => array(
-                    'poster_add_more_remove_one'
-                ),
-                '#ajax' => array(
-                    'callback' => 'poster_add_more_callback',
-                    'wrapper' => 'poster-fieldset-wrapper'
-                )
-            );
-        }
+
+        $form['poster_fieldset']['remove_name'] = array(
+            '#type' => 'submit',
+            '#value' => t('Remove Poster'),
+            '#limit_validation_errors' => array(),
+            '#submit' => array(
+                'poster_add_more_remove_one'
+            ),
+            '#ajax' => array(
+                'callback' => 'poster_remove_callback',
+            ),
+        );
         if ($no_js_use) {
             if (!empty($form['poster_fieldset']['remove_name']['#ajax'])) {
                 unset($form['poster_fieldset']['remove_name']['#ajax']);
@@ -7454,6 +7484,7 @@ function postalcampaign_add_form_submit($form, &$form_state) {
   $v = $form_state["values"];
   $posterupload = 0;
     if ($v["postercampaign_id"]) {
+        $p_id = $v["postercampaign_id"];
         $query = db_update('postercampaign');
         $query->fields(array(
             'foss_name' => $v["foss_select"],
@@ -7472,53 +7503,71 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         $query_poster->fields('postercampaign_poster');
         $query_poster->condition('p_id', $v["postercampaign_id"]);
         $result_poster = $query_poster->execute();
-  $root_path=posters_path();
+        $root_path=posters_path();
         while ($row_poster = $result_poster->fetchObject()) {
             if ($form_state['values']['postercheck@' . $row_poster->id] == 1) {
-                if (file_exists($root_path . $row_poster->path)) {
-                    unlink($root_path . $row_poster->path);
-                    $query2 = db_delete('postercampaign_poster');
-                    $query2->condition('id', $row_poster->id);
-                    $delete_poster = $query2->execute();
-                    if ($delete_poster != 0) {
-                        $deletecounter++;
-                    }
+                $query2 = db_delete('postercampaign_poster');
+                $query2->condition('id', $row_poster->id);
+                $delete_poster = $query2->execute();
+                if ($delete_poster != 0) {
+                    $deletecounter++;
                 }
                 else {
-                    drupal_set_message(t('Error Could not delete :') . $row_poster->name . t(', file does not exist'), 'error');
+                    drupal_set_message(t("Error: Could not delete database record". $row_poster->name));
+                }
+                if (file_exists($root_path . $row_poster->path)) {
+                    unlink($root_path . $row_poster->path);                    
+                }
+                else {
+                    drupal_set_message(t('Notice: File no longer exists "') . $row_poster->name . t('", file does not exist'), 'error');
                 }
             }
         }
         /* For adding more images to existing event */
-           $items = array();
         $root_path = posters_path();
-        $eventfolder = str_replace(' ', '_', $v["name"]);
-        $dest_path = $eventfolder . '/';
-        if (!is_dir($root_path . $dest_path)) {
-            mkdir($root_path . $dest_path);
+        $query = db_select('postercampaign');
+        $query->fields('postercampaign');
+        $query->condition('p_id', $p_id); 
+        $row = $query->execute()->fetchObject();
+        if(!file_exists($root_path.$row->poster_folder)){
+            $dest_path = preg_replace('/\s+/', '_', $row->p_name).time();
+            $dirresult = mkdir($root_path.$dest_path);
+            $result = db_update('postercampaign')->fields(array('poster_folder'=>$dest_path))->condition('p_id', $p_id)->execute();
+            if(!$result or !$dirresult)
+             { drupal_set_message(t('Error: Could not create directory'), 'error'); return; }
         }
+
+        $query = db_select('postercampaign');
+        $query->fields('postercampaign');
+        $query->condition('p_id', $p_id);
+        $row = $query->execute()->fetchObject();
+
+        $query = db_select('postercampaign');
+        $query->fields('postercampaign');
+        $query->condition('p_id', $p_id);
+        $postercampaign = $query->execute()->fetchObject();
+        $dest_path = $postercampaign->poster_folder;
         /* uploading files */
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
-                if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
-                    drupal_set_message(t("Error uploading file. File !filename already exists."), array(
-                        '!filename' => $_FILES['files']['name'][$file_form_name]
-                    ), 'error');
+                if (file_exists($root_path . $dest_path.'/'. preg_replace('/\s+/', '_',$file_name))) {
+                    drupal_set_message(t("Error uploading file. File '".$file_name."' already exists."), 'error');
                     return;
                 }
                 $posterupload = 0;
+
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path .$dest_path. '/'.preg_replace('/\s+/', '_',$file_name))) {
                     $posterquery = "
-  INSERT INTO postercampaign_poster
-  (p_id,name,path)
-  VALUES
-  (:p_id,:name, :path)
-  ";
+                                      INSERT INTO postercampaign_poster
+                                      (p_id,name,path)
+                                      VALUES
+                                      (:p_id,:name, :path)
+                                      ";
                     $posterargs = array(
                         ":p_id" => $v["postercampaign_id"],
                         ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":path" => $dest_path . '/'.preg_replace('/\s+/', '_', $file_name),
                     );
                     /* storing the row id in $result */
                     $posterresult = db_query($posterquery, $posterargs, array(
@@ -7549,15 +7598,17 @@ function postalcampaign_add_form_submit($form, &$form_state) {
     }
     else {
         $query = "
-  INSERT INTO {postercampaign}
-  (foss_name,p_name, startdate,body)
-  VALUES  (:foss_name,:p_name, :startdate,:body)
-  ";
+                  INSERT INTO {postercampaign}
+                  (foss_name,p_name, startdate,body,poster_folder)
+                  VALUES  (:foss_name,:p_name, :startdate,:body, :poster_folder)
+                  ";
+        $dest_path = preg_replace('/\s+/', '_', $v["name"]).time();
         $args = array(
             ":foss_name" => $v["foss_select"],
             ":p_name" => $v["name"],
             ":startdate" => $v["start_date"],
-            ":body" => $v["body"]
+            ":body" => $v["body"],
+            ":poster_folder" => $dest_path,
         );
         /* storing the row id in $result */
         $result = db_query($query, $args, array(
@@ -7567,15 +7618,11 @@ function postalcampaign_add_form_submit($form, &$form_state) {
         /* For adding poster of events*/
         $items = array();
         $root_path = posters_path();
-        $eventfolder = str_replace(' ', '_', $v["name"]);
-        $dest_path = $eventfolder . '/';
-        if (!is_dir($root_path . $dest_path)) {
-            mkdir($root_path . $dest_path);
-        }
+        mkdir($root_path . $dest_path);
         /* uploading files */
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
-                if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                if (file_exists($root_path . $dest_path .'/'.  preg_replace('/\s+/', '_', $file_name))) {
                     drupal_set_message(t("Error uploading file. File !filename already exists."), array(
                         t('!filename') => $_FILES['files']['name'][$file_form_name]
                     ), 'error');
@@ -7583,17 +7630,17 @@ function postalcampaign_add_form_submit($form, &$form_state) {
                 }
                 $posterupload = 0;
                 /* uploading file */
-                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+                if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path .'/'. preg_replace('/\s+/', '_', $file_name))) {
                     $posterquery = "
-  INSERT INTO postercampaign_poster
-  (p_id,name,path)
-  VALUES
-  (:p_id,:name, :path)
-  ";
+                                      INSERT INTO postercampaign_poster
+                                      (p_id,name,path)
+                                      VALUES
+                                      (:p_id,:name, :path)
+                                      ";
                     $posterargs = array(
                         ":p_id" => $result,
                         ":name" => $_FILES['files']['name'][$file_form_name],
-                        ":path" => $dest_path . $_FILES['files']['name'][$file_form_name]
+                        ":path" => $dest_path .'/'. preg_replace('/\s+/', '_', $file_name)
                     );
                     /* storing the row id in $result */
                     $posterresult = db_query($posterquery, $posterargs, array(
@@ -7622,23 +7669,41 @@ function postalcampaign_add_form_submit($form, &$form_state) {
 }
 
 
-function poster_add_more_callback($form, &$form_state) {
-    return $form['poster_fieldset'];
+function poster_add_more_add_one_callback($form, &$form_state) {
+    $form['poster_fieldset'][$form_state['num_poster']-1]['name'] = array(
+        '#title' => t('Add poster'),
+        '#type' => 'file',
+        '#weight' => '5',
+        '#description' => t('Upload an poster'),
+        '#name' => 'files[poster_fieldset_'.($form_state['num_poster']-1).'_name]',
+        '#prefix' => '<div id="poster_'.($form_state['num_poster']-1).'">',
+        '#suffix' => '</div>'
+    );
+    return $form['poster_fieldset'][$form_state['num_poster']-1];
 }
-
 
 function poster_add_more_add_one($form, &$form_state) {
     $form_state['num_poster']++;
-    $form_state['rebuild'] = TRUE;
     //$form_state['no_redirect'] = TRUE;
 }
 
+function poster_remove_callback($form, &$form_state){
+    $commands = [];
+    if($form_state['poster_0']){
+        $commands[] = ajax_command_replace('#poster-wrapper', drupal_render($form['poster_fieldset'][0]));
+    }
+    else
+        $commands[] = ajax_command_remove('#poster_'.$form_state['num_poster']);
+    return array('#type' => 'ajax', '#commands' => $commands);
+}
 
 function poster_add_more_remove_one($form, &$form_state) {
     if ($form_state['num_poster'] > 1) {
         $form_state['num_poster']--;
+        $form_state['poster_0'] = FALSE;
     }
-    $form_state['rebuild'] = TRUE;
+    else
+        $form_state['poster_0'] = TRUE;
 }
 
 
@@ -7655,10 +7720,14 @@ function postalcampaign_add_form_validate($form, &$form_state) {
                         break;
                 }
                 $allowed_extensions = explode(',', $allowed_extensions_str);
-    $allowed_ext= explode('.', strtolower($_FILES['files']['name'][$file_form_name]));
+                foreach($allowed_extensions as $i=>$ext) $allowed_extensions[$i] = trim($ext);
+                $allowed_ext= explode('.', strtolower($_FILES['files']['name'][$file_form_name]));
                 $temp_extension = end($allowed_ext);
                 if (!in_array($temp_extension, $allowed_extensions))
-                    form_set_error($file_form_name, t('Only file with') . $allowed_extensions_str . t(',extensions can be uploaded.'));
+                {
+                    //drupal_set_message($temp_extension);
+                    form_set_error($file_form_name, t('Only file with ') . $allowed_extensions_str . t(',extensions can be uploaded.'));
+                }
 
             }
         }
@@ -7703,6 +7772,10 @@ function postalcampaign_edit_all($postercampaign_id = 0) {
 
 
 function postalcampaign_delete_all($postercampaign_id = 0) {
+
+    if($postercampaign_id == 0)
+        drupal_goto('postalcampaign/edit');
+
     $page_content = "";
     $query = db_select('postercampaign');
     $query->fields('postercampaign');
@@ -7710,19 +7783,19 @@ function postalcampaign_delete_all($postercampaign_id = 0) {
     $result = $query->execute();
     $row = $result->fetchObject();
     $root_path = posters_path();
-    $eventfolder = str_replace(' ', '_', $row->p_name);
+    $eventfolder = $row->poster_folder; 
     $dest_path = $eventfolder;
     $dir_path = $root_path . $dest_path;
+
+    $query2 = db_delete('postercampaign_poster');
+    $query2->condition('p_id', $postercampaign_id);
+    $result2 = $query2->execute();
+
     if (is_dir($dir_path)) {
         $res = delete_directory($dir_path);
         if (!$res) {
             drupal_set_message(t("Cannot delete Campaign directory :") . $dir_path . t(",Please contact administrator."), 'error');
             return;
-        }
-        else {
-            $query2 = db_delete('postercampaign_poster');
-            $query2->condition('p_id', $postercampaign_id);
-            $result2 = $query2->execute();
         }
     }
     else {
@@ -7760,7 +7833,7 @@ function postalcampaign_view_details_all($postalcampaign_id = 0) {
 
     //createZipOfPosterMaterial($row->p_name);
     $startdate = $row->startdate;
-    $eventfolder = str_replace(' ', '_', $row->p_name);
+    $eventfolder = $row->poster_folder;
     $page_content .= "<table class='table table-bordered table-hover' >";
     $page_content .= "<tr><td><b>Name</b></td><td>{$row->p_name}</td></tr>";
     $page_content .= "<tr><td><b>Date</b></td><td>$startdate</td></tr>";
@@ -7770,8 +7843,8 @@ function postalcampaign_view_details_all($postalcampaign_id = 0) {
     $page_content .= "<table class='table table-bordered table-hover'><tr>";
     $page_content .= "<td style='font-size:20px;padding-bottom:20px'>Campaign Posters
 
- <a style='float:right' title='Download all material of Campign' href=" . $GLOBALS['base_url'] . "/postalcampaign/download/" . $eventfolder . ">Click to Download</a></td>";
-$page_content .="</tr>";
+    <a style='float:right' title='Download all material of Campign' href=" . $GLOBALS['base_url'] . "/postalcampaign/download/" . $eventfolder . ">Click to Download</a></td>";
+    $page_content .="</tr>";
 
     $query = db_select('postercampaign_poster');
     $query->fields('postercampaign_poster');
@@ -7781,29 +7854,27 @@ $page_content .="</tr>";
     if ($num_of_results != 0) {
         $page_content .= "<tr><td>";
         while ($row1 = $result->fetchObject()) {
-  $ext = explode(".", $row1->name);
-  $eventfolder = str_replace(' ',  '_', $row->p_name) ;
-  if (($ext[1]=="png")||($ext[1]=="PNG")||($ext[1]=="jpeg")||($ext[1]=="JPEG")||($ext[1]=="jpg")||($ext[1]=="JPG")) {
-            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . "><img title='Click to view' style='width:120px; height:200px; padding-right:20px;padding-bottom:10px'       src=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " /></a>";
+            $ext = end(explode(".", $row1->name));
+            if (($ext=="png")||($ext=="PNG")||($ext=="jpeg")||($ext=="JPEG")||($ext=="jpg")||($ext=="JPG")) {
+            $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/campaign_posters/"  . $row1->path . "><img title='Click to view' style='width:150px; height:150px; padding-right:20px;padding-bottom:10px'       src=" . $GLOBALS['base_url'] . "/campaign_posters/" . $row1->path . " /></a>";
 
-  }
-  }
+            }
+        }
         $page_content .= "</td></tr></table>";
-  $page_content .= "<h4>Poster's PDF</h4>";
-  $query = db_select('postercampaign_poster');
+
+        $page_content .= "<h4>Poster's PDF</h4>";
+        $query = db_select('postercampaign_poster');
         $query->fields('postercampaign_poster');
         $query->condition('p_id', $postalcampaign_id);
         $result = $query->execute();
 
-  while ($row1 = $result->fetchObject()) {
-  $ext = explode(".", $row1->name);
-  $eventfolder = str_replace(' ',  '_', $row->p_name) ;
-  if (($ext[1]=="pdf")||($ext[1]=="PDF")) {
-            $page_content .= "<a href=" . $GLOBALS['base_url'] . "/campaign_posters/" . $eventfolder . "/" . $row1->name . " target='_blank' title='Click to view'>" . $row1->name . "</a>";
+        while ($row1 = $result->fetchObject()) {
+            $ext = end(explode(".", $row1->name));
+            if (($ext=="pdf")||($ext=="PDF")) {
+                $page_content .= "<a href=" . $GLOBALS['base_url'] . "/campaign_posters/" .  $row1->path . " target='_blank' title='Click to view'>" . $row1->name . "</a>";
 
-  }
-  }
-
+            }
+        }
     }
     else {
         $page_content .= "</table>";
@@ -7816,14 +7887,20 @@ function createZipOfPosterMaterial($name = "") {
 
 $root_path = posters_path();
 $eventfolder = $name;
-$zip_filename=$root_path . $eventfolder . ".zip";
+$zip_filename = $root_path . $eventfolder . ".zip";
 
 $zip = new ZipArchive();
 // open archive
 if ($zip->open($root_path . $eventfolder . ".zip", ZIPARCHIVE::CREATE) !== TRUE) {
 die ("Could not open archive");
 }
-$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root_path . $eventfolder . "/"));
+
+try{
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root_path . $eventfolder . "/"));
+}
+catch(Exception $e){
+    return drupal_set_message('Failed to open directory: Invalid postalcampaign name or no posters added to postalcampaign yet.', 'error');
+}
 // iterate over the directory
 // add each file found to the archive
 foreach ($iterator as $key => $value) {
@@ -7905,7 +7982,6 @@ function postalcampaign_view_all($foss_name, $startdate, $enddate) {
 }
 
 /* Spoken Tutorials  */
-
 
 function spokentutorial_display_all() {
     $page_content = "";
@@ -8058,6 +8134,7 @@ function spokentutorial_view_all($foss_name) {
     $page_content .= bootstrap_table_format($headers, $rows1);
     return $page_content;
 }
+
 
 function other_activities($foss_name,$status,$startdate = false,$enddate = false) {
     $page_content = "";

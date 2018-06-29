@@ -5695,7 +5695,7 @@ function workshop_add_form_submit($form, &$form_state) {
         $query->condition('w_id', $v["workshop_id"]);
         $result = $query->execute();
         $row_folder = $result->fetchObject();
-        $eventfolder = $row_folder -> images_folder;
+        $eventfolder = $row_folder->images_folder;
         $dest_path = $eventfolder . '/';
         if (!is_dir($root_path . $dest_path)) {
             mkdir($root_path . $dest_path);
@@ -5704,7 +5704,10 @@ function workshop_add_form_submit($form, &$form_state) {
         /* uploading files */
         foreach ($_FILES['files']['name'] as $file_form_name => $file_name) {
             if ($file_name) {
-                if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])) {
+
+                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+
+                if (file_exists($root_path . $dest_path . $sanitized_file_name)) {
                     drupal_set_message(t("Error uploading file. File !filename already exists."), array(
                         '!filename' => $_FILES['files']['name'][$file_form_name]
                     ), 'error');
@@ -5714,8 +5717,7 @@ function workshop_add_form_submit($form, &$form_state) {
                 /* uploading file */
                 if(get_file_size_MB($_FILES['files']['tmp_name'][$file_form_name]) > variable_get('max_upload_size', 1))
                 { drupal_set_message(t('Max file upload size('.variable_get('max_upload_size', 1).'MB) exceeded'), 'error'); return; }
-
-                $sanitized_file_name = preg_replace('/\s+/', '_', $file_name);
+                
                 if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $sanitized_file_name)) {
                     $imagequery = "
                                   INSERT INTO workshop_images
@@ -6007,6 +6009,8 @@ function workshop_view_image_all($wid = 0) {
     $result1 = $query->execute();
     $image_urls = array();
     while($row1 = $result1->fetchObject()){
+        if(!file_exists(events_images_path().$row1->path))
+                continue;
         array_push($image_urls, $GLOBALS['base_url'].
             '/events_images/'.$row1->path);
     }
@@ -6018,6 +6022,8 @@ function workshop_view_image_all($wid = 0) {
     $page_content .= "<table class='tablew tablew-bordered tablew-hover' > <tr>";    
     $i=0;
     while($row = $result->fetchObject()) {
+        if(!file_exists(events_images_path().$row->path))
+            continue;
         $i++;
         if(($i%3)==0){
             $page_content .= '<td>'.$row->name.'<br> <img src="'.$GLOBALS['base_url'] . '/events_images/' .$row->path.'" style="height:200px;width:200px;cursor:pointer;" onclick="openNav('.$i.')"/> </td> </tr><tr>';
@@ -6758,7 +6764,8 @@ $page_content .= "<div style='float:right;padding-bottom:10px'><a href=" . $GLOB
     if ($num_of_results != 0) {
         $page_content .= "<tr><td><b>Pictures</b></td><td>";
         while ($row1 = $result->fetchObject()) {
-          $eventfolder = str_replace(' ',  '_', $row->w_name) ;
+            if(!file_exists(events_images_path().$row1->path))
+                continue;
             $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . "><img style='width:100px; height:100px; padding-right:20px;padding-bottom:10px' src=" . $GLOBALS['base_url'] . "/events_images/" . $row1->path . " /></a>";
         }
         $page_content .= "</td></tr></table>";
@@ -7854,6 +7861,8 @@ function postalcampaign_view_details_all($postalcampaign_id = 0) {
     if ($num_of_results != 0) {
         $page_content .= "<tr><td>";
         while ($row1 = $result->fetchObject()) {
+            if(!file_exists(posters_path().$row1->path))
+                continue;
             $ext = end(explode(".", $row1->name));
             if (($ext=="png")||($ext=="PNG")||($ext=="jpeg")||($ext=="JPEG")||($ext=="jpg")||($ext=="JPG")) {
             $page_content .= "<a class='fancybox' rel='gallery1' href=" . $GLOBALS['base_url'] . "/campaign_posters/"  . $row1->path . "><img title='Click to view' style='width:150px; height:150px; padding-right:20px;padding-bottom:10px'       src=" . $GLOBALS['base_url'] . "/campaign_posters/" . $row1->path . " /></a>";
@@ -8482,6 +8491,8 @@ $page_content .= '</tbody></table>';
   $page_content .= "<h3>Pictures</h3>";
   $page_content .= '<table border="" cellspacing="6" cellpadding="4"><tr>';
         while ($row1 = $result->fetchObject()) {
+            if(!file_exists(events_images_path().$row1->path))
+                continue;
   $i++;
 
   if (($i%2)==0) {
